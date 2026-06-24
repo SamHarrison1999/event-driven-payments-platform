@@ -10,16 +10,251 @@ asynchronous event delivery and settlement reconciliation.
 
 Current phase:
 
-**Phase 0 — Architecture and repository foundation**
+**Phase 1 — Executable platform foundation**
 
-No executable application has been implemented yet.
+The repository now contains an executable Spring Boot backend, PostgreSQL
+database foundation, React frontend, automated tests and a GitHub Actions
+continuous-integration workflow.
+
+Local Phase 1 verification passed on 24 June 2026.
+
+The remote GitHub Actions workflow has been configured but must still be
+observed passing after the branch is pushed.
 
 See the [progress ledger](docs/progress/ledger.md) for the verified project
 status.
 
+## Implemented foundation
+
+### Backend
+
+The backend currently provides:
+
+- a Java 25 and Spring Boot 4 modular-monolith foundation;
+- Spring Modulith module declarations and architecture verification;
+- PostgreSQL connectivity;
+- Flyway-managed database migrations;
+- Testcontainers-based PostgreSQL integration tests;
+- a versioned system-information endpoint;
+- Spring Boot Actuator health endpoints;
+- OpenAPI documentation and Swagger UI;
+- request correlation identifiers; and
+- an executable Spring Boot JAR.
+
+The implemented API endpoint is:
+
+```text
+GET /api/v1/system/info
+```
+
+Operational endpoints include:
+
+```text
+GET /actuator/health
+GET /actuator/health/liveness
+GET /actuator/health/readiness
+GET /v3/api-docs
+GET /swagger-ui.html
+```
+
+### Frontend
+
+The frontend currently provides:
+
+- a React and TypeScript application built with Vite;
+- TanStack Query server-state management;
+- a typed backend client with runtime response validation;
+- loading, connected and unavailable backend states;
+- manual connection retry behaviour;
+- an accessible and responsive platform shell;
+- Vitest component and API-client tests;
+- Mock Service Worker network simulation; and
+- ESLint static analysis.
+
+### Delivery
+
+The project currently provides:
+
+- a PostgreSQL Docker Compose service;
+- locked backend and frontend dependencies;
+- reproducible PowerShell and Bash verification scripts; and
+- GitHub Actions jobs for repository, backend and frontend verification.
+
+## Local development
+
+### Prerequisites
+
+The verified Windows development environment uses:
+
+- Java 25;
+- Docker Desktop;
+- Node.js 24.18.0;
+- pnpm 11.9.0; and
+- PowerShell 5.1 or later.
+
+### Start PostgreSQL
+
+From the repository root:
+
+```powershell
+docker compose up -d postgres
+docker compose ps
+```
+
+Wait until PostgreSQL reports a healthy status.
+
+### Start the backend
+
+In a second terminal:
+
+```powershell
+cd backend
+.\gradlew.bat bootRun
+```
+
+The backend starts at:
+
+```text
+http://localhost:8080
+```
+
+### Start the frontend
+
+In a third terminal:
+
+```powershell
+cd frontend
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+The frontend starts at:
+
+```text
+http://localhost:5173
+```
+
+During local development, Vite proxies API requests to the Spring Boot
+backend.
+
+### Stop the services
+
+Stop the frontend and backend with `Ctrl+C`.
+
+Then, from the repository root:
+
+```powershell
+docker compose down
+```
+
+This preserves the PostgreSQL development volume.
+
+## Phase 1 verification
+
+### Windows PowerShell
+
+From the repository root:
+
+```powershell
+.\scripts\verify-phase-1.ps1
+```
+
+A successful run ends with:
+
+```text
+Phase 1 verification passed.
+```
+
+The verifier:
+
+1. checks required repository files;
+2. validates the Docker Compose configuration;
+3. tests and packages the backend;
+4. installs locked frontend dependencies;
+5. runs frontend linting;
+6. runs frontend tests;
+7. creates the frontend production build; and
+8. checks staged and unstaged whitespace.
+
+### Bash
+
+On a Linux, macOS or WSL environment containing the complete Java, Docker,
+Node.js and pnpm toolchain:
+
+```bash
+./scripts/verify-phase-1.sh
+```
+
+The Bash script performs the same Phase 1 verification gate.
+
+## Architecture
+
+The application is structured as a modular monolith with a separately built
+browser client.
+
+The backend currently declares the following modules:
+
+- identity;
+- customer;
+- account;
+- payment;
+- ledger;
+- risk;
+- reconciliation;
+- notification;
+- audit;
+- reporting; and
+- shared.
+
+Business functionality will be introduced incrementally without bypassing the
+declared module boundaries.
+
+The architecture is described in
+[docs/architecture/overview.md](docs/architecture/overview.md).
+
+Major decisions are recorded as Architecture Decision Records under
+[docs/adr](docs/adr).
+
+## Current technology baseline
+
+| Technology | Resolved version |
+|---|---:|
+| Java | 25.0.1 LTS |
+| Spring Boot | 4.0.7 |
+| Spring Modulith | 2.0.7 |
+| Springdoc OpenAPI | 3.0.3 |
+| Gradle Wrapper | 9.6.0 |
+| Flyway | 11.14.1 |
+| PostgreSQL | 18.4 |
+| PostgreSQL JDBC | 42.7.11 |
+| Testcontainers | 2.0.5 |
+| Node.js | 24.18.0 |
+| pnpm | 11.9.0 |
+| React | 19.2.7 |
+| TypeScript | 6.0.3 |
+| Vite | 8.1.0 |
+| TanStack Query | 5.101.1 |
+| Vitest | 4.1.9 |
+| Mock Service Worker | 2.14.6 |
+
+Dependencies managed by Spring Boot will not be independently overridden
+without a documented reason.
+
+## Repository layout
+
+```text
+backend/          Spring Boot modular monolith
+frontend/         React and TypeScript application
+infrastructure/   Reserved for later deployment infrastructure
+load-tests/       Reserved for later performance tests
+docs/             Architecture, product and project evidence
+scripts/          Reproducible verification commands
+.github/          Continuous-integration workflows
+```
+
 ## Product objective
 
-The completed platform will allow authorised users to:
+The completed platform is intended to allow authorised users to:
 
 - register and authenticate;
 - create simulated customers and accounts;
@@ -33,77 +268,7 @@ The completed platform will allow authorised users to:
 - view operational metrics; and
 - receive simulated payment notifications.
 
-## Architecture
-
-The system begins as a modular monolith consisting of:
-
-- a Java and Spring Boot backend;
-- Spring Modulith module verification;
-- a React and TypeScript frontend;
-- PostgreSQL as the system of record;
-- an explicit double-entry ledger;
-- a transactional outbox; and
-- a Kafka-compatible broker introduced when asynchronous use cases exist.
-
-The architecture is described in
-[docs/architecture/overview.md](docs/architecture/overview.md).
-
-Major decisions are recorded as Architecture Decision Records under
-[docs/adr](docs/adr).
-
-## Initial technology baseline
-
-| Technology | Version |
-|---|---:|
-| Java | 25 LTS |
-| Spring Boot | 4.0.7 |
-| Spring Modulith | 2.0.7 |
-| Springdoc OpenAPI | 3.0.3 |
-| Gradle Wrapper | 9.6.0 |
-| PostgreSQL | 18.4 |
-| Node.js | 24.18.0 LTS |
-| pnpm | 11.9.0 |
-| React | 19.2 |
-| TypeScript | 6 |
-| Vite | 8 |
-| Playwright | 1.61 |
-
-Dependencies managed by Spring Boot will not be independently overridden
-without a documented reason.
-
-## Planned repository layout
-
-```text
-backend/          Spring Boot modular monolith
-frontend/         React application and Playwright tests
-infrastructure/   Docker Compose and deployment assets
-load-tests/       Payment-path performance tests
-docs/             Architecture, security and project evidence
-scripts/          Reproducible verification commands
-```
-
-Executable directories are introduced only in the phase that implements them.
-
-## Phase 0 verification
-
-From Git Bash, WSL, Linux or macOS:
-
-```bash
-chmod +x scripts/verify-phase-0.sh
-./scripts/verify-phase-0.sh
-```
-
-From PowerShell with WSL:
-
-```powershell
-wsl bash scripts/verify-phase-0.sh
-```
-
-A successful run prints:
-
-```text
-Phase 0 repository checks passed.
-```
+These domain capabilities are planned work and are not yet implemented.
 
 ## Engineering principles
 

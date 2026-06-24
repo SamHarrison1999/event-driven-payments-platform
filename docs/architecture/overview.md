@@ -8,10 +8,35 @@ client.
 The backend is one deployable Spring Boot process, but its business domains are
 treated as independently owned modules.
 
-Spring Modulith will verify module boundaries during automated testing.
+Spring Modulith verifies declared module boundaries during automated testing.
 
 Asynchronous infrastructure is introduced only when an implemented use case
 requires durable asynchronous delivery.
+
+## Phase 1 implementation status
+
+Phase 1 established the executable platform foundation.
+
+The currently implemented runtime consists of:
+
+- one Spring Boot backend process;
+- declared Spring Modulith module boundaries;
+- PostgreSQL 18.4 as the development database;
+- Flyway-managed schema history;
+- a React and TypeScript browser client;
+- a versioned system-information API;
+- Actuator health endpoints;
+- OpenAPI documentation;
+- correlation-ID propagation;
+- Testcontainers integration testing; and
+- GitHub Actions verification.
+
+The payment, ledger, identity, reconciliation, notification, audit and
+reporting domains are declared architectural modules but do not yet contain
+their final business implementations.
+
+The Kafka-compatible broker, asynchronous consumers and observability stack
+remain planned components.
 
 ## C4 context diagram
 
@@ -99,8 +124,9 @@ flowchart TB
 
 The diagram represents conceptual dependencies.
 
-Executable architecture rules introduced in Phase 1 will distinguish public
-module interfaces from internal implementations.
+Phase 1 introduced declared module metadata and an automated Spring Modulith
+verification test. Public module APIs and internal implementations will be
+introduced with each domain capability.
 
 ## Module responsibilities
 
@@ -268,27 +294,45 @@ A financial correction requires a new compensating ledger transaction.
 
 ## Persistence principles
 
-- PostgreSQL is the system of record.
+### Implemented in Phase 1
+
+- PostgreSQL is configured as the application database.
+- Flyway owns schema migration history.
+- Hibernate schema generation is disabled.
+- The initial migration establishes the migration baseline.
+- Database integration is verified with a real PostgreSQL Testcontainer.
+
+### Planned domain persistence guarantees
+
+- PostgreSQL remains the system of record.
 - Ledger entries are append-only.
 - Audit events are append-only.
 - Account balances are transactionally maintained snapshots.
 - Ledger-derived balances can be recalculated for verification.
 - Outbox records retain diagnostic and retry metadata.
 - Imported files retain synthetic source identifiers and fingerprints.
-- Database migrations are managed by Flyway.
-
+- Financial schema changes use forward-only Flyway migrations.
 ## API principles
 
+### Implemented in Phase 1
+
 - APIs are versioned under `/api/v1`.
+- `GET /api/v1/system/info` exposes non-sensitive platform metadata.
+- Correlation identifiers are accepted through `X-Correlation-ID`.
+- Invalid or absent correlation identifiers are replaced with generated IDs.
+- The effective correlation identifier is returned in the response.
+- Actuator exposes health, liveness and readiness.
+- OpenAPI output is available under `/v3/api-docs`.
+- Swagger UI is available for local API inspection.
+
+### Planned API guarantees
+
 - Errors use `application/problem+json`.
 - Field errors use stable property paths.
 - Business conflicts use stable error codes.
 - Pagination is bounded.
 - Payment submission requires an `Idempotency-Key` header.
-- Correlation identifiers are accepted or generated.
-- The response returns the effective correlation identifier.
 - Authentication uses a server-side session cookie.
-
 ## Initial risk register
 
 | Risk | Consequence | Control |

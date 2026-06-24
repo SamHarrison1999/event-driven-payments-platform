@@ -31,7 +31,7 @@ Last updated: 2026-06-24
 
 | Phase | Status | Evidence |
 |---:|---|---|
-| 0 — Architecture and repository foundation | Current | Files created; content and verification pending |
+| 0 — Architecture and repository foundation | Completed | Verifier passed; Git checks passed; commit `0bab905` created |
 | 1 — Backend, frontend and CI skeletons | Not started | None |
 | 2 — Identity and access | Not started | None |
 | 3 — Customers and accounts | Not started | None |
@@ -60,12 +60,12 @@ Last updated: 2026-06-24
 | Definition of done exists | Prepared |
 | Educational-use warning is prominent | Prepared |
 | Repository policy files exist | Prepared |
-| `scripts/verify-phase-0.sh` passes | Awaiting execution |
-| `git diff --check` passes | Awaiting execution |
-| Phase 0 commit exists | Awaiting completion |
+| `scripts/verify-phase-0.sh` passes | Completed |
+| `git diff --check` passes | Completed |
+| Phase 0 commit exists | Completed — `0bab905` |
 
-Phase 0 becomes Completed only after the verifier output and Git checks have
-been observed.
+Phase 0 was completed after the repository verifier passed, the staged
+whitespace check returned no errors and commit `0bab905` was created.
 
 ## Decision history
 
@@ -81,5 +81,5 @@ been observed.
 
 ## Next verified action
 
-Populate all Phase 0 files, run the Phase 0 verifier and inspect its actual
-output before starting Phase 1.
+Merge the completed Phase 0 branch into `main`, then create the Phase 1 branch
+for the backend, frontend and CI skeletons.

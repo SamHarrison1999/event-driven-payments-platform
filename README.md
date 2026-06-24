@@ -16,10 +16,11 @@ The repository now contains an executable Spring Boot backend, PostgreSQL
 database foundation, React frontend, automated tests and a GitHub Actions
 continuous-integration workflow.
 
-Local Phase 1 verification passed on 24 June 2026.
+Phase 1 verification passed locally and through GitHub Actions on
+24 June 2026.
 
-The remote GitHub Actions workflow has been configured but must still be
-observed passing after the branch is pushed.
+The `main` branch is protected by a ruleset requiring pull requests and the
+repository, backend and frontend CI checks.
 
 See the [progress ledger](docs/progress/ledger.md) for the verified project
 status.

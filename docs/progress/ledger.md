@@ -33,7 +33,7 @@ Last updated: 2026-06-24
 | Phase | Status | Evidence |
 |---:|---|---|
 | 0 — Architecture and repository foundation | Completed | Repository verifier passed; commits `0bab905` and `6cd81a5` |
-| 1 — Backend, frontend and CI skeletons | Current | Local verifier passed; GitHub Actions observation remains |
+| 1 — Backend, frontend and CI skeletons | Completed | Local and GitHub Actions verification passed; PR #1 ready to merge |
 | 2 — Identity and access | Not started | None |
 | 3 — Customers and accounts | Not started | None |
 | 4 — Double-entry ledger | Not started | None |
@@ -120,7 +120,8 @@ Last updated: 2026-06-24
 | Bash Phase 1 verifier exists | Completed | `scripts/verify-phase-1.sh` |
 | PowerShell Phase 1 verifier passes | Completed | Observed on 2026-06-24 |
 | Bash syntax validation passes | Completed | `bash -n` produced no errors |
-| GitHub Actions run passes | Pending | Branch has not yet been pushed |
+| GitHub Actions run passes | Completed | Repository, Backend and Frontend checks passed on PR #1 |
+| Main branch protection is configured | Completed | Pull requests and all three CI checks are required |
 | Mobile-width browser check | Completed | Responsive layout verified at a 390px viewport |
 
 ## Verified Phase 1 results
@@ -166,11 +167,11 @@ Phase 1 verification passed.
 
 ## Next verified action
 
-Push the Phase 1 branch and observe the GitHub Actions workflow.
+Commit and push the final Phase 1 verification evidence, allow the required
+GitHub Actions checks to pass again and merge PR #1 into `main`.
 
-After the GitHub Actions gate passes:
+After the merge:
 
-1. mark Phase 1 as completed;
-2. commit the final progress-ledger update;
-3. merge `chore/phase-1-project-skeleton` into `main`; and
-4. create the Phase 2 identity-and-access branch.
+1. synchronise the local `main` branch;
+2. remove the completed Phase 1 branch; and
+3. create the Phase 2 identity-and-access branch.

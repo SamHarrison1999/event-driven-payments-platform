@@ -1,0 +1,32 @@
+name: event-driven-payments-platform
+
+services:
+  postgres:
+    image: postgres:18.4-alpine
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-payments_platform}
+      POSTGRES_USER: ${POSTGRES_USER:-payments_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-payments_local_dev_only}
+
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          pg_isready
+          -U ${POSTGRES_USER:-payments_app}
+          -d ${POSTGRES_DB:-payments_platform}
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+    volumes:
+      - postgres-data:/var/lib/postgresql
+
+volumes:
+  postgres-data:

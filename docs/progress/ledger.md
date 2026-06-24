@@ -121,7 +121,7 @@ Last updated: 2026-06-24
 | PowerShell Phase 1 verifier passes | Completed | Observed on 2026-06-24 |
 | Bash syntax validation passes | Completed | `bash -n` produced no errors |
 | GitHub Actions run passes | Pending | Branch has not yet been pushed |
-| Mobile-width browser check | Pending | Explicit 390px check not yet recorded |
+| Mobile-width browser check | Completed | Responsive layout verified at a 390px viewport |
 
 ## Verified Phase 1 results
 
@@ -166,10 +166,9 @@ Phase 1 verification passed.
 
 ## Next verified action
 
-Complete the explicit mobile-width browser check, push the Phase 1 branch and
-observe the GitHub Actions workflow.
+Push the Phase 1 branch and observe the GitHub Actions workflow.
 
-After both gates pass:
+After the GitHub Actions gate passes:
 
 1. mark Phase 1 as completed;
 2. commit the final progress-ledger update;

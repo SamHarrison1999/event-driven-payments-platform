@@ -1,0 +1,71 @@
+# Operating systems
+.DS_Store
+Thumbs.db
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Visual Studio Code
+.vscode/
+
+# Temporary editor files
+*.swp
+*.swo
+*~
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+
+# Logs and runtime files
+*.log
+logs/
+tmp/
+*.pid
+
+# Java and Gradle
+.gradle/
+**/build/
+out/
+target/
+.classpath
+.project
+.settings/
+
+# Preserve the Gradle wrapper
+!gradle/wrapper/gradle-wrapper.jar
+
+# Node.js and frontend
+node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results/
+*.tsbuildinfo
+.pnpm-store/
+
+# Test and analysis output
+coverage/
+reports/
+allure-results/
+allure-report/
+dependency-check-report.*
+spotbugsXml.xml
+spotbugsHtml.html
+
+# Containers and local volumes
+infrastructure/volumes/
+docker-data/
+
+# Local application data
+*.db
+*.sqlite
+*.sqlite3
+uploads/

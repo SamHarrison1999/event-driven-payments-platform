@@ -15,6 +15,9 @@ public class IdentityRoleManagementService {
 
     private final IdentityUserRepository repository;
 
+    private final IdentitySecurityEventRepository
+        securityEventRepository;
+
     private final FindByIndexNameSessionRepository<
         ? extends Session
         > sessionRepository;
@@ -23,32 +26,52 @@ public class IdentityRoleManagementService {
 
     public IdentityRoleManagementService(
         IdentityUserRepository repository,
+        IdentitySecurityEventRepository
+            securityEventRepository,
         FindByIndexNameSessionRepository<
             ? extends Session
             > sessionRepository,
         Clock clock
     ) {
         this.repository = repository;
+
+        this.securityEventRepository =
+            securityEventRepository;
+
         this.sessionRepository =
             sessionRepository;
+
         this.clock = clock;
     }
 
     @Transactional
     public IdentityRolesResponse grantRole(
+        UUID actorUserId,
         UUID userId,
         IdentityRole role
     ) {
         IdentityUser user =
             findRequiredUser(userId);
 
+        Instant changedAt =
+            Instant.now(clock);
+
         boolean changed =
             user.grantRole(
                 role,
-                Instant.now(clock)
+                changedAt
             );
 
         if (changed) {
+            securityEventRepository.save(
+                IdentitySecurityEvent.roleGranted(
+                    actorUserId,
+                    user.id(),
+                    role,
+                    changedAt
+                )
+            );
+
             revokeActiveSessions(
                 user.normalizedEmail()
             );
@@ -59,19 +82,32 @@ public class IdentityRoleManagementService {
 
     @Transactional
     public IdentityRolesResponse revokeRole(
+        UUID actorUserId,
         UUID userId,
         IdentityRole role
     ) {
         IdentityUser user =
             findRequiredUser(userId);
 
+        Instant changedAt =
+            Instant.now(clock);
+
         boolean changed =
             user.revokeRole(
                 role,
-                Instant.now(clock)
+                changedAt
             );
 
         if (changed) {
+            securityEventRepository.save(
+                IdentitySecurityEvent.roleRevoked(
+                    actorUserId,
+                    user.id(),
+                    role,
+                    changedAt
+                )
+            );
+
             revokeActiveSessions(
                 user.normalizedEmail()
             );

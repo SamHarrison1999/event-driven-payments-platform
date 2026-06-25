@@ -24,6 +24,12 @@ spring:
   jackson:
     time-zone: UTC
 
+  session:
+    timeout: 30m
+    jdbc:
+      initialize-schema: never
+      table-name: SPRING_SESSION
+
 management:
   endpoints:
     web:
@@ -64,6 +70,15 @@ platform:
 
 server:
   shutdown: graceful
+
+  servlet:
+    session:
+      cookie:
+        name: PAYMENTS_SESSION
+        http-only: true
+        secure: ${SESSION_COOKIE_SECURE:false}
+        same-site: strict
+        path: /api
 
 logging:
   pattern:

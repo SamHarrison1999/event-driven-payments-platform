@@ -13,31 +13,44 @@ Spring Modulith verifies declared module boundaries during automated testing.
 Asynchronous infrastructure is introduced only when an implemented use case
 requires durable asynchronous delivery.
 
-## Phase 1 implementation status
+## Implementation status
 
-Phase 1 established the executable platform foundation.
+### Phase 1 — Executable platform foundation
 
-The currently implemented runtime consists of:
+Phase 1 established:
 
-- one Spring Boot backend process;
-- declared Spring Modulith module boundaries;
-- PostgreSQL 18.4 as the development database;
-- Flyway-managed schema history;
-- a React and TypeScript browser client;
-- a versioned system-information API;
-- Actuator health endpoints;
-- OpenAPI documentation;
+- the Spring Boot modular monolith;
+- PostgreSQL and Flyway integration;
+- the React and TypeScript browser client;
+- the versioned system-information API;
+- Actuator and OpenAPI;
 - correlation-ID propagation;
 - Testcontainers integration testing; and
 - GitHub Actions verification.
 
-The payment, ledger, identity, reconciliation, notification, audit and
-reporting domains are declared architectural modules but do not yet contain
-their final business implementations.
+### Phase 2 — Identity and access
+
+Phase 2 implemented:
+
+- persistent identity users and roles;
+- normalised and uniquely constrained email addresses;
+- password validation and BCrypt hashing;
+- customer registration;
+- Spring Security authentication;
+- PostgreSQL-backed browser sessions;
+- CSRF protection;
+- failed-login tracking and temporary lockout;
+- service-level role-based access control;
+- administrator role management;
+- session invalidation following role changes; and
+- immutable role-change security audit events.
+
+The remaining payment, ledger, customer, account, reconciliation,
+notification, reporting and operational capabilities are introduced in later
+phases.
 
 The Kafka-compatible broker, asynchronous consumers and observability stack
-remain planned components.
-
+also remain planned components.
 ## C4 context diagram
 
 ```mermaid
@@ -257,11 +270,13 @@ If any required operation fails, the transaction rolls back.
 
 ### Role change
 
-A role change transaction will:
+A role change transaction:
 
-1. modify role assignments; and
-2. write the associated security audit event.
+1. modifies the role assignment;
+2. writes the associated immutable security audit event; and
+3. invalidates active sessions for the affected user.
 
+The role mutation and security event commit atomically.
 ### Discrepancy resolution
 
 A discrepancy-resolution transaction will:
@@ -294,19 +309,24 @@ A financial correction requires a new compensating ledger transaction.
 
 ## Persistence principles
 
-### Implemented in Phase 1
+### Implemented by Phase 2
 
-- PostgreSQL is configured as the application database.
-- Flyway owns schema migration history.
+- PostgreSQL is the application system of record.
+- Flyway owns forward-only schema migration history.
 - Hibernate schema generation is disabled.
-- The initial migration establishes the migration baseline.
-- Database integration is verified with a real PostgreSQL Testcontainer.
+- Migration version 1 establishes the baseline.
+- Migration version 2 creates the identity schema.
+- Migration version 3 creates the JDBC session schema.
+- Migration version 4 creates the identity security-event log.
+- Identity email uniqueness is protected by a database constraint.
+- Browser sessions are stored in PostgreSQL.
+- Role-change security events are append-only.
+- A PostgreSQL trigger rejects updates and deletions of security-event rows.
+- Database integration is tested with real PostgreSQL Testcontainers.
 
 ### Planned domain persistence guarantees
 
-- PostgreSQL remains the system of record.
 - Ledger entries are append-only.
-- Audit events are append-only.
 - Account balances are transactionally maintained snapshots.
 - Ledger-derived balances can be recalculated for verification.
 - Outbox records retain diagnostic and retry metadata.
@@ -314,25 +334,28 @@ A financial correction requires a new compensating ledger transaction.
 - Financial schema changes use forward-only Flyway migrations.
 ## API principles
 
-### Implemented in Phase 1
+### Implemented by Phase 2
 
 - APIs are versioned under `/api/v1`.
 - `GET /api/v1/system/info` exposes non-sensitive platform metadata.
-- Correlation identifiers are accepted through `X-Correlation-ID`.
-- Invalid or absent correlation identifiers are replaced with generated IDs.
-- The effective correlation identifier is returned in the response.
+- Correlation identifiers are propagated through `X-Correlation-ID`.
+- Customer registration validates bounded email and password inputs.
+- Authentication uses a server-side PostgreSQL session.
+- State-changing browser requests require CSRF protection.
+- Session responses use `Cache-Control: no-store`.
+- Role-management operations are authorised at the service boundary.
+- Anonymous protected requests return `401 Unauthorized`.
+- Authenticated users without sufficient authority receive `403 Forbidden`.
 - Actuator exposes health, liveness and readiness.
 - OpenAPI output is available under `/v3/api-docs`.
-- Swagger UI is available for local API inspection.
 
 ### Planned API guarantees
 
-- Errors use `application/problem+json`.
+- All errors use a consistent `application/problem+json` structure.
 - Field errors use stable property paths.
-- Business conflicts use stable error codes.
+- Business conflicts use stable machine-readable codes.
 - Pagination is bounded.
 - Payment submission requires an `Idempotency-Key` header.
-- Authentication uses a server-side session cookie.
 ## Initial risk register
 
 | Risk | Consequence | Control |

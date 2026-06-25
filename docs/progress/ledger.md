@@ -1,6 +1,6 @@
 # Progress ledger
 
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 
 ## Status meanings
 
@@ -26,7 +26,7 @@ Last updated: 2026-06-24
 | Docker execution | Completed | `hello-world` container succeeded |
 | jq | Completed | jq 1.8.1 |
 | IntelliJ repository | Completed | Repository and Gradle project configured |
-| Current Git phase branch | Completed | `chore/phase-1-project-skeleton` |
+| Current Git phase branch | Completed | `feat/phase-2-identity-access` |
 
 ## Phase progress
 
@@ -34,7 +34,7 @@ Last updated: 2026-06-24
 |---:|---|---|
 | 0 — Architecture and repository foundation | Completed | Repository verifier passed; commits `0bab905` and `6cd81a5` |
 | 1 — Backend, frontend and CI skeletons | Completed | Local and GitHub Actions verification passed; PR #1 ready to merge |
-| 2 — Identity and access | Not started | None |
+| 2 — Identity and access | Current | Identity implementation complete; Phase 2 completion gate in progress |
 | 3 — Customers and accounts | Not started | None |
 | 4 — Double-entry ledger | Not started | None |
 | 5 — Synchronous payments | Not started | None |
@@ -149,6 +149,52 @@ The verifier ended with:
 Phase 1 verification passed.
 ```
 
+## Phase 2 acceptance evidence
+
+### Identity persistence and credentials
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Identity users persist in PostgreSQL | Completed | `IdentityPersistenceIntegrationTest` |
+| Email addresses are normalised | Completed | `EmailAddressTest` |
+| Normalised emails are unique | Completed | Database constraint and registration tests |
+| Password inputs are bounded | Completed | `PasswordPolicyTest` |
+| Passwords are securely hashed | Completed | `PasswordHashingServiceTest` |
+| Raw passwords are not persisted | Completed | Registration integration tests |
+
+### Authentication and access control
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Customer registration works | Completed | `CustomerRegistrationIntegrationTest` |
+| Duplicate registration is rejected | Completed | Registration conflict tests |
+| JDBC browser sessions work | Completed | `IdentitySessionIntegrationTest` |
+| Login, current-session and logout APIs work | Completed | Session integration tests |
+| CSRF protection is enabled | Completed | Security and session integration tests |
+| Failed logins are tracked | Completed | Authentication-attempt tests |
+| Accounts temporarily lock after repeated failures | Completed | Lockout tests |
+| Session identifiers rotate during login | Completed | Session integration tests |
+| Protected APIs reject anonymous callers | Completed | Authentication integration tests |
+| Service-level method security works | Completed | `IdentityMethodSecurityIntegrationTest` |
+| Administrators can manage roles | Completed | `IdentityRoleManagementIntegrationTest` |
+| Non-administrators cannot manage roles | Completed | Negative authorisation tests |
+| Role changes invalidate affected sessions | Completed | Role-management integration test |
+| Final user role cannot be removed | Completed | Conflict integration test |
+
+### Security audit and verification
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Role grants create security events | Completed | `IdentitySecurityAuditIntegrationTest` |
+| Role revocations create security events | Completed | `IdentitySecurityAuditIntegrationTest` |
+| No-op role changes do not create events | Completed | Idempotency audit test |
+| Security events cannot be updated | Completed | PostgreSQL trigger integration test |
+| Security events cannot be deleted | Completed | PostgreSQL trigger integration test |
+| Flyway migrations 2 through 4 apply cleanly | Completed | PostgreSQL integration suite |
+| Phase 2 PowerShell verifier exists | Completed | `scripts/verify-phase-2.ps1` |
+| Phase 2 Bash verifier exists | Completed | `scripts/verify-phase-2.sh` |
+| Local Phase 2 verifier passes | Completed | PowerShell verifier passed on 2026-06-25 |
+| GitHub Actions checks pass | Completed | Repository, Backend and Frontend checks passed on PR #2 |
 ## Decision history
 
 | Date | Decision |
@@ -164,14 +210,19 @@ Phase 1 verification passed.
 | 2026-06-24 | Use React, TypeScript, Vite and TanStack Query |
 | 2026-06-24 | Use Vitest, Testing Library and MSW for frontend testing |
 | 2026-06-24 | Use GitHub Actions for repository, backend and frontend verification |
+| 2026-06-25 | Use BCrypt password hashing through Spring Security |
+| 2026-06-25 | Use PostgreSQL-backed server-side browser sessions |
+| 2026-06-25 | Lock accounts temporarily after repeated failed login attempts |
+| 2026-06-25 | Enforce role management at the service boundary |
+| 2026-06-25 | Store immutable role-change security audit events |
 
 ## Next verified action
 
-Commit and push the final Phase 1 verification evidence, allow the required
-GitHub Actions checks to pass again and merge PR #1 into `main`.
+Commit and push the final Phase 2 CI evidence, allow the required GitHub
+Actions checks to pass again and merge PR #2 into `main`.
 
 After the merge:
 
 1. synchronise the local `main` branch;
-2. remove the completed Phase 1 branch; and
-3. create the Phase 2 identity-and-access branch.
+2. remove the completed Phase 2 branch; and
+3. create the Phase 3 customers-and-accounts branch.

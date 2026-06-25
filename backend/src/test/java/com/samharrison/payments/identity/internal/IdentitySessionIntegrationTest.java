@@ -11,6 +11,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import jakarta.servlet.http.Cookie;
+import java.time.Instant;
+import java.sql.Timestamp;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -377,6 +379,363 @@ class IdentitySessionIntegrationTest {
                     .cookie(sessionCookie)
             )
             .andExpect(status().isOk());
+    }
+
+    @Test
+    void locksAccountAfterFiveFailedLoginAttempts()
+        throws Exception {
+        String email =
+            "sam.customer@example.com";
+
+        String correctPassword =
+            "this is a secure customer passphrase";
+
+        String incorrectPassword =
+            "this password is incorrect";
+
+        registrationService.register(
+            email,
+            correctPassword
+        );
+
+        Instant beforeFailedAttempts =
+            Instant.now();
+
+        for (
+            int attempt = 1;
+            attempt <= 5;
+            attempt++
+        ) {
+            mockMvc.perform(
+                    post(SESSION_ENDPOINT)
+                        .with(csrf())
+                        .contentType(
+                            MediaType.APPLICATION_JSON
+                        )
+                        .content(
+                            """
+                            {
+                              "email":
+                                "sam.customer@example.com",
+                              "password":
+                                "this password is incorrect"
+                            }
+                            """
+                        )
+                )
+                .andExpect(
+                    status().isUnauthorized()
+                )
+                .andExpect(
+                    header().string(
+                        HttpHeaders.CACHE_CONTROL,
+                        containsString("no-store")
+                    )
+                );
+        }
+
+        IdentityUser lockedUser =
+            repository
+                .findByNormalizedEmail(email)
+                .orElseThrow();
+
+        assertThat(
+            lockedUser.failedLoginAttempts()
+        )
+            .isEqualTo(5);
+
+        assertThat(lockedUser.status())
+            .isEqualTo(
+                IdentityUserStatus.LOCKED
+            );
+
+        assertThat(lockedUser.lockedUntil())
+            .isNotNull()
+            .isAfter(beforeFailedAttempts);
+
+        Instant originalLockedUntil =
+            lockedUser.lockedUntil();
+
+        MvcResult lockedLoginResult =
+            mockMvc.perform(
+                    post(SESSION_ENDPOINT)
+                        .with(csrf())
+                        .contentType(
+                            MediaType.APPLICATION_JSON
+                        )
+                        .content(
+                            """
+                            {
+                              "email":
+                                "sam.customer@example.com",
+                              "password":
+                                "this is a secure customer passphrase"
+                            }
+                            """
+                        )
+                )
+                .andExpect(
+                    status().isUnauthorized()
+                )
+                .andExpect(
+                    header().string(
+                        HttpHeaders.CACHE_CONTROL,
+                        containsString("no-store")
+                    )
+                )
+                .andReturn();
+
+        assertThat(
+            lockedLoginResult
+                .getResponse()
+                .getCookie(
+                    SESSION_COOKIE_NAME
+                )
+        )
+            .isNull();
+
+        IdentityUser stillLockedUser =
+            repository
+                .findByNormalizedEmail(email)
+                .orElseThrow();
+
+        assertThat(
+            stillLockedUser.failedLoginAttempts()
+        )
+            .isEqualTo(5);
+
+        assertThat(stillLockedUser.status())
+            .isEqualTo(
+                IdentityUserStatus.LOCKED
+            );
+
+        assertThat(stillLockedUser.lockedUntil())
+            .isEqualTo(originalLockedUntil);
+
+        assertThat(storedSessionCount())
+            .isZero();
+    }
+
+    @Test
+    void successfulLoginResetsPreviousFailedAttempts()
+        throws Exception {
+        String email =
+            "sam.customer@example.com";
+
+        registrationService.register(
+            email,
+            "this is a secure customer passphrase"
+        );
+
+        for (
+            int attempt = 1;
+            attempt <= 2;
+            attempt++
+        ) {
+            mockMvc.perform(
+                    post(SESSION_ENDPOINT)
+                        .with(csrf())
+                        .contentType(
+                            MediaType.APPLICATION_JSON
+                        )
+                        .content(
+                            """
+                            {
+                              "email":
+                                "sam.customer@example.com",
+                              "password":
+                                "this password is incorrect"
+                            }
+                            """
+                        )
+                )
+                .andExpect(
+                    status().isUnauthorized()
+                );
+        }
+
+        IdentityUser userAfterFailures =
+            repository
+                .findByNormalizedEmail(email)
+                .orElseThrow();
+
+        assertThat(
+            userAfterFailures.failedLoginAttempts()
+        )
+            .isEqualTo(2);
+
+        assertThat(userAfterFailures.status())
+            .isEqualTo(
+                IdentityUserStatus.ACTIVE
+            );
+
+        MvcResult successfulLogin =
+            mockMvc.perform(
+                    post(SESSION_ENDPOINT)
+                        .with(csrf())
+                        .contentType(
+                            MediaType.APPLICATION_JSON
+                        )
+                        .content(
+                            """
+                            {
+                              "email":
+                                "sam.customer@example.com",
+                              "password":
+                                "this is a secure customer passphrase"
+                            }
+                            """
+                        )
+                )
+                .andExpect(status().isOk())
+                .andReturn();
+
+        assertThat(
+            successfulLogin
+                .getResponse()
+                .getCookie(
+                    SESSION_COOKIE_NAME
+                )
+        )
+            .isNotNull();
+
+        IdentityUser userAfterSuccess =
+            repository
+                .findByNormalizedEmail(email)
+                .orElseThrow();
+
+        assertThat(
+            userAfterSuccess.failedLoginAttempts()
+        )
+            .isZero();
+
+        assertThat(userAfterSuccess.lockedUntil())
+            .isNull();
+
+        assertThat(userAfterSuccess.status())
+            .isEqualTo(
+                IdentityUserStatus.ACTIVE
+            );
+
+        assertThat(storedSessionCount())
+            .isEqualTo(1L);
+    }
+
+    @Test
+    void allowsLoginAfterTheTemporaryLockExpires()
+        throws Exception {
+        String email =
+            "sam.customer@example.com";
+
+        String password =
+            "this is a secure customer passphrase";
+
+        CustomerRegistrationResult registration =
+            registrationService.register(
+                email,
+                password
+            );
+
+        Instant expiredLock =
+            Instant.now().minusSeconds(60);
+
+        Instant persistedAt =
+            Instant.now();
+
+        int updatedRows =
+            jdbcTemplate.update(
+                """
+                UPDATE identity_user
+                SET status = 'LOCKED',
+                    failed_login_attempts = 5,
+                    locked_until = ?,
+                    updated_at = ?,
+                    version = version + 1
+                WHERE id = ?
+                """,
+                Timestamp.from(expiredLock),
+                Timestamp.from(persistedAt),
+                registration.id()
+            );
+
+        assertThat(updatedRows)
+            .isEqualTo(1);
+
+        IdentityUser lockedUser =
+            repository
+                .findByNormalizedEmail(email)
+                .orElseThrow();
+
+        assertThat(lockedUser.status())
+            .isEqualTo(
+                IdentityUserStatus.LOCKED
+            );
+
+        assertThat(
+            lockedUser.failedLoginAttempts()
+        )
+            .isEqualTo(5);
+
+        assertThat(lockedUser.lockedUntil())
+            .isBefore(Instant.now());
+
+        MvcResult successfulLogin =
+            mockMvc.perform(
+                    post(SESSION_ENDPOINT)
+                        .with(csrf())
+                        .contentType(
+                            MediaType.APPLICATION_JSON
+                        )
+                        .content(
+                            """
+                            {
+                              "email":
+                                "sam.customer@example.com",
+                              "password":
+                                "this is a secure customer passphrase"
+                            }
+                            """
+                        )
+                )
+                .andExpect(status().isOk())
+                .andExpect(
+                    header().string(
+                        HttpHeaders.CACHE_CONTROL,
+                        containsString("no-store")
+                    )
+                )
+                .andReturn();
+
+        Cookie sessionCookie =
+            successfulLogin
+                .getResponse()
+                .getCookie(
+                    SESSION_COOKIE_NAME
+                );
+
+        assertThat(sessionCookie)
+            .isNotNull();
+
+        IdentityUser recoveredUser =
+            repository
+                .findByNormalizedEmail(email)
+                .orElseThrow();
+
+        assertThat(recoveredUser.status())
+            .isEqualTo(
+                IdentityUserStatus.ACTIVE
+            );
+
+        assertThat(
+            recoveredUser.failedLoginAttempts()
+        )
+            .isZero();
+
+        assertThat(recoveredUser.lockedUntil())
+            .isNull();
+
+        assertThat(storedSessionCount())
+            .isEqualTo(1L);
     }
 
     private Long storedSessionCount() {

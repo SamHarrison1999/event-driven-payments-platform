@@ -194,6 +194,91 @@ public class IdentityUser {
         );
     }
 
+    void recordFailedLogin(
+        Instant attemptedAt,
+        IdentityLockoutPolicy policy
+    ) {
+        Instant timestamp =
+            Objects.requireNonNull(
+                attemptedAt,
+                "attemptedAt must not be null"
+            );
+
+        IdentityLockoutPolicy requiredPolicy =
+            Objects.requireNonNull(
+                policy,
+                "policy must not be null"
+            );
+
+        releaseExpiredLock(timestamp);
+
+        if (status != IdentityUserStatus.ACTIVE) {
+            return;
+        }
+
+        failedLoginAttempts += 1;
+
+        if (
+            failedLoginAttempts
+                >= requiredPolicy
+                .maximumFailedAttempts()
+        ) {
+            status = IdentityUserStatus.LOCKED;
+            lockedUntil =
+                timestamp.plus(
+                    requiredPolicy.lockDuration()
+                );
+        }
+
+        updatedAt = timestamp;
+    }
+
+    void recordSuccessfulLogin(
+        Instant authenticatedAt
+    ) {
+        Instant timestamp =
+            Objects.requireNonNull(
+                authenticatedAt,
+                "authenticatedAt must not be null"
+            );
+
+        if (status != IdentityUserStatus.ACTIVE) {
+            throw new IllegalStateException(
+                "Only active users can complete "
+                    + "authentication."
+            );
+        }
+
+        failedLoginAttempts = 0;
+        lockedUntil = null;
+        updatedAt = timestamp;
+    }
+
+    boolean releaseExpiredLock(
+        Instant checkedAt
+    ) {
+        Instant timestamp =
+            Objects.requireNonNull(
+                checkedAt,
+                "checkedAt must not be null"
+            );
+
+        if (
+            status != IdentityUserStatus.LOCKED
+                || lockedUntil == null
+                || timestamp.isBefore(lockedUntil)
+        ) {
+            return false;
+        }
+
+        status = IdentityUserStatus.ACTIVE;
+        failedLoginAttempts = 0;
+        lockedUntil = null;
+        updatedAt = timestamp;
+
+        return true;
+    }
+
     private static String requirePasswordHash(
         String passwordHash
     ) {

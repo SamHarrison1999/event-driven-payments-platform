@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
@@ -19,13 +20,17 @@ public final class IdentityLoginService {
         sessionAuthenticationStrategy;
     private final SecurityContextRepository
         securityContextRepository;
+    private final IdentityAuthenticationAttemptService
+        authenticationAttemptService;
 
     public IdentityLoginService(
         AuthenticationManager authenticationManager,
         SessionAuthenticationStrategy
             sessionAuthenticationStrategy,
         SecurityContextRepository
-            securityContextRepository
+            securityContextRepository,
+        IdentityAuthenticationAttemptService
+            authenticationAttemptService
     ) {
         this.authenticationManager =
             authenticationManager;
@@ -33,6 +38,8 @@ public final class IdentityLoginService {
             sessionAuthenticationStrategy;
         this.securityContextRepository =
             securityContextRepository;
+        this.authenticationAttemptService =
+            authenticationAttemptService;
     }
 
     IdentitySessionResponse login(
@@ -41,6 +48,9 @@ public final class IdentityLoginService {
         HttpServletRequest request,
         HttpServletResponse response
     ) {
+        authenticationAttemptService
+            .prepareForAuthentication(rawEmail);
+
         Authentication authenticationRequest =
             UsernamePasswordAuthenticationToken
                 .unauthenticated(
@@ -48,10 +58,21 @@ public final class IdentityLoginService {
                     rawPassword
                 );
 
-        Authentication authentication =
-            authenticationManager.authenticate(
-                authenticationRequest
-            );
+        Authentication authentication;
+
+        try {
+            authentication =
+                authenticationManager.authenticate(
+                    authenticationRequest
+                );
+        } catch (
+            AuthenticationException exception
+        ) {
+            authenticationAttemptService
+                .recordFailure(rawEmail);
+
+            throw exception;
+        }
 
         if (
             !(authentication.getPrincipal()
@@ -62,6 +83,10 @@ public final class IdentityLoginService {
                     + "an IdentityUserPrincipal."
             );
         }
+
+        authenticationAttemptService.recordSuccess(
+            principal.userId()
+        );
 
         sessionAuthenticationStrategy
             .onAuthentication(

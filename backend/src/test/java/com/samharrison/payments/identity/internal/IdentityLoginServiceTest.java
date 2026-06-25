@@ -4,6 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.inOrder;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -22,6 +26,8 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.mockito.InOrder;
 
 @ExtendWith(MockitoExtension.class)
 class IdentityLoginServiceTest {
@@ -38,6 +44,10 @@ class IdentityLoginServiceTest {
         securityContextRepository;
 
     @Mock
+    private IdentityAuthenticationAttemptService
+        authenticationAttemptService;
+
+    @Mock
     private HttpServletRequest request;
 
     @Mock
@@ -51,7 +61,8 @@ class IdentityLoginServiceTest {
             new IdentityLoginService(
                 authenticationManager,
                 sessionAuthenticationStrategy,
-                securityContextRepository
+                securityContextRepository,
+                authenticationAttemptService
             );
     }
 
@@ -101,6 +112,7 @@ class IdentityLoginServiceTest {
         )
             .thenReturn(authenticated);
 
+
         IdentitySessionResponse result =
             service.login(
                 rawEmail,
@@ -115,10 +127,25 @@ class IdentityLoginServiceTest {
                 Authentication.class
             );
 
-        verify(authenticationManager)
+        InOrder authenticationOrder =
+            inOrder(
+                authenticationAttemptService,
+                authenticationManager
+            );
+
+        authenticationOrder
+            .verify(authenticationAttemptService)
+            .prepareForAuthentication(rawEmail);
+
+        authenticationOrder
+            .verify(authenticationManager)
             .authenticate(
                 authenticationCaptor.capture()
             );
+
+        authenticationOrder
+            .verify(authenticationAttemptService)
+            .recordSuccess(user.id());
 
         Authentication submittedAuthentication =
             authenticationCaptor.getValue();
@@ -185,4 +212,66 @@ class IdentityLoginServiceTest {
                 IdentityRole.CUSTOMER
             );
     }
+
+    @Test
+    void recordsFailureAndRethrowsAuthenticationException() {
+        String rawEmail =
+            "sam.customer@example.com";
+
+        BadCredentialsException exception =
+            new BadCredentialsException(
+                "Invalid credentials."
+            );
+
+        when(
+            authenticationManager.authenticate(
+                any(Authentication.class)
+            )
+        )
+            .thenThrow(exception);
+
+        assertThatThrownBy(
+            () ->
+                service.login(
+                    rawEmail,
+                    "incorrect password",
+                    request,
+                    response
+                )
+        )
+            .isSameAs(exception);
+
+        InOrder authenticationOrder =
+            inOrder(
+                authenticationAttemptService,
+                authenticationManager
+            );
+
+        authenticationOrder
+            .verify(authenticationAttemptService)
+            .prepareForAuthentication(rawEmail);
+
+        authenticationOrder
+            .verify(authenticationManager)
+            .authenticate(
+                any(Authentication.class)
+            );
+
+        authenticationOrder
+            .verify(authenticationAttemptService)
+            .recordFailure(rawEmail);
+
+        verifyNoInteractions(
+            sessionAuthenticationStrategy,
+            securityContextRepository
+        );
+
+        assertThat(
+            SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+        )
+            .isNull();
+    }
+
 }

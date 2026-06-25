@@ -11,6 +11,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class IdentityAuthenticationConfiguration {
 
     @Bean
+    IdentityLockoutPolicy identityLockoutPolicy() {
+        return IdentityLockoutPolicy.standard();
+    }
+
+    @Bean
     AuthenticationManager identityAuthenticationManager(
         IdentityUserDetailsService userDetailsService,
         PasswordEncoder passwordEncoder

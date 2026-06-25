@@ -194,6 +194,64 @@ public class IdentityUser {
         );
     }
 
+    boolean grantRole(
+        IdentityRole role,
+        Instant changedAt
+    ) {
+        IdentityRole requiredRole =
+            Objects.requireNonNull(
+                role,
+                "role must not be null"
+            );
+
+        Instant timestamp =
+            Objects.requireNonNull(
+                changedAt,
+                "changedAt must not be null"
+            );
+
+        boolean added =
+            roles.add(requiredRole);
+
+        if (added) {
+            updatedAt = timestamp;
+        }
+
+        return added;
+    }
+
+    boolean revokeRole(
+        IdentityRole role,
+        Instant changedAt
+    ) {
+        IdentityRole requiredRole =
+            Objects.requireNonNull(
+                role,
+                "role must not be null"
+            );
+
+        Instant timestamp =
+            Objects.requireNonNull(
+                changedAt,
+                "changedAt must not be null"
+            );
+
+        if (!roles.contains(requiredRole)) {
+            return false;
+        }
+
+        if (roles.size() == 1) {
+            throw new LastIdentityRoleRemovalException(
+                id
+            );
+        }
+
+        roles.remove(requiredRole);
+        updatedAt = timestamp;
+
+        return true;
+    }
+
     void recordFailedLogin(
         Instant attemptedAt,
         IdentityLockoutPolicy policy

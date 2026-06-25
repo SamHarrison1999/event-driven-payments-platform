@@ -8,6 +8,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 interface IdentityUserRepository
     extends JpaRepository<IdentityUser, UUID> {
 
+    @Override
+    @EntityGraph(attributePaths = "roles")
+    Optional<IdentityUser> findById(UUID id);
+
     @EntityGraph(attributePaths = "roles")
     Optional<IdentityUser> findByNormalizedEmail(
         String normalizedEmail

@@ -194,7 +194,7 @@ Phase 1 verification passed.
 | Phase 2 PowerShell verifier exists | Completed | `scripts/verify-phase-2.ps1` |
 | Phase 2 Bash verifier exists | Completed | `scripts/verify-phase-2.sh` |
 | Local Phase 2 verifier passes | Completed | PowerShell verifier passed on 2026-06-25 |
-| GitHub Actions checks pass | Pending | Required after Phase 2 branch push |
+| GitHub Actions checks pass | Completed | Repository, Backend and Frontend checks passed on PR #2 |
 ## Decision history
 
 | Date | Decision |
@@ -218,12 +218,11 @@ Phase 1 verification passed.
 
 ## Next verified action
 
-Commit and push the Phase 2 completion evidence, then open the Phase 2 pull
-request and observe the required GitHub Actions checks.
+Commit and push the final Phase 2 CI evidence, allow the required GitHub
+Actions checks to pass again and merge PR #2 into `main`.
 
-After the checks pass:
+After the merge:
 
-1. mark Phase 2 as completed;
-2. commit the final CI evidence update;
-3. merge the Phase 2 pull request into `main`; and
-4. create the Phase 3 customers-and-accounts branch.
+1. synchronise the local `main` branch;
+2. remove the completed Phase 2 branch; and
+3. create the Phase 3 customers-and-accounts branch.

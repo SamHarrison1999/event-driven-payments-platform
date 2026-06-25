@@ -17,7 +17,7 @@ customer registration, PostgreSQL-backed browser sessions, CSRF protection,
 failed-login lockout, role-based access control and immutable security audit
 events.
 
-Local Phase 2 verification passed on 25 June 2026. The GitHub Actions completion gate remains pending.
+Phase 2 verification passed locally and through GitHub Actions on 25 June 2026.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.

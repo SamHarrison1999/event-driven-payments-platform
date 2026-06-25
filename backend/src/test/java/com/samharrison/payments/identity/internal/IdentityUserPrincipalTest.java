@@ -35,6 +35,11 @@ class IdentityUserPrincipalTest {
                 "Sam.Customer@Example.COM"
             );
 
+        assertThat(principal.roles())
+            .containsExactly(
+                IdentityRole.CUSTOMER
+            );
+
         assertThat(principal.getUsername())
             .isEqualTo(
                 "sam.customer@example.com"

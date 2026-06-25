@@ -22,6 +22,7 @@ final class IdentityUserPrincipal
     private final UUID userId;
     private final String email;
     private final String normalizedEmail;
+    private final HashSet<IdentityRole> roles;
     private final HashSet<SimpleGrantedAuthority> authorities;
     private final boolean enabled;
     private final boolean accountNonLocked;
@@ -57,10 +58,20 @@ final class IdentityUserPrincipal
             "passwordHash must not be null"
         );
 
-        this.authorities = Objects.requireNonNull(
+        this.roles = new HashSet<>(
+            Objects.requireNonNull(
                 roles,
                 "roles must not be null"
             )
+        );
+
+        if (this.roles.isEmpty()) {
+            throw new IllegalArgumentException(
+                "At least one role is required."
+            );
+        }
+
+        this.authorities = this.roles
             .stream()
             .map(IdentityUserPrincipal::toAuthority)
             .collect(
@@ -104,6 +115,10 @@ final class IdentityUserPrincipal
 
     String email() {
         return email;
+    }
+
+    Set<IdentityRole> roles() {
+        return Set.copyOf(roles);
     }
 
     @Override

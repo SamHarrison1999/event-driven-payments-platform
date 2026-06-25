@@ -9,21 +9,144 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
+import org.springframework.security.web.context.DelegatingSecurityContextRepository;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.boot.web.server.Cookie;
+import org.springframework.boot.web.server.autoconfigure.ServerProperties;
+import org.springframework.session.web.http.DefaultCookieSerializer;
 
 @Configuration(proxyBeanMethods = false)
 public class IdentitySecurityConfiguration {
 
     @Bean
+    SecurityContextRepository securityContextRepository() {
+        return new DelegatingSecurityContextRepository(
+            new RequestAttributeSecurityContextRepository(),
+            new HttpSessionSecurityContextRepository()
+        );
+    }
+
+    @Bean
+    SessionAuthenticationStrategy
+    sessionAuthenticationStrategy() {
+        return new ChangeSessionIdAuthenticationStrategy();
+    }
+
+    @Bean
+    LogoutHandler logoutHandler(
+        SecurityContextRepository
+            securityContextRepository
+    ) {
+        SecurityContextLogoutHandler logoutHandler =
+            new SecurityContextLogoutHandler();
+
+        logoutHandler.setSecurityContextRepository(
+            securityContextRepository
+        );
+
+        return logoutHandler;
+    }
+
+    @Bean
+    DefaultCookieSerializer identitySessionCookieSerializer(
+        ServerProperties serverProperties
+    ) {
+        Cookie cookie =
+            serverProperties
+                .getServlet()
+                .getSession()
+                .getCookie();
+
+        DefaultCookieSerializer serializer =
+            new DefaultCookieSerializer();
+
+        if (cookie.getName() != null) {
+            serializer.setCookieName(
+                cookie.getName()
+            );
+        }
+
+        if (cookie.getDomain() != null) {
+            serializer.setDomainName(
+                cookie.getDomain()
+            );
+        }
+
+        if (cookie.getPath() != null) {
+            serializer.setCookiePath(
+                cookie.getPath()
+            );
+        }
+
+        if (cookie.getHttpOnly() != null) {
+            serializer.setUseHttpOnlyCookie(
+                cookie.getHttpOnly()
+            );
+        }
+
+        if (cookie.getSecure() != null) {
+            serializer.setUseSecureCookie(
+                cookie.getSecure()
+            );
+        }
+
+        if (cookie.getMaxAge() != null) {
+            serializer.setCookieMaxAge(
+                Math.toIntExact(
+                    cookie.getMaxAge().toSeconds()
+                )
+            );
+        }
+
+        if (cookie.getSameSite() != null) {
+            serializer.setSameSite(
+                cookie.getSameSite()
+                    .attributeValue()
+            );
+        }
+
+        if (cookie.getPartitioned() != null) {
+            serializer.setPartitioned(
+                cookie.getPartitioned()
+            );
+        }
+
+        return serializer;
+    }
+
+    @Bean
     SecurityFilterChain securityFilterChain(
-        HttpSecurity http
+        HttpSecurity http,
+        SecurityContextRepository
+            securityContextRepository,
+        SessionAuthenticationStrategy
+            sessionAuthenticationStrategy
     ) throws Exception {
         http
             .csrf(Customizer.withDefaults())
+            .securityContext(
+                securityContext ->
+                    securityContext
+                        .securityContextRepository(
+                            securityContextRepository
+                        )
+                        .requireExplicitSave(true)
+            )
             .sessionManagement(
                 session ->
-                    session.sessionCreationPolicy(
-                        SessionCreationPolicy.IF_REQUIRED
-                    )
+                    session
+                        .sessionCreationPolicy(
+                            SessionCreationPolicy.IF_REQUIRED
+                        )
+                        .sessionAuthenticationStrategy(
+                            sessionAuthenticationStrategy
+                        )
             )
             .requestCache(
                 AbstractHttpConfigurer::disable
@@ -66,7 +189,8 @@ public class IdentitySecurityConfiguration {
                     authorize
                         .requestMatchers(
                             HttpMethod.POST,
-                            "/api/v1/identity/registrations"
+                            "/api/v1/identity/registrations",
+                            "/api/v1/identity/session"
                         )
                         .permitAll()
                         .requestMatchers(

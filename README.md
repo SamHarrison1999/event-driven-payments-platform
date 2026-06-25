@@ -10,22 +10,21 @@ asynchronous event delivery and settlement reconciliation.
 
 Current phase:
 
-**Phase 1 — Executable platform foundation**
+**Phase 2 — Identity and access**
 
-The repository now contains an executable Spring Boot backend, PostgreSQL
-database foundation, React frontend, automated tests and a GitHub Actions
-continuous-integration workflow.
+The identity module now provides persistent users, secure password hashing,
+customer registration, PostgreSQL-backed browser sessions, CSRF protection,
+failed-login lockout, role-based access control and immutable security audit
+events.
 
-Phase 1 verification passed locally and through GitHub Actions on
-24 June 2026.
+Local Phase 2 verification passed on 25 June 2026. The GitHub Actions completion gate remains pending.
 
-The `main` branch is protected by a ruleset requiring pull requests and the
-repository, backend and frontend CI checks.
+The `main` branch remains protected by a ruleset requiring pull requests and
+the repository, backend and frontend CI checks.
 
 See the [progress ledger](docs/progress/ledger.md) for the verified project
 status.
-
-## Implemented foundation
+## Implemented capabilities
 
 ### Backend
 
@@ -57,6 +56,35 @@ GET /actuator/health/readiness
 GET /v3/api-docs
 GET /swagger-ui.html
 ```
+
+### Identity and access
+
+The backend identity module currently provides:
+
+- normalised, uniquely constrained email addresses;
+- a bounded password policy;
+- BCrypt password hashing through Spring Security;
+- customer registration with duplicate-email protection;
+- server-side PostgreSQL-backed browser sessions;
+- CSRF token delivery and CSRF-protected state-changing requests;
+- secure session-cookie configuration;
+- failed-login tracking and temporary account lockout;
+- `CUSTOMER`, `OPERATIONS`, `RECONCILIATION_ANALYST` and `ADMIN` roles;
+- administrator-only role management;
+- active-session invalidation after role changes; and
+- immutable security audit events for role assignments.
+
+Implemented identity endpoints include:
+
+    GET    /api/v1/identity/csrf
+    POST   /api/v1/identity/registrations
+    POST   /api/v1/identity/session
+    GET    /api/v1/identity/session
+    DELETE /api/v1/identity/session
+    PUT    /api/v1/identity/users/{userId}/roles/{role}
+    DELETE /api/v1/identity/users/{userId}/roles/{role}
+
+Role-management endpoints require the `ADMIN` role.
 
 ### Frontend
 
@@ -188,6 +216,33 @@ Node.js and pnpm toolchain:
 
 The Bash script performs the same Phase 1 verification gate.
 
+## Phase 2 verification
+
+### Windows PowerShell
+
+From the repository root:
+
+```powershell
+.\scripts\verify-phase-2.ps1
+```
+
+A successful run ends with:
+
+```text
+Phase 2 verification passed.
+```
+
+The Phase 2 verifier checks the identity implementation, documentation and
+Flyway migration sequence before running the complete Phase 1 baseline
+verification.
+
+### Bash
+
+On Linux, macOS or WSL:
+
+```bash
+./scripts/verify-phase-2.sh
+```
 ## Architecture
 
 The application is structured as a modular monolith with a separately built
@@ -269,7 +324,9 @@ The completed platform is intended to allow authorised users to:
 - view operational metrics; and
 - receive simulated payment notifications.
 
-These domain capabilities are planned work and are not yet implemented.
+Identity registration, authentication and access management are implemented.
+Customer, account, payment, ledger, settlement, notification and reporting
+capabilities remain planned work.
 
 ## Engineering principles
 

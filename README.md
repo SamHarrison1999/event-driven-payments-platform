@@ -10,15 +10,15 @@ asynchronous event delivery and settlement reconciliation.
 
 Current phase:
 
-**Phase 3 — Customers and accounts**
+**Phase 4 — Double-entry ledger**
 
-The customer and account modules now provide simulated customer profiles,
-GBP accounts, identity-to-customer ownership, customer-scoped account queries,
-lifecycle controls, optimistic concurrency and consistent security and
-validation problem responses.
+The ledger module now provides exact GBP minor-unit journals, explicit debit
+and credit entries, atomic posting, append-only PostgreSQL records, deferred
+database balance checks, transaction and account-history queries, and
+snapshot-versus-ledger verification.
 
-The Phase 3 implementation has passed its local backend and complete baseline
-verification gates. The final documentation, dedicated verifier and pull
+The Phase 4 domain, persistence, posting, database-invariant and query gates
+have passed locally. The final documentation, dedicated verifier and pull
 request checks remain in progress.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
@@ -124,6 +124,27 @@ Implemented customer and account endpoints include:
 Customer and account management requires the `OPERATIONS` or `ADMIN` role.
 The customer account collection is resolved from the authenticated identity
 and does not accept a caller-supplied customer identifier.
+
+### Double-entry ledger
+
+The backend ledger module currently provides:
+
+- immutable transaction headers with two or more ordered entries;
+- positive GBP amounts represented as exact integer minor units;
+- explicit `DEBIT` and `CREDIT` posting sides;
+- application-level rejection of incomplete, one-sided and unbalanced
+  journals;
+- atomic persistence of each transaction header and all entries;
+- deferred PostgreSQL balance verification at transaction commit;
+- database triggers that reject updates and deletes of posted records;
+- compensating-transaction links without mutation of original history;
+- transaction lookup with deterministic entry ordering;
+- deterministic account-entry history; and
+- verification of account snapshots against ledger debit and credit totals.
+
+The ledger capability is currently exposed as a public Java module API for
+later payment orchestration. Phase 4 does not add a payment-submission HTTP
+endpoint and does not process real money.
 
 ### Frontend
 
@@ -311,6 +332,34 @@ On Linux, macOS or WSL:
 ./scripts/verify-phase-3.sh
 ```
 
+## Phase 4 verification
+
+### Windows PowerShell
+
+From the repository root:
+
+```powershell
+.\scripts\verify-phase-4.ps1
+```
+
+A successful run ends with:
+
+```text
+Phase 4 verification passed.
+```
+
+The Phase 4 verifier checks the ledger domain, persistence, PostgreSQL
+invariants, posting and query implementation, documentation and Flyway
+migration sequence before running the complete Phase 3 baseline verification.
+
+### Bash
+
+On Linux, macOS or WSL:
+
+```bash
+./scripts/verify-phase-4.sh
+```
+
 ## Architecture
 
 The application is structured as a modular monolith with a separately built
@@ -393,9 +442,10 @@ The completed platform is intended to allow authorised users to:
 - receive simulated payment notifications.
 
 Identity registration, authentication and access management are implemented.
-Customer profiles, GBP accounts, ownership views and account lifecycle
-management are also implemented. Payment, ledger, settlement, notification
-and reporting capabilities remain planned work.
+Customer profiles, GBP accounts, ownership views, account lifecycle management
+and the immutable double-entry ledger foundation are also implemented.
+Payment submission, settlement, notification and reporting capabilities remain
+planned work.
 
 ## Engineering principles
 

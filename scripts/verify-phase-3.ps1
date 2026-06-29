@@ -110,7 +110,7 @@ try {
 
   $requiredLedgerText = @(
     'Phase 3 acceptance evidence',
-    'Customers and accounts | Current',
+    'Customers and accounts | Completed',
     'Customer profiles and ownership',
     'GBP accounts and customer views',
     'Validation, security and verification',
@@ -139,13 +139,17 @@ try {
   )
 
   $expectedMigrationVersions = @(1..8)
+  $phase3MigrationVersions = @(
+    $migrationVersions |
+      Select-Object -First 8
+  )
 
   if (
-    ($migrationVersions -join ',') -ne
+    ($phase3MigrationVersions -join ',') -ne
       ($expectedMigrationVersions -join ',')
   ) {
     throw (
-      'Expected Flyway migrations 1 through 8 exactly, found: ' +
+      'Expected Flyway migrations 1 through 8 to remain present, found: ' +
       ($migrationVersions -join ', ')
     )
   }

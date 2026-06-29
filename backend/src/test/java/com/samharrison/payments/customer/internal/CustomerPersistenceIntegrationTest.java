@@ -204,6 +204,60 @@ class CustomerPersistenceIntegrationTest {
                 DataIntegrityViolationException.class
             );
     }
+    @Test
+    void appliesPhaseThreeValidationMigration() {
+        Long migrationCount =
+            jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM public.flyway_schema_history
+                WHERE version = '8'
+                  AND success = TRUE
+                """,
+                Long.class
+            );
+
+        assertThat(migrationCount)
+            .isEqualTo(1L);
+    }
+
+    @Test
+    void databaseRejectsNegativeCustomerVersion() {
+        Instant timestamp =
+            Instant.parse(
+                "2026-06-29T09:00:00Z"
+            );
+
+        assertThatThrownBy(
+            () ->
+                jdbcTemplate.update(
+                    """
+                    INSERT INTO customer_profile (
+                        id,
+                        full_name,
+                        status,
+                        created_at,
+                        updated_at,
+                        version
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    UUID.randomUUID(),
+                    "Invalid Version Customer",
+                    "ACTIVE",
+                    timestamp.atOffset(
+                        ZoneOffset.UTC
+                    ),
+                    timestamp.atOffset(
+                        ZoneOffset.UTC
+                    ),
+                    -1L
+                )
+        )
+            .isInstanceOf(
+                DataIntegrityViolationException.class
+            );
+    }
     private void insertCustomer(
         String fullName,
         String status,

@@ -547,6 +547,89 @@ class CustomerManagementHttpIntegrationTest {
             );
     }
 
+    @Test
+    void unknownCustomerPropertyReturnsMalformedProblem()
+        throws Exception {
+        Cookie operationsSession =
+            createSession(
+                "unknown-customer-field@example.com",
+                "OPERATIONS"
+            );
+
+        mockMvc.perform(
+                post(CUSTOMER_ENDPOINT)
+                    .cookie(operationsSession)
+                    .with(csrf())
+                    .contentType(
+                        MediaType.APPLICATION_JSON
+                    )
+                    .content(
+                        """
+                        {
+                          "fullName": "Strict Customer",
+                          "unexpected": true
+                        }
+                        """
+                    )
+            )
+            .andExpect(status().isBadRequest())
+            .andExpect(
+                content().contentTypeCompatibleWith(
+                    MediaType.APPLICATION_PROBLEM_JSON
+                )
+            )
+            .andExpect(
+                header().string(
+                    HttpHeaders.CACHE_CONTROL,
+                    containsString("no-store")
+                )
+            )
+            .andExpect(
+                jsonPath("$.code")
+                    .value(
+                        "CUSTOMER_REQUEST_MALFORMED"
+                    )
+            );
+
+        assertThat(customerCount())
+            .isZero();
+    }
+
+    @Test
+    void malformedCustomerIdentifierReturnsProblem()
+        throws Exception {
+        Cookie operationsSession =
+            createSession(
+                "invalid-customer-id@example.com",
+                "OPERATIONS"
+            );
+
+        mockMvc.perform(
+                get(
+                    CUSTOMER_ENDPOINT
+                        + "/not-a-uuid"
+                )
+                    .cookie(operationsSession)
+            )
+            .andExpect(status().isBadRequest())
+            .andExpect(
+                content().contentTypeCompatibleWith(
+                    MediaType.APPLICATION_PROBLEM_JSON
+                )
+            )
+            .andExpect(
+                header().string(
+                    HttpHeaders.CACHE_CONTROL,
+                    containsString("no-store")
+                )
+            )
+            .andExpect(
+                jsonPath("$.code")
+                    .value(
+                        "CUSTOMER_IDENTIFIER_INVALID"
+                    )
+            );
+    }
     private UUID createCustomer(
         Cookie session,
         String fullName

@@ -624,6 +624,93 @@ class AccountManagementHttpIntegrationTest {
             .isEqualTo(100L);
     }
 
+    @Test
+    void unknownAccountPropertyReturnsMalformedProblem()
+        throws Exception {
+        Cookie operationsSession =
+            createSession(
+                "unknown-account-field@example.com",
+                "OPERATIONS"
+            );
+
+        UUID customerId =
+            insertCustomer("ACTIVE");
+
+        mockMvc.perform(
+                post(ACCOUNT_ENDPOINT)
+                    .cookie(operationsSession)
+                    .with(csrf())
+                    .contentType(
+                        MediaType.APPLICATION_JSON
+                    )
+                    .content(
+                        """
+                        {
+                          "customerId": "%s",
+                          "unexpected": true
+                        }
+                        """
+                            .formatted(customerId)
+                    )
+            )
+            .andExpect(status().isBadRequest())
+            .andExpect(
+                content().contentTypeCompatibleWith(
+                    MediaType.APPLICATION_PROBLEM_JSON
+                )
+            )
+            .andExpect(
+                header().string(
+                    HttpHeaders.CACHE_CONTROL,
+                    containsString("no-store")
+                )
+            )
+            .andExpect(
+                jsonPath("$.code")
+                    .value(
+                        "ACCOUNT_REQUEST_MALFORMED"
+                    )
+            );
+
+        assertThat(accountCount())
+            .isZero();
+    }
+
+    @Test
+    void malformedAccountIdentifierReturnsProblem()
+        throws Exception {
+        Cookie operationsSession =
+            createSession(
+                "invalid-account-id@example.com",
+                "OPERATIONS"
+            );
+
+        mockMvc.perform(
+                get(
+                    ACCOUNT_ENDPOINT
+                        + "/not-a-uuid"
+                )
+                    .cookie(operationsSession)
+            )
+            .andExpect(status().isBadRequest())
+            .andExpect(
+                content().contentTypeCompatibleWith(
+                    MediaType.APPLICATION_PROBLEM_JSON
+                )
+            )
+            .andExpect(
+                header().string(
+                    HttpHeaders.CACHE_CONTROL,
+                    containsString("no-store")
+                )
+            )
+            .andExpect(
+                jsonPath("$.code")
+                    .value(
+                        "ACCOUNT_IDENTIFIER_INVALID"
+                    )
+            );
+    }
     private UUID createAccount(
         Cookie session,
         UUID customerId

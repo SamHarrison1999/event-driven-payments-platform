@@ -52,10 +52,16 @@ public class CustomerManagementService {
     @Transactional
     public CustomerSnapshot rename(
         UUID customerId,
-        String fullName
+        String fullName,
+        long expectedVersion
     ) {
         CustomerProfile customer =
             findRequired(customerId);
+
+        requireExpectedVersion(
+            customer,
+            expectedVersion
+        );
 
         customer.rename(
             CustomerName.of(fullName),
@@ -67,10 +73,16 @@ public class CustomerManagementService {
 
     @Transactional
     public CustomerSnapshot suspend(
-        UUID customerId
+        UUID customerId,
+        long expectedVersion
     ) {
         CustomerProfile customer =
             findRequired(customerId);
+
+        requireExpectedVersion(
+            customer,
+            expectedVersion
+        );
 
         customer.suspend(now());
 
@@ -79,10 +91,16 @@ public class CustomerManagementService {
 
     @Transactional
     public CustomerSnapshot reactivate(
-        UUID customerId
+        UUID customerId,
+        long expectedVersion
     ) {
         CustomerProfile customer =
             findRequired(customerId);
+
+        requireExpectedVersion(
+            customer,
+            expectedVersion
+        );
 
         customer.reactivate(now());
 
@@ -91,10 +109,16 @@ public class CustomerManagementService {
 
     @Transactional
     public CustomerSnapshot close(
-        UUID customerId
+        UUID customerId,
+        long expectedVersion
     ) {
         CustomerProfile customer =
             findRequired(customerId);
+
+        requireExpectedVersion(
+            customer,
+            expectedVersion
+        );
 
         customer.close(now());
 
@@ -112,6 +136,25 @@ public class CustomerManagementService {
                         customerId
                     )
             );
+    }
+
+    private static void requireExpectedVersion(
+        CustomerProfile customer,
+        long expectedVersion
+    ) {
+        if (expectedVersion < 0L) {
+            throw new IllegalArgumentException(
+                "expectedVersion must not be negative"
+            );
+        }
+
+        if (customer.version() != expectedVersion) {
+            throw new CustomerVersionConflictException(
+                customer.id(),
+                expectedVersion,
+                customer.version()
+            );
+        }
     }
 
     private CustomerSnapshot flushAndSnapshot(

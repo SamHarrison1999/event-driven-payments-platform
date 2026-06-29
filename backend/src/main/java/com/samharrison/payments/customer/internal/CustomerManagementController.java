@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.UUID;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -45,6 +47,12 @@ public final class CustomerManagementController {
 
         return ResponseEntity
             .created(location)
+            .header(
+                HttpHeaders.ETAG,
+                CustomerVersionPrecondition.format(
+                    created.version()
+                )
+            )
             .cacheControl(CacheControl.noStore())
             .body(CustomerResponse.from(created));
     }
@@ -68,14 +76,25 @@ public final class CustomerManagementController {
     )
     public ResponseEntity<CustomerResponse> rename(
         @PathVariable UUID customerId,
+        @RequestHeader(
+            value = HttpHeaders.IF_MATCH,
+            required = false
+        )
+        String ifMatch,
         @Valid
         @RequestBody
         CustomerRenameRequest request
     ) {
+        long expectedVersion =
+            CustomerVersionPrecondition.parseRequired(
+                ifMatch
+            );
+
         return ok(
             service.rename(
                 customerId,
-                request.fullName()
+                request.fullName(),
+                expectedVersion
             )
         );
     }
@@ -88,18 +107,37 @@ public final class CustomerManagementController {
     public ResponseEntity<CustomerResponse>
     updateStatus(
         @PathVariable UUID customerId,
+        @RequestHeader(
+            value = HttpHeaders.IF_MATCH,
+            required = false
+        )
+        String ifMatch,
         @Valid
         @RequestBody
         CustomerStatusUpdateRequest request
     ) {
+        long expectedVersion =
+            CustomerVersionPrecondition.parseRequired(
+                ifMatch
+            );
+
         CustomerSnapshot updated =
             switch (request.status()) {
                 case ACTIVE ->
-                    service.reactivate(customerId);
+                    service.reactivate(
+                        customerId,
+                        expectedVersion
+                    );
                 case SUSPENDED ->
-                    service.suspend(customerId);
+                    service.suspend(
+                        customerId,
+                        expectedVersion
+                    );
                 case CLOSED ->
-                    service.close(customerId);
+                    service.close(
+                        customerId,
+                        expectedVersion
+                    );
             };
 
         return ok(updated);
@@ -111,6 +149,12 @@ public final class CustomerManagementController {
     ) {
         return ResponseEntity
             .ok()
+            .header(
+                HttpHeaders.ETAG,
+                CustomerVersionPrecondition.format(
+                    customer.version()
+                )
+            )
             .cacheControl(CacheControl.noStore())
             .body(CustomerResponse.from(customer));
     }

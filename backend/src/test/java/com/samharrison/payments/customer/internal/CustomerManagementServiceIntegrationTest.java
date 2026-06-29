@@ -108,7 +108,8 @@ class CustomerManagementServiceIntegrationTest {
         CustomerSnapshot renamed =
             service.rename(
                 created.id(),
-                "Samuel Example"
+                "Samuel Example",
+                created.version()
             );
 
         assertThat(renamed.fullName())
@@ -120,7 +121,10 @@ class CustomerManagementServiceIntegrationTest {
             );
 
         CustomerSnapshot suspended =
-            service.suspend(created.id());
+            service.suspend(
+                created.id(),
+                renamed.version()
+            );
 
         assertThat(suspended.status())
             .isEqualTo(SUSPENDED);
@@ -131,7 +135,10 @@ class CustomerManagementServiceIntegrationTest {
             );
 
         CustomerSnapshot reactivated =
-            service.reactivate(created.id());
+            service.reactivate(
+                created.id(),
+                suspended.version()
+            );
 
         assertThat(reactivated.status())
             .isEqualTo(ACTIVE);
@@ -142,7 +149,10 @@ class CustomerManagementServiceIntegrationTest {
             );
 
         CustomerSnapshot closed =
-            service.close(created.id());
+            service.close(
+                created.id(),
+                reactivated.version()
+            );
 
         assertThat(closed.status())
             .isEqualTo(CLOSED);
@@ -156,7 +166,8 @@ class CustomerManagementServiceIntegrationTest {
             () ->
                 service.rename(
                     created.id(),
-                    "Closed Customer"
+                    "Closed Customer",
+                    closed.version()
                 )
         )
             .isInstanceOf(
@@ -171,10 +182,16 @@ class CustomerManagementServiceIntegrationTest {
             service.create("Sam Example");
 
         CustomerSnapshot firstSuspension =
-            service.suspend(created.id());
+            service.suspend(
+                created.id(),
+                created.version()
+            );
 
         CustomerSnapshot secondSuspension =
-            service.suspend(created.id());
+            service.suspend(
+                created.id(),
+                firstSuspension.version()
+            );
 
         assertThat(secondSuspension.status())
             .isEqualTo(SUSPENDED);
@@ -190,10 +207,16 @@ class CustomerManagementServiceIntegrationTest {
             );
 
         CustomerSnapshot firstClosure =
-            service.close(created.id());
+            service.close(
+                created.id(),
+                secondSuspension.version()
+            );
 
         CustomerSnapshot secondClosure =
-            service.close(created.id());
+            service.close(
+                created.id(),
+                firstClosure.version()
+            );
 
         assertThat(secondClosure.status())
             .isEqualTo(CLOSED);

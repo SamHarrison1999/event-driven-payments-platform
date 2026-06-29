@@ -188,6 +188,12 @@ class CustomerManagementHttpIntegrationTest {
                 )
                     .cookie(operationsSession)
                     .with(csrf())
+                    .header(
+                        HttpHeaders.IF_MATCH,
+                        CustomerVersionPrecondition.format(
+                            customerVersion(customerId)
+                        )
+                    )
                     .contentType(
                         MediaType.APPLICATION_JSON
                     )
@@ -263,6 +269,12 @@ class CustomerManagementHttpIntegrationTest {
                 )
                     .cookie(operationsSession)
                     .with(csrf())
+                    .header(
+                        HttpHeaders.IF_MATCH,
+                        CustomerVersionPrecondition.format(
+                            customerVersion(customerId)
+                        )
+                    )
                     .contentType(
                         MediaType.APPLICATION_JSON
                     )
@@ -509,6 +521,12 @@ class CustomerManagementHttpIntegrationTest {
                 )
                     .cookie(operationsSession)
                     .with(csrf())
+                    .header(
+                        HttpHeaders.IF_MATCH,
+                        CustomerVersionPrecondition.format(
+                            customerVersion(customerId)
+                        )
+                    )
                     .contentType(
                         MediaType.APPLICATION_JSON
                     )
@@ -584,6 +602,12 @@ class CustomerManagementHttpIntegrationTest {
             )
                 .cookie(session)
                 .with(csrf())
+                .header(
+                    HttpHeaders.IF_MATCH,
+                    CustomerVersionPrecondition.format(
+                        customerVersion(customerId)
+                    )
+                )
                 .contentType(
                     MediaType.APPLICATION_JSON
                 )
@@ -694,6 +718,28 @@ class CustomerManagementHttpIntegrationTest {
         return sessionCookie;
     }
 
+    private long customerVersion(
+        UUID customerId
+    ) {
+        Long version =
+            jdbcTemplate.queryForObject(
+                """
+                SELECT version
+                FROM customer_profile
+                WHERE id = ?
+                """,
+                Long.class,
+                customerId
+            );
+
+        if (version == null) {
+            throw new IllegalStateException(
+                "Customer version was not found."
+            );
+        }
+
+        return version;
+    }
     private long customerCount() {
         Long count =
             jdbcTemplate.queryForObject(

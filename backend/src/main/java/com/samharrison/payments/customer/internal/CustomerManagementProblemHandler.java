@@ -37,6 +37,78 @@ public final class CustomerManagementProblemHandler {
     }
 
     @ExceptionHandler(
+        CustomerVersionPreconditionRequiredException.class
+    )
+    public ResponseEntity<ProblemDetail>
+    handleVersionRequired(
+        CustomerVersionPreconditionRequiredException
+            exception
+    ) {
+        return problem(
+            HttpStatus.PRECONDITION_REQUIRED,
+            "Customer version required",
+            exception.getMessage(),
+            "urn:problem:customer:"
+                + "version-required",
+            "CUSTOMER_VERSION_REQUIRED"
+        );
+    }
+
+    @ExceptionHandler(
+        InvalidCustomerVersionPreconditionException.class
+    )
+    public ResponseEntity<ProblemDetail>
+    handleInvalidVersion(
+        InvalidCustomerVersionPreconditionException
+            exception
+    ) {
+        return problem(
+            HttpStatus.BAD_REQUEST,
+            "Invalid customer version",
+            exception.getMessage(),
+            "urn:problem:customer:"
+                + "version-invalid",
+            "CUSTOMER_VERSION_INVALID"
+        );
+    }
+
+    @ExceptionHandler(
+        CustomerVersionConflictException.class
+    )
+    public ResponseEntity<ProblemDetail>
+    handleVersionConflict(
+        CustomerVersionConflictException exception
+    ) {
+        ProblemDetail detail = createProblem(
+            HttpStatus.PRECONDITION_FAILED,
+            "Customer version conflict",
+            exception.getMessage(),
+            "urn:problem:customer:"
+                + "version-conflict",
+            "CUSTOMER_VERSION_CONFLICT"
+        );
+
+        detail.setProperty(
+            "customerId",
+            exception.customerId()
+        );
+
+        detail.setProperty(
+            "expectedVersion",
+            exception.expectedVersion()
+        );
+
+        detail.setProperty(
+            "actualVersion",
+            exception.actualVersion()
+        );
+
+        return response(
+            HttpStatus.PRECONDITION_FAILED,
+            detail
+        );
+    }
+    @ExceptionHandler(
         InvalidCustomerNameException.class
     )
     public ResponseEntity<ProblemDetail>

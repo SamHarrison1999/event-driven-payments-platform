@@ -47,11 +47,12 @@ class LedgerPostingServiceIntegrationTest {
 
     @BeforeEach
     void cleanDatabase() {
-        jdbcTemplate.update(
-            "DELETE FROM ledger_entry"
-        );
-        jdbcTemplate.update(
-            "DELETE FROM ledger_transaction"
+        jdbcTemplate.execute(
+            """
+            TRUNCATE TABLE
+                ledger_entry,
+                ledger_transaction
+            """
         );
         jdbcTemplate.update(
             "DELETE FROM customer_identity_assignment"

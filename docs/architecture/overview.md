@@ -61,8 +61,22 @@ Phase 3 implemented:
 - strict JSON and identifier validation; and
 - consistent security, validation and business-conflict problem responses.
 
-Payment, ledger, reconciliation, notification, reporting and asynchronous
-event capabilities are introduced in later phases.
+### Phase 4 — Double-entry ledger
+
+Phase 4 implemented:
+
+- immutable ledger transaction headers and ordered entries;
+- exact GBP minor-unit values with explicit debit and credit sides;
+- application-level balanced-journal validation;
+- atomic transaction-header and entry persistence;
+- deferred PostgreSQL checks for entry count, both posting sides and balance;
+- database-enforced append-only transaction and entry records;
+- compensating-transaction links;
+- deterministic transaction and account-history queries; and
+- account snapshot verification against ledger totals.
+
+Payment, reconciliation, notification, reporting and asynchronous event
+capabilities are introduced in later phases.
 
 The Kafka-compatible broker, asynchronous consumers and observability stack
 also remain planned components.
@@ -207,11 +221,12 @@ Owns:
 
 Owns:
 
-- ledger accounts;
 - ledger transaction headers;
-- immutable debit entries;
-- immutable credit entries; and
-- balance-verification queries.
+- ordered ledger entries referencing customer accounts;
+- explicit debit and credit posting sides;
+- compensating-transaction links;
+- immutable posting history; and
+- transaction, account-history and balance-verification queries.
 
 ### Risk
 
@@ -307,6 +322,20 @@ Missing, malformed and stale preconditions return distinct problem responses.
 
 The following operations use one PostgreSQL transaction.
 
+### Ledger posting
+
+A ledger posting transaction:
+
+1. validates the transaction type, metadata and entry values;
+2. verifies that at least two entries contain both debit and credit sides;
+3. verifies exact equality of debit and credit minor-unit totals;
+4. stores one immutable transaction header;
+5. stores all ordered entries; and
+6. passes the deferred PostgreSQL balance constraint at commit.
+
+A persistence or deferred-constraint failure rolls back the header and every
+entry together. Posted headers and entries cannot be updated or deleted.
+
 ### Payment posting
 
 The payment transaction will:
@@ -365,7 +394,7 @@ A financial correction requires a new compensating ledger transaction.
 
 ## Persistence principles
 
-### Implemented through Phase 3
+### Implemented through Phase 4
 
 - PostgreSQL is the application system of record.
 - Flyway owns forward-only schema migration history.
@@ -378,6 +407,8 @@ A financial correction requires a new compensating ledger transaction.
 - Migration version 6 creates the GBP customer account schema.
 - Migration version 7 creates identity-to-customer assignments.
 - Migration version 8 adds the remaining Phase 3 version invariant.
+- Migration version 9 creates ledger transaction and entry tables.
+- Migration version 10 adds deferred balance and immutability triggers.
 - Identity email uniqueness is protected by a database constraint.
 - Browser sessions are stored in PostgreSQL.
 - Role-change security events are append-only.
@@ -387,13 +418,16 @@ A financial correction requires a new compensating ledger transaction.
 - Account currency is constrained to GBP.
 - Account balances cannot be negative.
 - One identity can be assigned to no more than one customer.
+- Ledger entries use positive `BIGINT` GBP minor-unit values.
+- Every committed ledger transaction has at least two entries, contains debit
+  and credit sides, and has equal debit and credit totals.
+- Posted ledger transactions and entries are append-only.
+- Ledger-derived account totals can be recalculated for snapshot verification.
 - Database integration is tested with real PostgreSQL Testcontainers.
 
 ### Planned domain persistence guarantees
 
-- Ledger entries are append-only.
-- Account balances are transactionally maintained snapshots.
-- Ledger-derived balances can be recalculated for verification.
+- Payment orchestration transactionally maintains account balance snapshots.
 - Outbox records retain diagnostic and retry metadata.
 - Imported files retain synthetic source identifiers and fingerprints.
 - Financial schema changes use forward-only Flyway migrations.

@@ -1,8 +1,12 @@
 # ADR 0003: Money, ledger and consistency model
 
-- Status: Accepted
+- Status: Accepted; money representation partially superseded by ADR 0008
 - Date: 2026-06-24
 - Decision owners: Project maintainer
+
+ADR 0008 supersedes the money-representation and PostgreSQL monetary-storage
+decisions in this record. The double-entry, balancing, immutability, balance
+snapshot, concurrency and correction decisions remain accepted.
 
 ## Context
 

@@ -101,7 +101,7 @@ done
 
 readonly REQUIRED_LEDGER_TEXT=(
   "Phase 3 acceptance evidence"
-  "Customers and accounts | Current"
+  "Customers and accounts | Completed"
   "Customer profiles and ownership"
   "GBP accounts and customer views"
   "Validation, security and verification"
@@ -132,9 +132,13 @@ readonly expected_migration_versions=(
   1 2 3 4 5 6 7 8
 )
 
-if [[ "${migration_versions[*]}" != "${expected_migration_versions[*]}" ]]; then
+readonly phase3_migration_versions=(
+  "${migration_versions[@]:0:8}"
+)
+
+if [[ "${phase3_migration_versions[*]}" != "${expected_migration_versions[*]}" ]]; then
   fail \
-    "expected Flyway migrations 1 through 8 exactly, found: ${migration_versions[*]}"
+    "expected Flyway migrations 1 through 8 to remain present, found: ${migration_versions[*]}"
 fi
 
 printf '\n==> Run Phase 2 baseline verification\n'

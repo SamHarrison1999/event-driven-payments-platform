@@ -26,7 +26,7 @@ Last updated: 2026-06-29
 | Docker execution | Completed | `hello-world` container succeeded |
 | jq | Completed | jq 1.8.1 |
 | IntelliJ repository | Completed | Repository and Gradle project configured |
-| Current Git phase branch | Completed | `feat/phase-3-customers-accounts` |
+| Current Git phase branch | Completed | `feat/phase-4-double-entry-ledger` |
 
 ## Phase progress
 
@@ -35,8 +35,8 @@ Last updated: 2026-06-29
 | 0 — Architecture and repository foundation | Completed | Repository verifier passed; commits `0bab905` and `6cd81a5` |
 | 1 — Backend, frontend and CI skeletons | Completed | Local and GitHub Actions verification passed; PR #1 ready to merge |
 | 2 — Identity and access | Completed | PR #2 merged; local and GitHub Actions verification passed |
-| 3 — Customers and accounts | Current | Implementation and local regression gates passed; final phase gate in progress |
-| 4 — Double-entry ledger | Not started | None |
+| 3 — Customers and accounts | Completed | PR #3 merged; local and GitHub Actions verification passed |
+| 4 — Double-entry ledger | Current | Domain, persistence, database-invariant and query gates passed; final phase gate in progress |
 | 5 — Synchronous payments | Not started | None |
 | 6 — Frontend payment experience | Not started | None |
 | 7 — Asynchronous events and outbox | Not started | None |
@@ -241,6 +241,51 @@ Phase 1 verification passed.
 | Spring Modulith verification passes | Completed | `ModularityTest` |
 | Full backend test and JAR gate passes | Completed | `clean test bootJar` on 2026-06-29 |
 | Complete Phase 2 baseline verifier passes | Completed | PowerShell verifier on 2026-06-29 |
+
+## Phase 4 acceptance evidence
+
+### Ledger domain and posting
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| GBP ledger values use exact integer minor units | Completed | `GbpAmount` and ledger domain tests |
+| Entries use explicit debit and credit sides | Completed | `LedgerSide` and `LedgerEntrySide` |
+| Transactions require two or more entries | Completed | Domain and PostgreSQL invariant tests |
+| Transactions require debit and credit sides | Completed | Domain and PostgreSQL invariant tests |
+| Debit and credit totals must balance exactly | Completed | Domain factory and deferred constraint trigger |
+| Arithmetic overflow is rejected | Completed | `LedgerTransactionTest` |
+| Posting stores one header and all entries atomically | Completed | `LedgerPostingServiceIntegrationTest` |
+| Persistence failures roll back the complete posting | Completed | Missing-account rollback integration test |
+| Corrections link to the original transaction | Completed | Persistence integration test |
+
+### PostgreSQL integrity and immutability
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Flyway migration 9 creates ledger tables | Completed | `LedgerPersistenceIntegrationTest` |
+| Flyway migration 10 creates invariant triggers | Completed | `LedgerDatabaseInvariantIntegrationTest` |
+| Deferred checks run at transaction commit | Completed | Header-only, one-sided and unbalanced commit tests |
+| Posted headers reject updates | Completed | Database immutability integration test |
+| Posted headers reject deletes | Completed | Database immutability integration test |
+| Posted entries reject updates | Completed | Database immutability integration test |
+| Posted entries reject deletes | Completed | Database immutability integration test |
+| Database foreign keys protect referenced accounts | Completed | Persistence integration test |
+| Entry amount, currency, side and sequence are constrained | Completed | Persistence integration tests |
+
+### Queries, verification and architecture
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Transactions reload with ordered entries | Completed | `LedgerQueryServiceIntegrationTest` |
+| Account history ordering is deterministic | Completed | `LedgerQueryServiceIntegrationTest` |
+| Empty-account verification returns zero totals | Completed | `LedgerQueryServiceIntegrationTest` |
+| Snapshot and ledger totals can be compared | Completed | Consistent and inconsistent verification tests |
+| Missing transactions and accounts are explicit | Completed | Query-service integration tests |
+| Ledger module exposes a public posting API | Completed | `LedgerPostingService` |
+| Ledger module exposes public query APIs | Completed | `LedgerQueryService` |
+| Ledger depends only on shared | Completed | `ModularityTest` |
+| Focused Phase 4 ledger suite passes | Completed | Local Gradle verification on 2026-06-29 |
+
 ## Decision history
 
 | Date | Decision |
@@ -266,17 +311,21 @@ Phase 1 verification passed.
 | 2026-06-29 | Require strong ETags and `If-Match` for mutable Phase 3 resources |
 | 2026-06-29 | Reject unknown JSON properties and malformed resource identifiers |
 | 2026-06-29 | Standardise authentication and authorisation failures as problem responses |
+| 2026-06-29 | Use non-negative GBP minor units with explicit debit and credit sides |
+| 2026-06-29 | Enforce balanced journals in the domain and with deferred PostgreSQL checks |
+| 2026-06-29 | Make posted ledger headers and entries append-only |
+| 2026-06-29 | Use compensating transactions instead of mutating financial history |
+| 2026-06-29 | Keep ledger posting and query APIs independent of account internals |
 
 ## Next verified action
 
-Add and execute the dedicated Phase 3 PowerShell and Bash verification scripts,
-commit the final Phase 3 evidence and open the customers-and-accounts pull
-request.
+Add and execute the dedicated Phase 4 PowerShell and Bash verification scripts,
+commit the final Phase 4 evidence and open the double-entry-ledger pull request.
 
 After the required repository, backend and frontend checks pass:
 
-1. review the complete Phase 3 diff;
+1. review the complete Phase 4 diff;
 2. merge the pull request into `main`;
 3. synchronise the local `main` branch;
-4. remove the completed Phase 3 branch; and
-5. create the Phase 4 double-entry-ledger branch.
+4. remove the completed Phase 4 branch; and
+5. create the Phase 5 synchronous-payments branch.

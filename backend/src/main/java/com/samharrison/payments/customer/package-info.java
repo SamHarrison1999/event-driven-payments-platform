@@ -1,6 +1,9 @@
 @ApplicationModule(
     displayName = "Customers",
-    allowedDependencies = "shared"
+    allowedDependencies = {
+        "identity",
+        "shared"
+    }
 )
 package com.samharrison.payments.customer;
 

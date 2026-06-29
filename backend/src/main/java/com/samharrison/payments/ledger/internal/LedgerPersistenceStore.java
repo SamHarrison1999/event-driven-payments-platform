@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
-class LedgerPersistenceStore {
+public class LedgerPersistenceStore {
 
     private final LedgerTransactionRecordRepository
         transactionRepository;
@@ -26,7 +26,7 @@ class LedgerPersistenceStore {
     }
 
     @Transactional
-    void save(
+    public void save(
         LedgerTransaction transaction
     ) {
         LedgerTransaction required =

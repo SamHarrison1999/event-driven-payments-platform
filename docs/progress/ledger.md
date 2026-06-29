@@ -1,6 +1,6 @@
 # Progress ledger
 
-Last updated: 2026-06-25
+Last updated: 2026-06-29
 
 ## Status meanings
 
@@ -26,7 +26,7 @@ Last updated: 2026-06-25
 | Docker execution | Completed | `hello-world` container succeeded |
 | jq | Completed | jq 1.8.1 |
 | IntelliJ repository | Completed | Repository and Gradle project configured |
-| Current Git phase branch | Completed | `feat/phase-2-identity-access` |
+| Current Git phase branch | Completed | `feat/phase-3-customers-accounts` |
 
 ## Phase progress
 
@@ -34,8 +34,8 @@ Last updated: 2026-06-25
 |---:|---|---|
 | 0 — Architecture and repository foundation | Completed | Repository verifier passed; commits `0bab905` and `6cd81a5` |
 | 1 — Backend, frontend and CI skeletons | Completed | Local and GitHub Actions verification passed; PR #1 ready to merge |
-| 2 — Identity and access | Current | Identity implementation complete; Phase 2 completion gate in progress |
-| 3 — Customers and accounts | Not started | None |
+| 2 — Identity and access | Completed | PR #2 merged; local and GitHub Actions verification passed |
+| 3 — Customers and accounts | Current | Implementation and local regression gates passed; final phase gate in progress |
 | 4 — Double-entry ledger | Not started | None |
 | 5 — Synchronous payments | Not started | None |
 | 6 — Frontend payment experience | Not started | None |
@@ -195,6 +195,52 @@ Phase 1 verification passed.
 | Phase 2 Bash verifier exists | Completed | `scripts/verify-phase-2.sh` |
 | Local Phase 2 verifier passes | Completed | PowerShell verifier passed on 2026-06-25 |
 | GitHub Actions checks pass | Completed | Repository, Backend and Frontend checks passed on PR #2 |
+
+## Phase 3 acceptance evidence
+
+### Customer profiles and ownership
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Customer profiles persist in PostgreSQL | Completed | `CustomerPersistenceIntegrationTest` |
+| Customer names are bounded and reject control characters | Completed | `CustomerNameTest` |
+| Customer lifecycle transitions are explicit | Completed | `CustomerProfileTest` |
+| Operations and administrators manage customers | Completed | Customer management service and HTTP integration tests |
+| Customer updates use optimistic concurrency | Completed | `CustomerConditionalUpdateHttpIntegrationTest` |
+| Identity users can be assigned to customers | Completed | Customer ownership management integration tests |
+| One identity cannot belong to multiple customers | Completed | Ownership conflict and database tests |
+| Multiple identities can share one customer | Completed | Ownership HTTP integration test |
+| Account creation requires an active customer | Completed | Customer eligibility integration tests |
+
+### GBP accounts and customer views
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| GBP money uses integer minor units | Completed | `GbpAmountTest` |
+| Accounts persist with GBP and zero starting balance | Completed | `CustomerAccountPersistenceIntegrationTest` |
+| Negative balances are rejected | Completed | Domain and database integration tests |
+| Account lifecycle transitions are explicit | Completed | `CustomerAccountTest` |
+| Funded accounts cannot be closed | Completed | Account domain and HTTP integration tests |
+| Operations and administrators manage accounts | Completed | Account management service and HTTP integration tests |
+| Customer users see only owned accounts | Completed | Customer account query and ownership HTTP tests |
+| Customer queries derive identity server-side | Completed | `CustomerAccountOwnershipHttpIntegrationTest` |
+| Account updates use optimistic concurrency | Completed | `AccountConditionalUpdateHttpIntegrationTest` |
+| Customer and account ordering is deterministic | Completed | Customer account query integration test |
+
+### Validation, security and verification
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Unknown JSON properties are rejected | Completed | Customer and account HTTP integration tests |
+| Malformed UUID paths return stable problems | Completed | Customer and account HTTP integration tests |
+| Missing conditional headers return `428` | Completed | Conditional update HTTP tests |
+| Stale conditional writes return `412` | Completed | Conditional update HTTP tests |
+| Security failures use problem responses | Completed | Security foundation and account HTTP tests |
+| Security responses use `Cache-Control: no-store` | Completed | Security integration tests |
+| Flyway migrations 5 through 8 apply cleanly | Completed | Customer and account persistence tests |
+| Spring Modulith verification passes | Completed | `ModularityTest` |
+| Full backend test and JAR gate passes | Completed | `clean test bootJar` on 2026-06-29 |
+| Complete Phase 2 baseline verifier passes | Completed | PowerShell verifier on 2026-06-29 |
 ## Decision history
 
 | Date | Decision |
@@ -215,14 +261,22 @@ Phase 1 verification passed.
 | 2026-06-25 | Lock accounts temporarily after repeated failed login attempts |
 | 2026-06-25 | Enforce role management at the service boundary |
 | 2026-06-25 | Store immutable role-change security audit events |
+| 2026-06-26 | Represent GBP account values in integer minor units |
+| 2026-06-26 | Keep identity-to-customer ownership in the customer module |
+| 2026-06-29 | Require strong ETags and `If-Match` for mutable Phase 3 resources |
+| 2026-06-29 | Reject unknown JSON properties and malformed resource identifiers |
+| 2026-06-29 | Standardise authentication and authorisation failures as problem responses |
 
 ## Next verified action
 
-Commit and push the final Phase 2 CI evidence, allow the required GitHub
-Actions checks to pass again and merge PR #2 into `main`.
+Add and execute the dedicated Phase 3 PowerShell and Bash verification scripts,
+commit the final Phase 3 evidence and open the customers-and-accounts pull
+request.
 
-After the merge:
+After the required repository, backend and frontend checks pass:
 
-1. synchronise the local `main` branch;
-2. remove the completed Phase 2 branch; and
-3. create the Phase 3 customers-and-accounts branch.
+1. review the complete Phase 3 diff;
+2. merge the pull request into `main`;
+3. synchronise the local `main` branch;
+4. remove the completed Phase 3 branch; and
+5. create the Phase 4 double-entry-ledger branch.

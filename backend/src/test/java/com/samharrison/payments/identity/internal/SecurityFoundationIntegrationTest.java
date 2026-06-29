@@ -142,7 +142,22 @@ class SecurityFoundationIntegrationTest {
                         """
                     )
             )
-            .andExpect(status().isForbidden());
+            .andExpect(status().isForbidden())
+            .andExpect(
+                content().contentTypeCompatibleWith(
+                    MediaType.APPLICATION_PROBLEM_JSON
+                )
+            )
+            .andExpect(
+                header().string(
+                    HttpHeaders.CACHE_CONTROL,
+                    containsString("no-store")
+                )
+            )
+            .andExpect(
+                jsonPath("$.code")
+                    .value("SECURITY_ACCESS_DENIED")
+            );
     }
 
     @Test
@@ -160,6 +175,23 @@ class SecurityFoundationIntegrationTest {
         mockMvc.perform(
                 get("/api/v1/accounts")
             )
-            .andExpect(status().isUnauthorized());
+            .andExpect(status().isUnauthorized())
+            .andExpect(
+                content().contentTypeCompatibleWith(
+                    MediaType.APPLICATION_PROBLEM_JSON
+                )
+            )
+            .andExpect(
+                header().string(
+                    HttpHeaders.CACHE_CONTROL,
+                    containsString("no-store")
+                )
+            )
+            .andExpect(
+                jsonPath("$.code")
+                    .value(
+                        "SECURITY_AUTHENTICATION_REQUIRED"
+                    )
+            );
     }
 }

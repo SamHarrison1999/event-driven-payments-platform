@@ -2,6 +2,7 @@
     displayName = "Accounts",
     allowedDependencies = {
         "customer",
+        "identity",
         "shared"
     }
 )

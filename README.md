@@ -10,14 +10,16 @@ asynchronous event delivery and settlement reconciliation.
 
 Current phase:
 
-**Phase 2 — Identity and access**
+**Phase 3 — Customers and accounts**
 
-The identity module now provides persistent users, secure password hashing,
-customer registration, PostgreSQL-backed browser sessions, CSRF protection,
-failed-login lockout, role-based access control and immutable security audit
-events.
+The customer and account modules now provide simulated customer profiles,
+GBP accounts, identity-to-customer ownership, customer-scoped account queries,
+lifecycle controls, optimistic concurrency and consistent security and
+validation problem responses.
 
-Phase 2 verification passed locally and through GitHub Actions on 25 June 2026.
+The Phase 3 implementation has passed its local backend and complete baseline
+verification gates. The final documentation, dedicated verifier and pull
+request checks remain in progress.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.
@@ -85,6 +87,43 @@ Implemented identity endpoints include:
     DELETE /api/v1/identity/users/{userId}/roles/{role}
 
 Role-management endpoints require the `ADMIN` role.
+
+### Customers and accounts
+
+The backend customer and account modules currently provide:
+
+- simulated customer profiles with `ACTIVE`, `SUSPENDED` and `CLOSED`
+  lifecycle states;
+- operations and administrator customer management;
+- identity-to-customer assignments;
+- one customer shared by multiple assigned identities;
+- customer-owned account queries based on the authenticated principal;
+- GBP-only accounts represented in integer minor units;
+- account lifecycle states for active, frozen and closed accounts;
+- zero-overdraft and funded-account closure protection;
+- optimistic concurrency through strong ETags and required `If-Match`
+  preconditions;
+- strict request-body and identifier validation;
+- database constraints for customer, account and ownership invariants; and
+- consistent `application/problem+json` responses for authentication,
+  authorisation, validation and business conflicts.
+
+Implemented customer and account endpoints include:
+
+    POST /api/v1/customers
+    GET  /api/v1/customers/{customerId}
+    PUT  /api/v1/customers/{customerId}/name
+    PUT  /api/v1/customers/{customerId}/status
+    PUT  /api/v1/customers/{customerId}/identity-users/{identityUserId}
+    GET  /api/v1/customers/{customerId}/accounts
+    POST /api/v1/accounts
+    GET  /api/v1/accounts
+    GET  /api/v1/accounts/{accountId}
+    PUT  /api/v1/accounts/{accountId}/status
+
+Customer and account management requires the `OPERATIONS` or `ADMIN` role.
+The customer account collection is resolved from the authenticated identity
+and does not accept a caller-supplied customer identifier.
 
 ### Frontend
 
@@ -243,6 +282,35 @@ On Linux, macOS or WSL:
 ```bash
 ./scripts/verify-phase-2.sh
 ```
+
+## Phase 3 verification
+
+### Windows PowerShell
+
+From the repository root:
+
+```powershell
+.\scripts\verify-phase-3.ps1
+```
+
+A successful run ends with:
+
+```text
+Phase 3 verification passed.
+```
+
+The Phase 3 verifier checks the customer and account implementation,
+documentation, database migrations and security hardening before running the
+complete Phase 2 baseline verification.
+
+### Bash
+
+On Linux, macOS or WSL:
+
+```bash
+./scripts/verify-phase-3.sh
+```
+
 ## Architecture
 
 The application is structured as a modular monolith with a separately built
@@ -325,8 +393,9 @@ The completed platform is intended to allow authorised users to:
 - receive simulated payment notifications.
 
 Identity registration, authentication and access management are implemented.
-Customer, account, payment, ledger, settlement, notification and reporting
-capabilities remain planned work.
+Customer profiles, GBP accounts, ownership views and account lifecycle
+management are also implemented. Payment, ledger, settlement, notification
+and reporting capabilities remain planned work.
 
 ## Engineering principles
 

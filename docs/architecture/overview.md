@@ -45,9 +45,24 @@ Phase 2 implemented:
 - session invalidation following role changes; and
 - immutable role-change security audit events.
 
-The remaining payment, ledger, customer, account, reconciliation,
-notification, reporting and operational capabilities are introduced in later
-phases.
+### Phase 3 — Customers and accounts
+
+Phase 3 implemented:
+
+- simulated customer profiles and lifecycle transitions;
+- operations and administrator customer management;
+- identity-to-customer ownership assignments;
+- authenticated customer account views;
+- GBP-only accounts using integer minor units;
+- account lifecycle transitions and closure rules;
+- database-enforced customer, account and ownership invariants;
+- optimistic concurrency through entity versions, strong ETags and
+  `If-Match`;
+- strict JSON and identifier validation; and
+- consistent security, validation and business-conflict problem responses.
+
+Payment, ledger, reconciliation, notification, reporting and asynchronous
+event capabilities are introduced in later phases.
 
 The Kafka-compatible broker, asynchronous consumers and observability stack
 also remain planned components.
@@ -117,8 +132,10 @@ flowchart TB
     shared["shared"]
 
     identity --> shared
+    customer --> identity
     customer --> shared
     account --> customer
+    account --> identity
     account --> shared
     payment --> account
     payment --> ledger
@@ -161,17 +178,19 @@ It does not own customer account balances.
 Owns:
 
 - customer profiles;
-- customer identifiers; and
-- customer lifecycle.
+- customer identifiers;
+- customer lifecycle;
+- identity-to-customer assignments; and
+- customer eligibility for account creation.
 
 ### Account
 
 Owns:
 
 - customer accounts;
-- account ownership;
 - account status;
-- account balance snapshots; and
+- account balance snapshots;
+- GBP currency enforcement; and
 - optimistic versions.
 
 ### Payment
@@ -247,6 +266,43 @@ as:
 
 It must not become a generic dumping ground.
 
+## Customer and account lifecycle
+
+Customer profiles progress through explicit lifecycle operations:
+
+```mermaid
+stateDiagram-v2
+    [*] --> ACTIVE
+    ACTIVE --> SUSPENDED
+    SUSPENDED --> ACTIVE
+    ACTIVE --> CLOSED
+    SUSPENDED --> CLOSED
+    CLOSED --> CLOSED
+```
+
+Customer closure is terminal. Account creation requires an active customer.
+
+Customer accounts use the following lifecycle:
+
+```mermaid
+stateDiagram-v2
+    [*] --> ACTIVE
+    ACTIVE --> FROZEN
+    FROZEN --> ACTIVE
+    ACTIVE --> CLOSED
+    FROZEN --> CLOSED
+    CLOSED --> CLOSED
+```
+
+Account closure is terminal and is rejected while the account has a non-zero
+balance. Phase 3 does not provide balance mutation APIs; later ledger and
+payment phases will own financial postings.
+
+Customer and account changes use optimistic concurrency. Read and successful
+write responses provide a strong ETag derived from the persisted version.
+Lifecycle and customer-name updates require a matching `If-Match` header.
+Missing, malformed and stale preconditions return distinct problem responses.
+
 ## Strong consistency boundaries
 
 The following operations use one PostgreSQL transaction.
@@ -309,7 +365,7 @@ A financial correction requires a new compensating ledger transaction.
 
 ## Persistence principles
 
-### Implemented by Phase 2
+### Implemented through Phase 3
 
 - PostgreSQL is the application system of record.
 - Flyway owns forward-only schema migration history.
@@ -318,10 +374,19 @@ A financial correction requires a new compensating ledger transaction.
 - Migration version 2 creates the identity schema.
 - Migration version 3 creates the JDBC session schema.
 - Migration version 4 creates the identity security-event log.
+- Migration version 5 creates the customer profile schema.
+- Migration version 6 creates the GBP customer account schema.
+- Migration version 7 creates identity-to-customer assignments.
+- Migration version 8 adds the remaining Phase 3 version invariant.
 - Identity email uniqueness is protected by a database constraint.
 - Browser sessions are stored in PostgreSQL.
 - Role-change security events are append-only.
 - A PostgreSQL trigger rejects updates and deletions of security-event rows.
+- Customer, account and ownership versions cannot be negative.
+- Customer and account statuses are database constrained.
+- Account currency is constrained to GBP.
+- Account balances cannot be negative.
+- One identity can be assigned to no more than one customer.
 - Database integration is tested with real PostgreSQL Testcontainers.
 
 ### Planned domain persistence guarantees
@@ -334,7 +399,7 @@ A financial correction requires a new compensating ledger transaction.
 - Financial schema changes use forward-only Flyway migrations.
 ## API principles
 
-### Implemented by Phase 2
+### Implemented through Phase 3
 
 - APIs are versioned under `/api/v1`.
 - `GET /api/v1/system/info` exposes non-sensitive platform metadata.
@@ -342,10 +407,21 @@ A financial correction requires a new compensating ledger transaction.
 - Customer registration validates bounded email and password inputs.
 - Authentication uses a server-side PostgreSQL session.
 - State-changing browser requests require CSRF protection.
-- Session responses use `Cache-Control: no-store`.
+- Sensitive and security responses use `Cache-Control: no-store`.
 - Role-management operations are authorised at the service boundary.
-- Anonymous protected requests return `401 Unauthorized`.
-- Authenticated users without sufficient authority receive `403 Forbidden`.
+- Customer and account management requires `OPERATIONS` or `ADMIN`.
+- Customer account views derive ownership from the authenticated identity.
+- Anonymous protected requests return a structured `401 Unauthorized`
+  problem response.
+- Authenticated users without sufficient authority receive a structured
+  `403 Forbidden` problem response.
+- Customer and account request failures use stable problem codes.
+- Unknown JSON fields are rejected.
+- Malformed UUID path identifiers return deterministic problem responses.
+- Customer and account reads return strong ETags.
+- Conditional customer and account updates require `If-Match`.
+- Stale writes return `412 Precondition Failed` without overwriting newer
+  state.
 - Actuator exposes health, liveness and readiness.
 - OpenAPI output is available under `/v3/api-docs`.
 

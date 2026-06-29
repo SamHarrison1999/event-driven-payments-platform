@@ -130,7 +130,10 @@ class AccountManagementServiceIntegrationTest {
             service.create(customerId);
 
         AccountSnapshot frozen =
-            service.freeze(created.id());
+            service.freeze(
+                created.id(),
+                created.version()
+            );
 
         assertThat(frozen.status())
             .isEqualTo(FROZEN);
@@ -141,7 +144,10 @@ class AccountManagementServiceIntegrationTest {
             );
 
         AccountSnapshot reactivated =
-            service.reactivate(created.id());
+            service.reactivate(
+                created.id(),
+                frozen.version()
+            );
 
         assertThat(reactivated.status())
             .isEqualTo(ACTIVE);
@@ -152,7 +158,10 @@ class AccountManagementServiceIntegrationTest {
             );
 
         AccountSnapshot closed =
-            service.close(created.id());
+            service.close(
+                created.id(),
+                reactivated.version()
+            );
 
         assertThat(closed.status())
             .isEqualTo(CLOSED);
@@ -165,7 +174,8 @@ class AccountManagementServiceIntegrationTest {
         assertThatThrownBy(
             () ->
                 service.reactivate(
-                    created.id()
+                    created.id(),
+                    closed.version()
                 )
         )
             .isInstanceOf(
@@ -183,10 +193,16 @@ class AccountManagementServiceIntegrationTest {
             service.create(customerId);
 
         AccountSnapshot firstFreeze =
-            service.freeze(created.id());
+            service.freeze(
+                created.id(),
+                created.version()
+            );
 
         AccountSnapshot secondFreeze =
-            service.freeze(created.id());
+            service.freeze(
+                created.id(),
+                firstFreeze.version()
+            );
 
         assertThat(secondFreeze.status())
             .isEqualTo(FROZEN);
@@ -202,10 +218,16 @@ class AccountManagementServiceIntegrationTest {
             );
 
         AccountSnapshot firstReactivation =
-            service.reactivate(created.id());
+            service.reactivate(
+                created.id(),
+                secondFreeze.version()
+            );
 
         AccountSnapshot secondReactivation =
-            service.reactivate(created.id());
+            service.reactivate(
+                created.id(),
+                firstReactivation.version()
+            );
 
         assertThat(secondReactivation.status())
             .isEqualTo(ACTIVE);
@@ -221,10 +243,16 @@ class AccountManagementServiceIntegrationTest {
             );
 
         AccountSnapshot firstClosure =
-            service.close(created.id());
+            service.close(
+                created.id(),
+                secondReactivation.version()
+            );
 
         AccountSnapshot secondClosure =
-            service.close(created.id());
+            service.close(
+                created.id(),
+                firstClosure.version()
+            );
 
         assertThat(secondClosure.status())
             .isEqualTo(CLOSED);

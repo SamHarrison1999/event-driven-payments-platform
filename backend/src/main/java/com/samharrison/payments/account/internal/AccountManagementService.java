@@ -69,10 +69,16 @@ public class AccountManagementService {
 
     @Transactional
     public AccountSnapshot freeze(
-        UUID accountId
+        UUID accountId,
+        long expectedVersion
     ) {
         CustomerAccount account =
             findRequired(accountId);
+
+        requireExpectedVersion(
+            account,
+            expectedVersion
+        );
 
         account.freeze(now());
 
@@ -81,10 +87,16 @@ public class AccountManagementService {
 
     @Transactional
     public AccountSnapshot reactivate(
-        UUID accountId
+        UUID accountId,
+        long expectedVersion
     ) {
         CustomerAccount account =
             findRequired(accountId);
+
+        requireExpectedVersion(
+            account,
+            expectedVersion
+        );
 
         account.reactivate(now());
 
@@ -93,10 +105,16 @@ public class AccountManagementService {
 
     @Transactional
     public AccountSnapshot close(
-        UUID accountId
+        UUID accountId,
+        long expectedVersion
     ) {
         CustomerAccount account =
             findRequired(accountId);
+
+        requireExpectedVersion(
+            account,
+            expectedVersion
+        );
 
         account.close(now());
 
@@ -120,6 +138,25 @@ public class AccountManagementService {
                         requiredAccountId
                     )
             );
+    }
+
+    private static void requireExpectedVersion(
+        CustomerAccount account,
+        long expectedVersion
+    ) {
+        if (expectedVersion < 0L) {
+            throw new IllegalArgumentException(
+                "expectedVersion must not be negative"
+            );
+        }
+
+        if (account.version() != expectedVersion) {
+            throw new AccountVersionConflictException(
+                account.id(),
+                expectedVersion,
+                account.version()
+            );
+        }
     }
 
     private AccountSnapshot flushAndSnapshot(

@@ -40,6 +40,78 @@ public final class AccountManagementProblemHandler {
     }
 
     @ExceptionHandler(
+        AccountVersionPreconditionRequiredException.class
+    )
+    public ResponseEntity<ProblemDetail>
+    handleVersionRequired(
+        AccountVersionPreconditionRequiredException
+            exception
+    ) {
+        return problem(
+            HttpStatus.PRECONDITION_REQUIRED,
+            "Account version required",
+            exception.getMessage(),
+            "urn:problem:account:"
+                + "version-required",
+            "ACCOUNT_VERSION_REQUIRED"
+        );
+    }
+
+    @ExceptionHandler(
+        InvalidAccountVersionPreconditionException.class
+    )
+    public ResponseEntity<ProblemDetail>
+    handleInvalidVersion(
+        InvalidAccountVersionPreconditionException
+            exception
+    ) {
+        return problem(
+            HttpStatus.BAD_REQUEST,
+            "Invalid account version",
+            exception.getMessage(),
+            "urn:problem:account:"
+                + "version-invalid",
+            "ACCOUNT_VERSION_INVALID"
+        );
+    }
+
+    @ExceptionHandler(
+        AccountVersionConflictException.class
+    )
+    public ResponseEntity<ProblemDetail>
+    handleVersionConflict(
+        AccountVersionConflictException exception
+    ) {
+        ProblemDetail detail = createProblem(
+            HttpStatus.PRECONDITION_FAILED,
+            "Account version conflict",
+            exception.getMessage(),
+            "urn:problem:account:"
+                + "version-conflict",
+            "ACCOUNT_VERSION_CONFLICT"
+        );
+
+        detail.setProperty(
+            "accountId",
+            exception.accountId()
+        );
+
+        detail.setProperty(
+            "expectedVersion",
+            exception.expectedVersion()
+        );
+
+        detail.setProperty(
+            "actualVersion",
+            exception.actualVersion()
+        );
+
+        return response(
+            HttpStatus.PRECONDITION_FAILED,
+            detail
+        );
+    }
+    @ExceptionHandler(
         CustomerAccountEligibilityException.class
     )
     public ResponseEntity<ProblemDetail>

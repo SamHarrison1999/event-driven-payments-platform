@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.UUID;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -45,6 +47,12 @@ public final class AccountManagementController {
 
         return ResponseEntity
             .created(location)
+            .header(
+                HttpHeaders.ETAG,
+                AccountVersionPrecondition.format(
+                    created.version()
+                )
+            )
             .cacheControl(CacheControl.noStore())
             .body(AccountResponse.from(created));
     }
@@ -69,18 +77,37 @@ public final class AccountManagementController {
     public ResponseEntity<AccountResponse>
     updateStatus(
         @PathVariable UUID accountId,
+        @RequestHeader(
+            value = HttpHeaders.IF_MATCH,
+            required = false
+        )
+        String ifMatch,
         @Valid
         @RequestBody
         AccountStatusUpdateRequest request
     ) {
+        long expectedVersion =
+            AccountVersionPrecondition.parseRequired(
+                ifMatch
+            );
+
         AccountSnapshot updated =
             switch (request.status()) {
                 case ACTIVE ->
-                    service.reactivate(accountId);
+                    service.reactivate(
+                        accountId,
+                        expectedVersion
+                    );
                 case FROZEN ->
-                    service.freeze(accountId);
+                    service.freeze(
+                        accountId,
+                        expectedVersion
+                    );
                 case CLOSED ->
-                    service.close(accountId);
+                    service.close(
+                        accountId,
+                        expectedVersion
+                    );
             };
 
         return ok(updated);
@@ -92,6 +119,12 @@ public final class AccountManagementController {
     ) {
         return ResponseEntity
             .ok()
+            .header(
+                HttpHeaders.ETAG,
+                AccountVersionPrecondition.format(
+                    account.version()
+                )
+            )
             .cacheControl(CacheControl.noStore())
             .body(AccountResponse.from(account));
     }

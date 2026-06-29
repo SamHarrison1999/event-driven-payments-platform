@@ -679,6 +679,12 @@ class AccountManagementHttpIntegrationTest {
             )
                 .cookie(session)
                 .with(csrf())
+                .header(
+                    HttpHeaders.IF_MATCH,
+                    AccountVersionPrecondition.format(
+                        accountVersion(accountId)
+                    )
+                )
                 .contentType(
                     MediaType.APPLICATION_JSON
                 )
@@ -827,6 +833,28 @@ class AccountManagementHttpIntegrationTest {
         return customerId;
     }
 
+    private long accountVersion(
+        UUID accountId
+    ) {
+        Long version =
+            jdbcTemplate.queryForObject(
+                """
+                SELECT version
+                FROM customer_account
+                WHERE id = ?
+                """,
+                Long.class,
+                accountId
+            );
+
+        if (version == null) {
+            throw new IllegalStateException(
+                "Account version was not found."
+            );
+        }
+
+        return version;
+    }
     private long accountCount() {
         Long count =
             jdbcTemplate.queryForObject(

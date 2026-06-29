@@ -3,7 +3,6 @@ package com.samharrison.payments.identity.internal;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -126,7 +125,9 @@ public class IdentitySecurityConfiguration {
         SecurityContextRepository
             securityContextRepository,
         SessionAuthenticationStrategy
-            sessionAuthenticationStrategy
+            sessionAuthenticationStrategy,
+        IdentitySecurityProblemHandler
+            securityProblemHandler
     ) throws Exception {
         http
             .csrf(Customizer.withDefaults())
@@ -164,24 +165,10 @@ public class IdentitySecurityConfiguration {
                 exceptions ->
                     exceptions
                         .authenticationEntryPoint(
-                            (
-                                request,
-                                response,
-                                exception
-                            ) ->
-                                response.sendError(
-                                    HttpStatus.UNAUTHORIZED.value()
-                                )
+                            securityProblemHandler
                         )
                         .accessDeniedHandler(
-                            (
-                                request,
-                                response,
-                                exception
-                            ) ->
-                                response.sendError(
-                                    HttpStatus.FORBIDDEN.value()
-                                )
+                            securityProblemHandler
                         )
             )
             .authorizeHttpRequests(

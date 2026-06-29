@@ -310,7 +310,22 @@ class AccountManagementHttpIntegrationTest {
                             .formatted(customerId)
                     )
             )
-            .andExpect(status().isForbidden());
+            .andExpect(status().isForbidden())
+            .andExpect(
+                content().contentTypeCompatibleWith(
+                    MediaType.APPLICATION_PROBLEM_JSON
+                )
+            )
+            .andExpect(
+                header().string(
+                    HttpHeaders.CACHE_CONTROL,
+                    containsString("no-store")
+                )
+            )
+            .andExpect(
+                jsonPath("$.code")
+                    .value("SECURITY_ACCESS_DENIED")
+            );
 
         assertThat(accountCount())
             .isZero();
@@ -326,7 +341,24 @@ class AccountManagementHttpIntegrationTest {
                         + UUID.randomUUID()
                 )
             )
-            .andExpect(status().isUnauthorized());
+            .andExpect(status().isUnauthorized())
+            .andExpect(
+                content().contentTypeCompatibleWith(
+                    MediaType.APPLICATION_PROBLEM_JSON
+                )
+            )
+            .andExpect(
+                header().string(
+                    HttpHeaders.CACHE_CONTROL,
+                    containsString("no-store")
+                )
+            )
+            .andExpect(
+                jsonPath("$.code")
+                    .value(
+                        "SECURITY_AUTHENTICATION_REQUIRED"
+                    )
+            );
     }
 
     @Test
@@ -356,7 +388,22 @@ class AccountManagementHttpIntegrationTest {
                             .formatted(customerId)
                     )
             )
-            .andExpect(status().isForbidden());
+            .andExpect(status().isForbidden())
+            .andExpect(
+                content().contentTypeCompatibleWith(
+                    MediaType.APPLICATION_PROBLEM_JSON
+                )
+            )
+            .andExpect(
+                header().string(
+                    HttpHeaders.CACHE_CONTROL,
+                    containsString("no-store")
+                )
+            )
+            .andExpect(
+                jsonPath("$.code")
+                    .value("SECURITY_ACCESS_DENIED")
+            );
 
         assertThat(accountCount())
             .isZero();

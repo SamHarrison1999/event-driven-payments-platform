@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param()
 
 Set-StrictMode -Version Latest
@@ -65,7 +65,7 @@ try {
     'verify-phase-4.ps1',
     'explicit `DEBIT` and `CREDIT`',
     'deferred PostgreSQL balance verification',
-    'snapshot-versus-ledger verification',
+    'verification of account snapshots against ledger debit and credit totals',
     'this application does not process real money'
   )
 
@@ -109,7 +109,7 @@ try {
 
   $requiredLedgerText = @(
     'Phase 4 acceptance evidence',
-    'Double-entry ledger | Current',
+    'Double-entry ledger | Completed',
     'Ledger domain and posting',
     'PostgreSQL integrity and immutability',
     'Queries, verification and architecture',
@@ -138,17 +138,20 @@ try {
   )
 
   $expectedMigrationVersions = @(1..10)
+  $phase4MigrationVersions = @(
+    $migrationVersions |
+      Select-Object -First 10
+  )
 
   if (
-    ($migrationVersions -join ',') -ne
+    ($phase4MigrationVersions -join ',') -ne
       ($expectedMigrationVersions -join ',')
   ) {
     throw (
-      'Expected Flyway migrations 1 through 10 exactly, found: ' +
+      'Expected Flyway migrations 1 through 10 to remain present, found: ' +
       ($migrationVersions -join ', ')
     )
   }
-
   Write-Host ''
   Write-Host '==> Run Phase 3 baseline verification'
 

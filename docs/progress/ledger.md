@@ -1,6 +1,6 @@
 # Progress ledger
 
-Last updated: 2026-06-29
+Last updated: 2026-07-03
 
 ## Status meanings
 
@@ -26,7 +26,7 @@ Last updated: 2026-06-29
 | Docker execution | Completed | `hello-world` container succeeded |
 | jq | Completed | jq 1.8.1 |
 | IntelliJ repository | Completed | Repository and Gradle project configured |
-| Current Git phase branch | Completed | `feat/phase-4-double-entry-ledger` |
+| Current Git phase branch | Completed | `feat/phase-5-synchronous-payments` |
 
 ## Phase progress
 
@@ -36,8 +36,8 @@ Last updated: 2026-06-29
 | 1 — Backend, frontend and CI skeletons | Completed | Local and GitHub Actions verification passed; PR #1 ready to merge |
 | 2 — Identity and access | Completed | PR #2 merged; local and GitHub Actions verification passed |
 | 3 — Customers and accounts | Completed | PR #3 merged; local and GitHub Actions verification passed |
-| 4 — Double-entry ledger | Current | Domain, persistence, database-invariant and query gates passed; final phase gate in progress |
-| 5 — Synchronous payments | Not started | None |
+| 4 — Double-entry ledger | Completed | PR #4 merged; local and GitHub Actions verification passed |
+| 5 — Synchronous payments | Completed | PR #5 ready to merge; local and GitHub Actions verification passed |
 | 6 — Frontend payment experience | Not started | None |
 | 7 — Asynchronous events and outbox | Not started | None |
 | 8 — Notifications and dead letters | Not started | None |
@@ -286,6 +286,55 @@ Phase 1 verification passed.
 | Ledger depends only on shared | Completed | `ModularityTest` |
 | Focused Phase 4 ledger suite passes | Completed | Local Gradle verification on 2026-06-29 |
 
+## Phase 5 acceptance evidence
+
+### Domain, persistence and idempotency
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Payment request data uses positive GBP minor units | Completed | `PaymentRequestDataTest` |
+| Payment lifecycle permits only accepted transitions | Completed | `PaymentTest` |
+| Terminal rejection and failure reasons use stable codes | Completed | Payment domain and response-factory tests |
+| Idempotency keys are bounded visible ASCII values | Completed | `IdempotencyKeyTest` |
+| Request fingerprints are canonical versioned SHA-256 values | Completed | `PaymentRequestFingerprintTest` |
+| Flyway migration 11 creates payment and idempotency persistence | Completed | `PaymentPersistenceIntegrationTest` |
+| Flyway migration 12 permits unknown rejected account references | Completed | Unknown-account rejection integration tests |
+| Database constraints protect payment and idempotency invariants | Completed | `PaymentPersistenceIntegrationTest` |
+| Terminal responses are bounded and retained for 24 hours | Completed | `StoredPaymentResponseTest` and idempotency-record tests |
+| New, replay, conflict and stale-lease reservation paths work | Completed | `PaymentReservationCoordinatorIntegrationTest` |
+
+### Account mutation and atomic processing
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Customer ownership has a non-throwing public lookup | Completed | Customer ownership integration tests |
+| Account mutation stays behind the public account module API | Completed | `AccountPaymentMutationServiceIntegrationTest` |
+| Source ownership, account state, currency and funds are checked before mutation | Completed | Account payment service unit and integration tests |
+| Expected business refusals return typed rejection results | Completed | `AccountPaymentResultTest` |
+| Approved payments update both snapshots and one balanced ledger atomically | Completed | `PaymentProcessingIntegrationTest` |
+| Rejected payments change no account or ledger state | Completed | `PaymentProcessingIntegrationTest` |
+| Processing failures roll back and finalise a bounded failure response | Completed | Processing coordinator and integration tests |
+| Concurrency conflicts retry the complete transaction at most three times | Completed | `PaymentProcessingCoordinatorTest` |
+| Spring Modulith boundaries remain valid | Completed | `ModularityTest` |
+
+### HTTP, security and verification
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| `POST /api/v1/payments` submits and exactly replays payments | Completed | `PaymentSubmissionHttpIntegrationTest` |
+| Invalid input and idempotency headers create no reservation | Completed | Submission HTTP integration tests |
+| Submission requires authenticated `CUSTOMER` authority and CSRF | Completed | Submission HTTP integration tests |
+| `GET /api/v1/payments/{paymentId}` returns a safe payment projection | Completed | `PaymentQueryHttpIntegrationTest` |
+| Customers read only their own submitted payments | Completed | Query service and HTTP ownership tests |
+| Foreign and missing payments are indistinguishable to customers | Completed | `PaymentQueryHttpIntegrationTest` |
+| `OPERATIONS` and `ADMIN` read any payment | Completed | Payment query HTTP integration tests |
+| `RECONCILIATION_ANALYST` has no Phase 5 payment-read access | Completed | Payment query HTTP integration test |
+| Payment problems and OpenAPI contracts are stable | Completed | Submission and query HTTP integration tests |
+| Focused payment HTTP and service suite passes | Completed | 5 suites and 30 tests on 2026-07-03 |
+| Complete backend regression passes | Completed | 59 suites and 366 tests on 2026-07-03 |
+| PowerShell and Bash Phase 5 verifiers exist | Completed | `scripts/verify-phase-5.ps1` and `.sh` |
+| Composite Phase 5 verifier passes | Completed | PowerShell verifier passed on 2026-07-03 |
+| Required GitHub Actions checks pass | Completed | Repository, Backend and Frontend checks passed on PR #5 |
 ## Decision history
 
 | Date | Decision |
@@ -316,16 +365,17 @@ Phase 1 verification passed.
 | 2026-06-29 | Make posted ledger headers and entries append-only |
 | 2026-06-29 | Use compensating transactions instead of mutating financial history |
 | 2026-06-29 | Keep ledger posting and query APIs independent of account internals |
+| 2026-06-29 | Reserve idempotency and a pending payment before financial posting |
+| 2026-06-29 | Recover stale in-progress requests through a bounded processing lease |
+| 2026-06-29 | Keep account balance mutation behind a public account-module API |
+| 2026-06-29 | Return typed account-payment rejections instead of throwing expected business outcomes |
+| 2026-06-29 | Resolve the current actor through `CurrentIdentityUser` and use the repository's `CUSTOMER`, `OPERATIONS` and `ADMIN` roles |
+| 2026-06-29 | Retry the complete payment transaction at most three times after concurrency conflicts |
+| 2026-06-29 | Extend the posting transaction with outbox and audit records only in their later phases |
+| 2026-07-03 | Persist exact bounded terminal idempotency responses for 24 hours using explicit `PROCESSING` and `COMPLETED` record states |
 
 ## Next verified action
 
-Add and execute the dedicated Phase 4 PowerShell and Bash verification scripts,
-commit the final Phase 4 evidence and open the double-entry-ledger pull request.
-
-After the required repository, backend and frontend checks pass:
-
-1. review the complete Phase 4 diff;
-2. merge the pull request into `main`;
-3. synchronise the local `main` branch;
-4. remove the completed Phase 4 branch; and
-5. create the Phase 5 synchronous-payments branch.
+Commit and push the Phase 5 pull-request verification evidence. Confirm the
+required GitHub Actions checks pass again on the updated pull-request head, then
+merge PR #5 and synchronise `main`.

@@ -70,6 +70,137 @@ class PaymentPersistenceIntegrationTest {
     }
 
     @Test
+    void appliesUnknownAccountReferenceMigration() {
+        Long migrationCount =
+            jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM public.flyway_schema_history
+                WHERE version = '12'
+                  AND success = TRUE
+                """,
+                Long.class
+            );
+
+        assertThat(migrationCount)
+            .isEqualTo(1L);
+    }
+
+    @Test
+    void persistsReplayableRejectionForUnknownAccounts() {
+        UUID actorId = insertIdentityUser();
+        UUID sourceAccountId = UUID.randomUUID();
+        UUID destinationAccountId = UUID.randomUUID();
+
+        PaymentRequestData request =
+            request(
+                sourceAccountId,
+                destinationAccountId
+            );
+
+        Payment payment =
+            Payment.pending(
+                actorId,
+                request,
+                CREATED_AT
+            );
+
+        paymentRepository.saveAndFlush(payment);
+
+        UUID ownerToken = UUID.randomUUID();
+
+        PaymentIdempotencyRecord reservation =
+            PaymentIdempotencyRecord.reserve(
+                actorId,
+                PaymentOperation
+                    .CREATE_INTERNAL_PAYMENT,
+                IdempotencyKey.of(
+                    "unknown-account-rejection"
+                ),
+                PaymentRequestFingerprint.from(
+                    request
+                ),
+                payment.id(),
+                ownerToken,
+                CREATED_AT
+            );
+
+        idempotencyRepository
+            .saveAndFlush(reservation);
+
+        Instant processingAt =
+            CREATED_AT.plusSeconds(30L);
+
+        payment.startProcessing(processingAt);
+
+        Instant rejectedAt =
+            CREATED_AT.plusSeconds(60L);
+
+        payment.reject(
+            PaymentRejectionReason
+                .SOURCE_NOT_FOUND,
+            rejectedAt
+        );
+
+        StoredPaymentResponse response =
+            new StoredPaymentResponse(
+                422,
+                StoredPaymentResponse
+                    .APPLICATION_PROBLEM_JSON,
+                """
+                {"type":"urn:problem:payment:source-not-found","title":"Payment rejected","status":422,"detail":"The source account was not found.","code":"PAYMENT_SOURCE_NOT_FOUND"}
+                """
+                    .trim()
+            );
+
+        reservation.complete(
+            ownerToken,
+            response,
+            rejectedAt
+        );
+
+        paymentRepository.saveAndFlush(payment);
+
+        idempotencyRepository
+            .saveAndFlush(reservation);
+
+        entityManager.clear();
+
+        Payment rejected =
+            paymentRepository
+                .findById(payment.id())
+                .orElseThrow();
+
+        assertThat(rejected.status())
+            .isEqualTo(PaymentStatus.REJECTED);
+
+        assertThat(rejected.request())
+            .isEqualTo(request);
+
+        assertThat(rejected.rejectionReason())
+            .isEqualTo(
+                PaymentRejectionReason
+                    .SOURCE_NOT_FOUND
+            );
+
+        assertThat(rejected.ledgerTransactionId())
+            .isNull();
+
+        PaymentIdempotencyRecord completed =
+            idempotencyRepository
+                .findById(reservation.id())
+                .orElseThrow();
+
+        assertThat(completed.status())
+            .isEqualTo(
+                PaymentIdempotencyStatus.COMPLETED
+            );
+
+        assertThat(completed.storedResponse())
+            .contains(response);
+    }
+
+    @Test
     void persistsReloadsAndRejectsPayment() {
         UUID actorId = insertIdentityUser();
         UUID sourceAccountId =

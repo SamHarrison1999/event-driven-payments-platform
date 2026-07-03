@@ -5,6 +5,7 @@
         "ledger",
         "risk",
         "audit",
+        "identity",
         "shared"
     }
 )

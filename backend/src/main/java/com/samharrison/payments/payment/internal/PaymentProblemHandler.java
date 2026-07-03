@@ -13,11 +13,28 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice(
     assignableTypes = PaymentController.class
 )
 public final class PaymentProblemHandler {
+
+    @ExceptionHandler(
+        PaymentNotFoundException.class
+    )
+    public ResponseEntity<ProblemDetail>
+    handlePaymentNotFound(
+        PaymentNotFoundException exception
+    ) {
+        return problem(
+            HttpStatus.NOT_FOUND,
+            "Payment not found",
+            exception.getMessage(),
+            "urn:problem:payment:not-found",
+            "PAYMENT_NOT_FOUND"
+        );
+    }
 
     @ExceptionHandler(
         PaymentIdempotencyKeyRequiredException.class
@@ -98,6 +115,20 @@ public final class PaymentProblemHandler {
             exception.getMessage(),
             "urn:problem:payment:request-invalid",
             "PAYMENT_REQUEST_INVALID"
+        );
+    }
+
+    @ExceptionHandler(
+        MethodArgumentTypeMismatchException.class
+    )
+    public ResponseEntity<ProblemDetail>
+    handleInvalidIdentifier() {
+        return problem(
+            HttpStatus.BAD_REQUEST,
+            "Invalid payment identifier",
+            "The payment identifier must be a valid UUID.",
+            "urn:problem:payment:identifier-invalid",
+            "PAYMENT_IDENTIFIER_INVALID"
         );
     }
 

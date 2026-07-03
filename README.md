@@ -15,10 +15,14 @@ Current phase:
 Phase 4 is complete and merged. The platform now has an immutable balanced
 ledger foundation with exact GBP minor-unit posting and verification.
 
-Phase 5 is defining the synchronous internal-payment boundary: authenticated
-source ownership, durable idempotency reservation and replay, the explicit
-payment state machine, atomic account-and-ledger posting, and bounded
-whole-transaction concurrency retries.
+Phase 5 now implements the synchronous internal-payment boundary: authenticated
+source ownership, durable idempotency reservation and exact response replay, an
+explicit payment state machine, atomic account-and-ledger posting, bounded
+whole-transaction concurrency retries, and ownership-aware payment lookup.
+
+The complete Phase 5 composite verifier passed locally on 3 July 2026,
+including repository, backend, frontend, documentation and migration checks.
+The remaining phase gate is pull-request CI.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.
@@ -141,9 +145,38 @@ The backend ledger module currently provides:
 - deterministic account-entry history; and
 - verification of account snapshots against ledger debit and credit totals.
 
-The ledger capability is currently exposed as a public Java module API for
-later payment orchestration. Phase 4 does not add a payment-submission HTTP
-endpoint and does not process real money.
+The ledger capability remains exposed as a public Java module API and is now
+used by the Phase 5 payment transaction. This educational application still
+does not process real money.
+
+### Synchronous payments
+
+The payment module currently provides:
+
+- authenticated internal GBP payment submission;
+- source-account ownership derived from the authenticated identity;
+- durable, identity-scoped `Idempotency-Key` reservation;
+- canonical SHA-256 request fingerprints;
+- exact replay of stored terminal HTTP responses for 24 hours;
+- stale processing-lease recovery;
+- explicit `PENDING`, `PROCESSING`, `COMPLETED`, `REJECTED` and `FAILED`
+  payment states;
+- atomic source debit, destination credit, balanced ledger posting and payment
+  completion;
+- deterministic and replayable business rejection responses;
+- bounded whole-transaction concurrency retries;
+- failure finalisation without exposing internal exception details; and
+- ownership-aware payment lookup.
+
+Implemented payment endpoints include:
+
+    POST /api/v1/payments
+    GET  /api/v1/payments/{paymentId}
+
+Submission requires the `CUSTOMER` role and an `Idempotency-Key` header.
+Customers may read only payments they submitted. `OPERATIONS` and `ADMIN` may
+read any payment for investigation, while `RECONCILIATION_ANALYST` has no
+Phase 5 payment-read permission.
 
 ### Frontend
 
@@ -359,6 +392,35 @@ On Linux, macOS or WSL:
 ./scripts/verify-phase-4.sh
 ```
 
+## Phase 5 verification
+
+### Windows PowerShell
+
+From the repository root:
+
+```powershell
+.\scripts\verify-phase-5.ps1
+```
+
+A successful run ends with:
+
+```text
+Phase 5 verification passed.
+```
+
+The Phase 5 verifier checks the payment domain, account-module payment
+boundary, persistence and migration sequence, idempotency reservation and
+replay, synchronous submission and lookup APIs, documentation and the complete
+Phase 4 baseline verification.
+
+### Bash
+
+On Linux, macOS or WSL:
+
+```bash
+./scripts/verify-phase-5.sh
+```
+
 ## Architecture
 
 The application is structured as a modular monolith with a separately built
@@ -441,9 +503,10 @@ The completed platform is intended to allow authorised users to:
 - receive simulated payment notifications.
 
 Identity registration, authentication and access management are implemented.
-Customer profiles, GBP accounts, ownership views, account lifecycle management
-and the immutable double-entry ledger foundation are also implemented.
-Payment submission, settlement, notification and reporting capabilities remain
+Customer profiles, GBP accounts, ownership views, account lifecycle management,
+the immutable double-entry ledger, synchronous payment submission and
+ownership-aware payment lookup are also implemented. Frontend payment flows,
+asynchronous event delivery, settlement, notification and reporting remain
 planned work.
 
 ## Engineering principles

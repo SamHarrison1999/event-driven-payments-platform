@@ -75,11 +75,28 @@ Phase 4 implemented:
 - deterministic transaction and account-history queries; and
 - account snapshot verification against ledger totals.
 
-Payment, reconciliation, notification, reporting and asynchronous event
-capabilities are introduced in later phases.
+### Phase 5 — Synchronous payments
 
-The Kafka-compatible broker, asynchronous consumers and observability stack
-also remain planned components.
+Phase 5 implemented:
+
+- authenticated internal GBP payment submission;
+- source-account ownership through public identity, customer and account module
+  boundaries;
+- durable idempotency reservation, canonical request fingerprints and exact
+  terminal response replay;
+- processing leases and stale-request recovery;
+- explicit payment lifecycle transitions and stable terminal reason codes;
+- atomic account balance mutation, balanced ledger posting and payment
+  completion;
+- deterministic rejection without account or ledger mutation;
+- bounded whole-transaction concurrency retry and durable failure finalisation;
+- customer-owned payment lookup;
+- privileged payment investigation for `OPERATIONS` and `ADMIN`; and
+- HTTP, method-security, PostgreSQL and Spring Modulith verification.
+
+Reconciliation, notification, reporting and asynchronous event capabilities are
+introduced in later phases. The Kafka-compatible broker, asynchronous consumers
+and observability stack also remain planned components.
 ## C4 context diagram
 
 ```mermaid
@@ -151,6 +168,7 @@ flowchart TB
     account --> customer
     account --> identity
     account --> shared
+    payment --> identity
     payment --> account
     payment --> ledger
     payment --> risk
@@ -310,9 +328,9 @@ stateDiagram-v2
 ```
 
 Account closure is terminal and is rejected while the account has a non-zero
-balance. Phase 3 does not provide balance mutation APIs; later ledger and
-payment phases will own financial postings.
-
+balance. Phase 5 adds a public account-module payment mutation boundary that
+validates both accounts before atomically debiting the source and crediting the
+destination inside the payment posting transaction.
 Customer and account changes use optimistic concurrency. Read and successful
 write responses provide a strong ETag derived from the persisted version.
 Lifecycle and customer-name updates require a matching `If-Match` header.
@@ -336,23 +354,38 @@ A ledger posting transaction:
 A persistence or deferred-constraint failure rolls back the header and every
 entry together. Posted headers and entries cannot be updated or deleted.
 
-### Payment posting
+### Payment reservation
 
-The payment transaction will:
+A short reservation transaction creates one `PENDING` payment and one
+`PROCESSING` idempotency record with a canonical request fingerprint, processing
+owner token and five-minute lease. Existing keys either replay an exact terminal
+response, reject a mismatched fingerprint, report active processing or allow
+same-fingerprint lease recovery.
 
-1. reserve or load the idempotency record;
-2. validate the source and destination accounts;
-3. validate the source balance;
-4. progress the payment state;
-5. create the ledger transaction;
-6. create balanced ledger entries;
-7. update account balance snapshots;
-8. create the audit event;
-9. create the outbox event; and
-10. store the idempotent response.
+### Core payment posting
 
-If any required operation fails, the transaction rolls back.
+The processing owner executes one PostgreSQL transaction that:
 
+1. verifies the idempotency reservation and owner token;
+2. moves the payment from `PENDING` to `PROCESSING`;
+3. validates ownership, account state, currency and available balance;
+4. atomically debits the source and credits the destination account snapshot;
+5. posts one balanced immutable ledger transaction;
+6. attaches the ledger transaction to the payment;
+7. moves the payment to `COMPLETED`; and
+8. stores the exact `201 Created` idempotent response.
+
+A deterministic business refusal instead moves the payment to `REJECTED`,
+changes no balance or ledger record and stores a replayable `422 Unprocessable
+Content` response such as `PAYMENT_INSUFFICIENT_FUNDS`.
+
+Unexpected failures roll back the core transaction and are finalised separately
+as a bounded non-sensitive `FAILED` response. Retryable concurrency conflicts
+restart the whole core transaction at most three total times.
+
+Phase 5 does not create outbox or business-audit records. Those later phases
+must extend the existing core transaction boundary rather than write after
+commit.
 ### Role change
 
 A role change transaction:
@@ -394,7 +427,7 @@ A financial correction requires a new compensating ledger transaction.
 
 ## Persistence principles
 
-### Implemented through Phase 4
+### Implemented through Phase 5
 
 - PostgreSQL is the application system of record.
 - Flyway owns forward-only schema migration history.
@@ -409,6 +442,9 @@ A financial correction requires a new compensating ledger transaction.
 - Migration version 8 adds the remaining Phase 3 version invariant.
 - Migration version 9 creates ledger transaction and entry tables.
 - Migration version 10 adds deferred balance and immutability triggers.
+- Migration version 11 creates payment and idempotency tables and constraints.
+- Migration version 12 allows unknown payment account references to be recorded
+  as deterministic business rejections.
 - Identity email uniqueness is protected by a database constraint.
 - Browser sessions are stored in PostgreSQL.
 - Role-change security events are append-only.
@@ -423,17 +459,22 @@ A financial correction requires a new compensating ledger transaction.
   and credit sides, and has equal debit and credit totals.
 - Posted ledger transactions and entries are append-only.
 - Ledger-derived account totals can be recalculated for snapshot verification.
+- Payment and idempotency states, fingerprints, response sizes and ledger links
+  are database constrained.
+- Completed idempotency records retain exact bounded terminal responses for 24
+  hours.
+- Payment orchestration transactionally maintains account balance snapshots,
+  ledger posting, payment state and the terminal idempotent response.
 - Database integration is tested with real PostgreSQL Testcontainers.
 
 ### Planned domain persistence guarantees
 
-- Payment orchestration transactionally maintains account balance snapshots.
-- Outbox records retain diagnostic and retry metadata.
+- Transactional outbox records retain diagnostic and retry metadata.
 - Imported files retain synthetic source identifiers and fingerprints.
 - Financial schema changes use forward-only Flyway migrations.
 ## API principles
 
-### Implemented through Phase 3
+### Implemented through Phase 5
 
 - APIs are versioned under `/api/v1`.
 - `GET /api/v1/system/info` exposes non-sensitive platform metadata.
@@ -456,16 +497,30 @@ A financial correction requires a new compensating ledger transaction.
 - Conditional customer and account updates require `If-Match`.
 - Stale writes return `412 Precondition Failed` without overwriting newer
   state.
+- `POST /api/v1/payments` requires `CUSTOMER` authority and an
+  `Idempotency-Key` header.
+- Payment submission derives the actor from the authenticated session and never
+  accepts a caller-supplied customer or actor identifier.
+- Same-key same-request terminal replays return the exact stored status, media
+  type and response body.
+- Deterministic payment refusals return stable `422 Unprocessable Content`
+  problem codes.
+- Customers may read only payments they submitted through
+  `GET /api/v1/payments/{paymentId}`.
+- Foreign and missing payments are indistinguishable to customer callers.
+- `OPERATIONS` and `ADMIN` may read any payment;
+  `RECONCILIATION_ANALYST` may not.
+- Payment responses use `Cache-Control: no-store`.
 - Actuator exposes health, liveness and readiness.
 - OpenAPI output is available under `/v3/api-docs`.
 
 ### Planned API guarantees
 
-- All errors use a consistent `application/problem+json` structure.
+- Remaining future APIs use the established
+  `application/problem+json` structure.
 - Field errors use stable property paths.
 - Business conflicts use stable machine-readable codes.
-- Pagination is bounded.
-- Payment submission requires an `Idempotency-Key` header.
+- Pagination is bounded where collection endpoints require it.
 ## Initial risk register
 
 | Risk | Consequence | Control |

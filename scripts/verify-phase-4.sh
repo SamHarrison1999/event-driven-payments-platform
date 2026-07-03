@@ -69,7 +69,7 @@ readonly REQUIRED_README_TEXT=(
   "verify-phase-4.ps1"
   'explicit `DEBIT` and `CREDIT`'
   "deferred PostgreSQL balance verification"
-  "snapshot-versus-ledger verification"
+  "verification of account snapshots against ledger debit and credit totals"
   "this application does not process real money"
 )
 
@@ -100,7 +100,7 @@ done
 
 readonly REQUIRED_LEDGER_TEXT=(
   "Phase 4 acceptance evidence"
-  "Double-entry ledger | Current"
+  "Double-entry ledger | Completed"
   "Ledger domain and posting"
   "PostgreSQL integrity and immutability"
   "Queries, verification and architecture"
@@ -131,11 +131,14 @@ readonly expected_migration_versions=(
   1 2 3 4 5 6 7 8 9 10
 )
 
-if [[ "${migration_versions[*]}" != "${expected_migration_versions[*]}" ]]; then
-  fail \
-    "expected Flyway migrations 1 through 10 exactly, found: ${migration_versions[*]}"
-fi
+readonly phase4_migration_versions=(
+  "${migration_versions[@]:0:10}"
+)
 
+if [[ "${phase4_migration_versions[*]}" != "${expected_migration_versions[*]}" ]]; then
+  fail \
+    "expected Flyway migrations 1 through 10 to remain present, found: ${migration_versions[*]}"
+fi
 printf '\n==> Run Phase 3 baseline verification\n'
 
 bash scripts/verify-phase-3.sh

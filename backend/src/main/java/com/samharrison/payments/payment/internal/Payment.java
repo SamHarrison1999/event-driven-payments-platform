@@ -1,21 +1,148 @@
 package com.samharrison.payments.payment.internal;
 
+import com.samharrison.payments.shared.GbpAmount;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
-public final class Payment {
+@Entity
+@Table(
+    name = "payment",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uq_payment_ledger_transaction",
+            columnNames = "ledger_transaction_id"
+        )
+    },
+    indexes = {
+        @Index(
+            name = "idx_payment_actor_created",
+            columnList = "actor_identity_id,created_at,id"
+        ),
+        @Index(
+            name = "idx_payment_source_account",
+            columnList = "source_account_id,created_at,id"
+        ),
+        @Index(
+            name = "idx_payment_destination_account",
+            columnList =
+                "destination_account_id,created_at,id"
+        ),
+        @Index(
+            name = "idx_payment_status_updated",
+            columnList = "status,updated_at,id"
+        )
+    }
+)
+public class Payment {
 
-    private final UUID id;
-    private final UUID actorIdentityId;
-    private final PaymentRequestData request;
-    private final Instant createdAt;
+    @Id
+    @Column(
+        name = "id",
+        nullable = false,
+        updatable = false
+    )
+    private UUID id;
 
+    @Column(
+        name = "actor_identity_id",
+        nullable = false,
+        updatable = false
+    )
+    private UUID actorIdentityId;
+
+    @Column(
+        name = "source_account_id",
+        nullable = false,
+        updatable = false
+    )
+    private UUID sourceAccountId;
+
+    @Column(
+        name = "destination_account_id",
+        nullable = false,
+        updatable = false
+    )
+    private UUID destinationAccountId;
+
+    @Column(
+        name = "amount_minor_units",
+        nullable = false,
+        updatable = false
+    )
+    private long amountMinorUnits;
+
+    @Column(
+        name = "currency",
+        nullable = false,
+        updatable = false,
+        length = 3
+    )
+    private String currency;
+
+    @Enumerated(EnumType.STRING)
+    @Column(
+        name = "status",
+        nullable = false,
+        length = 32
+    )
     private PaymentStatus status;
+
+    @Column(
+        name = "ledger_transaction_id"
+    )
     private UUID ledgerTransactionId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(
+        name = "rejection_reason",
+        length = 64
+    )
     private PaymentRejectionReason rejectionReason;
+
+    @Enumerated(EnumType.STRING)
+    @Column(
+        name = "failure_reason",
+        length = 64
+    )
     private PaymentFailureReason failureReason;
+
+    @Column(
+        name = "created_at",
+        nullable = false,
+        updatable = false
+    )
+    private Instant createdAt;
+
+    @Column(
+        name = "updated_at",
+        nullable = false
+    )
     private Instant updatedAt;
+
+    @Version
+    @Column(
+        name = "version",
+        nullable = false
+    )
+    private long version;
+
+    @Transient
+    private PaymentRequestData requestCache;
+
+    protected Payment() {
+        // Required by JPA.
+    }
 
     private Payment(
         UUID id,
@@ -35,11 +162,25 @@ public final class Payment {
                 "actorIdentityId must not be null"
             );
 
-        this.request =
+        PaymentRequestData requiredRequest =
             Objects.requireNonNull(
                 request,
                 "request must not be null"
             );
+
+        sourceAccountId =
+            requiredRequest.sourceAccountId();
+
+        destinationAccountId =
+            requiredRequest.destinationAccountId();
+
+        amountMinorUnits =
+            requiredRequest
+                .amount()
+                .minorUnits();
+
+        currency = GbpAmount.CURRENCY_CODE;
+        requestCache = requiredRequest;
 
         Instant timestamp =
             Objects.requireNonNull(
@@ -187,7 +328,18 @@ public final class Payment {
     }
 
     public PaymentRequestData request() {
-        return request;
+        if (requestCache == null) {
+            requestCache =
+                new PaymentRequestData(
+                    sourceAccountId,
+                    destinationAccountId,
+                    GbpAmount.ofMinorUnits(
+                        amountMinorUnits
+                    )
+                );
+        }
+
+        return requestCache;
     }
 
     public PaymentStatus status() {
@@ -212,5 +364,9 @@ public final class Payment {
 
     public Instant updatedAt() {
         return updatedAt;
+    }
+
+    public long version() {
+        return version;
     }
 }

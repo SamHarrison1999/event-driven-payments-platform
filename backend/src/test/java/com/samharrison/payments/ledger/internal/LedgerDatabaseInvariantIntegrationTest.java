@@ -62,6 +62,8 @@ class LedgerDatabaseInvariantIntegrationTest {
         jdbcTemplate.execute(
             """
             TRUNCATE TABLE
+                payment_idempotency,
+                payment,
                 ledger_entry,
                 ledger_transaction
             """

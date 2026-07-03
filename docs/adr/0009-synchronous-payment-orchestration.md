@@ -107,6 +107,51 @@ GBP amount in minor units
 
 Transport metadata and client-supplied hashes are excluded.
 
+### Persisted idempotency response and retention
+
+The idempotency record has two states:
+
+```text
+PROCESSING
+COMPLETED
+```
+
+`COMPLETED` is the terminal state of the idempotency record. It is separate
+from the payment lifecycle and means that a replayable HTTP response has been
+stored, whether the payment itself completed, was rejected or failed.
+
+A terminal idempotency record stores:
+
+- the HTTP status code;
+- the response media type;
+- the exact UTF-8 JSON response body; and
+- a retention expiry timestamp.
+
+The allowed stored media types are:
+
+```text
+application/json
+application/problem+json
+```
+
+Stored response bodies are limited to 16,384 UTF-8 bytes. The payment boundary
+constructs deterministic response bodies from typed internal response models
+before storage. Framework-specific `ProblemDetail` objects are not persisted.
+
+Replayable problem responses contain stable `type`, `title`, `status`, `detail`
+and `code` fields. Request-specific `instance`, correlation and tracing
+metadata are not stored.
+
+Terminal responses are retained for 24 hours from completion, evaluated through
+the injected application clock. Cleanup may remove a terminal record only after
+its retention expiry. Until cleanup removes it, the stored response remains
+replayable. Reusing the same scoped key after cleanup creates a new logical
+request.
+
+A `PROCESSING` record contains an owner token and lease expiry but no stored
+response or retention expiry. A `COMPLETED` record contains the stored response
+and retention expiry but no active owner token or lease.
+
 ### Reservation transaction
 
 A new idempotency key is reserved in a short transaction before financial

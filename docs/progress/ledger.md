@@ -323,6 +323,7 @@ Phase 1 verification passed.
 | 2026-06-29 | Resolve the current actor through `CurrentIdentityUser` and use the repository's `CUSTOMER`, `OPERATIONS` and `ADMIN` roles |
 | 2026-06-29 | Retry the complete payment transaction at most three times after concurrency conflicts |
 | 2026-06-29 | Extend the posting transaction with outbox and audit records only in their later phases |
+| 2026-07-03 | Persist exact bounded terminal idempotency responses for 24 hours using explicit `PROCESSING` and `COMPLETED` record states |
 
 ## Next verified action
 

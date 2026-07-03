@@ -37,7 +37,7 @@ Last updated: 2026-07-03
 | 2 — Identity and access | Completed | PR #2 merged; local and GitHub Actions verification passed |
 | 3 — Customers and accounts | Completed | PR #3 merged; local and GitHub Actions verification passed |
 | 4 — Double-entry ledger | Completed | PR #4 merged; local and GitHub Actions verification passed |
-| 5 — Synchronous payments | Current | Implementation and local composite verification complete; pull-request checks pending |
+| 5 — Synchronous payments | Completed | PR #5 ready to merge; local and GitHub Actions verification passed |
 | 6 — Frontend payment experience | Not started | None |
 | 7 — Asynchronous events and outbox | Not started | None |
 | 8 — Notifications and dead letters | Not started | None |
@@ -334,7 +334,7 @@ Phase 1 verification passed.
 | Complete backend regression passes | Completed | 59 suites and 366 tests on 2026-07-03 |
 | PowerShell and Bash Phase 5 verifiers exist | Completed | `scripts/verify-phase-5.ps1` and `.sh` |
 | Composite Phase 5 verifier passes | Completed | PowerShell verifier passed on 2026-07-03 |
-| Required GitHub Actions checks pass | Current | Pending Phase 5 pull request |
+| Required GitHub Actions checks pass | Completed | Repository, Backend and Frontend checks passed on PR #5 |
 ## Decision history
 
 | Date | Decision |
@@ -376,6 +376,6 @@ Phase 1 verification passed.
 
 ## Next verified action
 
-Review and commit the Phase 5 completion evidence, push the branch and open the
-Phase 5 pull request. Record the required GitHub Actions results after they
-complete.
+Commit and push the Phase 5 pull-request verification evidence. Confirm the
+required GitHub Actions checks pass again on the updated pull-request head, then
+merge PR #5 and synchronise `main`.

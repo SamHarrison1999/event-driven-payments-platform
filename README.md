@@ -10,16 +10,15 @@ asynchronous event delivery and settlement reconciliation.
 
 Current phase:
 
-**Phase 4 — Double-entry ledger**
+**Phase 5 — Synchronous payments**
 
-The ledger module now provides exact GBP minor-unit journals, explicit debit
-and credit entries, atomic posting, append-only PostgreSQL records, deferred
-database balance checks, transaction and account-history queries, and
-snapshot-versus-ledger verification.
+Phase 4 is complete and merged. The platform now has an immutable balanced
+ledger foundation with exact GBP minor-unit posting and verification.
 
-The Phase 4 domain, persistence, posting, database-invariant and query gates
-have passed locally. The final documentation, dedicated verifier and pull
-request checks remain in progress.
+Phase 5 is defining the synchronous internal-payment boundary: authenticated
+source ownership, durable idempotency reservation and replay, the explicit
+payment state machine, atomic account-and-ledger posting, and bounded
+whole-transaction concurrency retries.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.

@@ -26,7 +26,7 @@ Last updated: 2026-06-29
 | Docker execution | Completed | `hello-world` container succeeded |
 | jq | Completed | jq 1.8.1 |
 | IntelliJ repository | Completed | Repository and Gradle project configured |
-| Current Git phase branch | Completed | `feat/phase-4-double-entry-ledger` |
+| Current Git phase branch | Completed | `feat/phase-5-synchronous-payments` |
 
 ## Phase progress
 
@@ -36,8 +36,8 @@ Last updated: 2026-06-29
 | 1 — Backend, frontend and CI skeletons | Completed | Local and GitHub Actions verification passed; PR #1 ready to merge |
 | 2 — Identity and access | Completed | PR #2 merged; local and GitHub Actions verification passed |
 | 3 — Customers and accounts | Completed | PR #3 merged; local and GitHub Actions verification passed |
-| 4 — Double-entry ledger | Current | Domain, persistence, database-invariant and query gates passed; final phase gate in progress |
-| 5 — Synchronous payments | Not started | None |
+| 4 — Double-entry ledger | Completed | PR #4 merged; local and GitHub Actions verification passed |
+| 5 — Synchronous payments | Current | Idempotency, lifecycle, module-boundary and transaction design in progress |
 | 6 — Frontend payment experience | Not started | None |
 | 7 — Asynchronous events and outbox | Not started | None |
 | 8 — Notifications and dead letters | Not started | None |
@@ -316,16 +316,20 @@ Phase 1 verification passed.
 | 2026-06-29 | Make posted ledger headers and entries append-only |
 | 2026-06-29 | Use compensating transactions instead of mutating financial history |
 | 2026-06-29 | Keep ledger posting and query APIs independent of account internals |
+| 2026-06-29 | Reserve idempotency and a pending payment before financial posting |
+| 2026-06-29 | Recover stale in-progress requests through a bounded processing lease |
+| 2026-06-29 | Keep account balance mutation behind a public account-module API |
+| 2026-06-29 | Return typed account-payment rejections instead of throwing expected business outcomes |
+| 2026-06-29 | Resolve the current actor through `CurrentIdentityUser` and use the repository's `CUSTOMER`, `OPERATIONS` and `ADMIN` roles |
+| 2026-06-29 | Retry the complete payment transaction at most three times after concurrency conflicts |
+| 2026-06-29 | Extend the posting transaction with outbox and audit records only in their later phases |
 
 ## Next verified action
 
-Add and execute the dedicated Phase 4 PowerShell and Bash verification scripts,
-commit the final Phase 4 evidence and open the double-entry-ledger pull request.
+Implement and test the Phase 5 payment domain foundation from ADR 0009:
 
-After the required repository, backend and frontend checks pass:
-
-1. review the complete Phase 4 diff;
-2. merge the pull request into `main`;
-3. synchronise the local `main` branch;
-4. remove the completed Phase 4 branch; and
-5. create the Phase 5 synchronous-payments branch.
+1. payment identifiers, amounts and immutable request data;
+2. the accepted payment state machine;
+3. deterministic rejection and terminal-state rules;
+4. idempotency-key and canonical-fingerprint value objects; and
+5. exhaustive unit tests before persistence is introduced.

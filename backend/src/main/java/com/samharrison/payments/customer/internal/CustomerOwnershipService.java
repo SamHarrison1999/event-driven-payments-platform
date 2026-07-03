@@ -3,6 +3,7 @@ package com.samharrison.payments.customer.internal;
 import com.samharrison.payments.customer.CustomerOwnership;
 import com.samharrison.payments.customer.CustomerOwnershipNotFoundException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,7 +23,7 @@ class CustomerOwnershipService
 
     @Override
     @Transactional(readOnly = true)
-    public UUID requireCustomerId(
+    public Optional<UUID> findCustomerId(
         UUID identityUserId
     ) {
         UUID requiredIdentityUserId =
@@ -35,7 +36,23 @@ class CustomerOwnershipService
             .findById(requiredIdentityUserId)
             .map(
                 CustomerIdentityAssignment::customerId
-            )
+            );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UUID requireCustomerId(
+        UUID identityUserId
+    ) {
+        UUID requiredIdentityUserId =
+            Objects.requireNonNull(
+                identityUserId,
+                "identityUserId must not be null"
+            );
+
+        return findCustomerId(
+            requiredIdentityUserId
+        )
             .orElseThrow(
                 () ->
                     new CustomerOwnershipNotFoundException(

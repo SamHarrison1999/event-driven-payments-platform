@@ -95,6 +95,41 @@ class CustomerOwnershipManagementServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "OPERATIONS")
+    void assignedIdentityIsFoundWithoutThrowing() {
+        UUID identityUserId =
+            insertIdentityUser();
+
+        UUID customerId =
+            insertCustomer("ACTIVE");
+
+        managementService.assign(
+            identityUserId,
+            customerId
+        );
+
+        assertThat(
+            ownership.findCustomerId(
+                identityUserId
+            )
+        )
+            .contains(customerId);
+    }
+
+    @Test
+    void unassignedIdentityReturnsEmptyLookup() {
+        UUID identityUserId =
+            insertIdentityUser();
+
+        assertThat(
+            ownership.findCustomerId(
+                identityUserId
+            )
+        )
+            .isEmpty();
+    }
+
+    @Test
     @WithMockUser(roles = "ADMIN")
     void administratorAssignsIdentityToCustomer() {
         UUID identityUserId =

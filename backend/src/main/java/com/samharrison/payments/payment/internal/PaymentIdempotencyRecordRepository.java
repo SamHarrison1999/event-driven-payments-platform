@@ -16,4 +16,9 @@ interface PaymentIdempotencyRecordRepository
         PaymentOperation operation,
         String idempotencyKey
     );
+
+    Optional<PaymentIdempotencyRecord>
+    findByPaymentId(
+        UUID paymentId
+    );
 }

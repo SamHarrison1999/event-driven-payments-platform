@@ -8,6 +8,10 @@ import {
   it,
 } from 'vitest'
 
+import {
+  ApiContractError,
+  ApiHttpError,
+} from '../../../shared/api/apiClient'
 import { server } from '../../../test/server'
 import {
   getSystemInfo,
@@ -27,43 +31,74 @@ const validSystemInfo: SystemInfo = {
 }
 
 describe('getSystemInfo', () => {
-  it('returns a valid system-information response', async () => {
-    server.use(
-      http.get(endpoint, () => {
-        return HttpResponse.json(validSystemInfo)
-      }),
-    )
+  it(
+    'returns a valid system-information response',
+    async () => {
+      server.use(
+        http.get(endpoint, () => {
+          return HttpResponse.json(
+            validSystemInfo,
+          )
+        }),
+      )
 
-    await expect(getSystemInfo()).resolves.toEqual(
-      validSystemInfo,
-    )
-  })
+      await expect(
+        getSystemInfo(),
+      ).resolves.toEqual(
+        validSystemInfo,
+      )
+    },
+  )
 
-  it('rejects unsuccessful HTTP responses', async () => {
-    server.use(
-      http.get(endpoint, () => {
-        return new HttpResponse(null, {
-          status: 503,
-        })
-      }),
-    )
+  it(
+    'rejects unsuccessful HTTP responses',
+    async () => {
+      server.use(
+        http.get(endpoint, () => {
+          return new HttpResponse(null, {
+            status: 503,
+          })
+        }),
+      )
 
-    await expect(getSystemInfo()).rejects.toThrow(
-      'System information request failed with status 503.',
-    )
-  })
+      const request = getSystemInfo()
 
-  it('rejects responses that do not match the API contract', async () => {
-    server.use(
-      http.get(endpoint, () => {
-        return HttpResponse.json({
-          name: 'Incomplete response',
-        })
-      }),
-    )
+      await expect(
+        request,
+      ).rejects.toBeInstanceOf(
+        ApiHttpError,
+      )
 
-    await expect(getSystemInfo()).rejects.toThrow(
-      'System information response did not match the expected contract.',
-    )
-  })
+      await expect(
+        request,
+      ).rejects.toMatchObject({
+        status: 503,
+      })
+    },
+  )
+
+  it(
+    'rejects responses that do not match the API contract',
+    async () => {
+      server.use(
+        http.get(endpoint, () => {
+          return HttpResponse.json({
+            name: 'Incomplete response',
+          })
+        }),
+      )
+
+      await expect(
+        getSystemInfo(),
+      ).rejects.toBeInstanceOf(
+        ApiContractError,
+      )
+
+      await expect(
+        getSystemInfo(),
+      ).rejects.toThrow(
+        'System information response did not match the expected contract.',
+      )
+    },
+  )
 })

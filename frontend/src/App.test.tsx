@@ -5,18 +5,23 @@ import {
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {
+  beforeEach,
   describe,
   expect,
   it,
 } from 'vitest'
 
 import App from './App'
+import type { IdentitySession } from './features/identity/api/identitySession'
 import type { SystemInfo } from './features/system/api/getSystemInfo'
 import { renderWithQueryClient } from './test/renderWithQueryClient'
 import { server } from './test/server'
 
-const endpoint =
+const systemEndpoint =
   'http://localhost:5173/api/v1/system/info'
+
+const sessionEndpoint =
+  'http://localhost:5173/api/v1/identity/session'
 
 const systemInfo: SystemInfo = {
   name: 'Event-Driven Payments and Reconciliation Platform',
@@ -27,12 +32,34 @@ const systemInfo: SystemInfo = {
   realMoneyProcessing: false,
 }
 
+const session: IdentitySession = {
+  userId:
+    '2f1f55da-5793-4a75-aeb5-c20f69f16949',
+  email: 'sam.customer@example.com',
+  roles: ['CUSTOMER'],
+}
+
+beforeEach(() => {
+  server.use(
+    http.get(sessionEndpoint, () => {
+      return HttpResponse.json(session)
+    }),
+
+    http.get(
+      'http://localhost:5173/api/v1/accounts',
+      () => {
+        return HttpResponse.json([])
+      },
+    ),
+  )
+})
+
 describe('App', () => {
   it(
-    'renders the platform shell and connected system information',
+    'renders the platform shell, customer workspace and system information',
     async () => {
       server.use(
-        http.get(endpoint, () => {
+        http.get(systemEndpoint, () => {
           return HttpResponse.json(systemInfo)
         }),
       )
@@ -45,6 +72,28 @@ describe('App', () => {
           name: 'Payments operations workspace',
         }),
       ).toBeInTheDocument()
+
+      expect(
+        await screen.findByText(
+          session.email,
+        ),
+      ).toBeInTheDocument()
+
+      expect(
+        screen.getByRole('heading', {
+          level: 3,
+          name: 'Manage simulated payments',
+        }),
+      ).toBeInTheDocument()
+
+      expect(
+        screen.getByRole('link', {
+          name: 'Accounts',
+        }),
+      ).toHaveAttribute(
+        'href',
+        '#customer-accounts',
+      )
 
       expect(
         await screen.findByText(systemInfo.name),
@@ -68,7 +117,7 @@ describe('App', () => {
     'shows an accessible error when the backend is unavailable',
     async () => {
       server.use(
-        http.get(endpoint, () => {
+        http.get(systemEndpoint, () => {
           return new HttpResponse(null, {
             status: 503,
           })
@@ -77,7 +126,9 @@ describe('App', () => {
 
       renderWithQueryClient(<App />)
 
-      const alert = await screen.findByRole('alert')
+      const alert = await screen.findByRole(
+        'alert',
+      )
 
       expect(alert).toHaveTextContent(
         'Backend unavailable',
@@ -92,12 +143,12 @@ describe('App', () => {
   )
 
   it(
-    'allows the user to retry a failed request',
+    'allows the user to retry a failed system request',
     async () => {
       let attempts = 0
 
       server.use(
-        http.get(endpoint, () => {
+        http.get(systemEndpoint, () => {
           attempts += 1
 
           if (attempts === 1) {

@@ -10,19 +10,20 @@ asynchronous event delivery and settlement reconciliation.
 
 Current phase:
 
-**Phase 5 — Synchronous payments**
+**Phase 6 — Frontend payment experience**
 
-Phase 4 is complete and merged. The platform now has an immutable balanced
-ledger foundation with exact GBP minor-unit posting and verification.
+Phase 5 is complete and merged through PR #5. The platform now provides
+authenticated synchronous internal GBP payments with durable idempotency,
+atomic account-and-ledger posting, deterministic rejection and ownership-aware
+payment lookup.
 
-Phase 5 now implements the synchronous internal-payment boundary: authenticated
-source ownership, durable idempotency reservation and exact response replay, an
-explicit payment state machine, atomic account-and-ledger posting, bounded
-whole-transaction concurrency retries, and ownership-aware payment lookup.
+Phase 6 now provides an authenticated customer workspace for session
+management, customer-owned account views, exact GBP payment entry, retry-safe
+idempotent submission, accessible payment outcomes and customer-owned payment
+lookup.
 
-The complete Phase 5 composite verifier passed locally on 3 July 2026,
-including repository, backend, frontend, documentation and migration checks.
-The remaining phase gate is pull-request CI.
+The Phase 6 implementation and composite local verification gate have passed.
+Final documentation review and pull-request checks remain in progress.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.
@@ -183,14 +184,18 @@ Phase 5 payment-read permission.
 The frontend currently provides:
 
 - a React and TypeScript application built with Vite;
-- TanStack Query server-state management;
-- a typed backend client with runtime response validation;
-- loading, connected and unavailable backend states;
-- manual connection retry behaviour;
-- an accessible and responsive platform shell;
-- Vitest component and API-client tests;
-- Mock Service Worker network simulation; and
-- ESLint static analysis.
+- TanStack Query server-state management and customer-scoped cache isolation;
+- a typed authenticated API client with runtime JSON and problem validation;
+- server-side session bootstrap, login, logout and CSRF-protected mutations;
+- customer-owned account and exact GBP balance presentation;
+- direct GBP text-to-minor-unit conversion without floating-point arithmetic;
+- reviewable payment drafts with retry-safe idempotent submission;
+- bounded session-storage recovery for one unresolved payment request;
+- accessible completed, rejected, failed and in-progress payment outcomes;
+- customer-owned payment lookup with privacy-preserving unavailable results;
+- session-expiry recovery that preserves safe retry state;
+- Vitest, Testing Library and Mock Service Worker workflow tests; and
+- ESLint static analysis and Vite production builds.
 
 ### Delivery
 
@@ -419,6 +424,37 @@ On Linux, macOS or WSL:
 
 ```bash
 ./scripts/verify-phase-5.sh
+```
+
+## Phase 6 verification
+
+### Windows PowerShell
+
+From the repository root:
+
+```powershell
+.\scripts\verify-phase-6.ps1
+```
+
+A successful run ends with:
+
+```text
+Phase 6 verification passed.
+```
+
+The Phase 6 verifier checks the authenticated payment workspace, customer
+session and cache isolation, exact GBP handling, idempotent submission,
+accessible payment outcomes, customer-owned payment lookup and documentation.
+It then runs the complete Phase 5 baseline, which performs backend verification
+and executes frontend dependency installation, lint, all frontend tests and the
+production build once.
+
+### Bash
+
+On Linux, macOS or WSL:
+
+```bash
+./scripts/verify-phase-6.sh
 ```
 
 ## Architecture

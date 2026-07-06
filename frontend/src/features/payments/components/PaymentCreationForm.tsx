@@ -11,7 +11,19 @@ import type {
 
 import type { CustomerAccount } from '../../accounts/api/customerAccount'
 import { useOwnedAccounts } from '../../accounts/hooks/useOwnedAccounts'
+import { useCurrentSession } from '../../identity/hooks/useCurrentSession'
+import {
+  ApiProblemError,
+} from '../../../shared/api/apiProblem'
 import { formatGbpMinorUnits } from '../../../shared/money/gbp'
+import {
+  clearPaymentSubmissionEnvelope,
+  discardPaymentSubmissionEnvelopeForDifferentUser,
+} from '../idempotency/paymentSubmissionEnvelope'
+import {
+  isRetryablePaymentSubmissionError,
+} from '../api/submitPaymentIdempotently'
+import { useSubmitPayment } from '../hooks/useSubmitPayment'
 import { PaymentAmountInput } from './PaymentAmountInput'
 import {
   type PaymentDraft,
@@ -41,6 +53,37 @@ function accountOptionLabel(
   )
 }
 
+function submissionProblemDetail(
+  error: unknown,
+): string {
+  if (error instanceof ApiProblemError) {
+    return error.problem.detail
+  }
+
+  return (
+    'The browser could not confirm the result. ' +
+    'Retry safely to reuse the same protected request key.'
+  )
+}
+
+function submissionProblemTitle(
+  error: unknown,
+): string {
+  if (
+    error instanceof ApiProblemError &&
+    error.problem.code ===
+      'IDEMPOTENCY_REQUEST_IN_PROGRESS'
+  ) {
+    return 'Payment is still processing'
+  }
+
+  if (error instanceof ApiProblemError) {
+    return error.problem.title
+  }
+
+  return 'Payment result not confirmed'
+}
+
 function PaymentReview({
   draft,
   accounts,
@@ -48,8 +91,9 @@ function PaymentReview({
 }: {
   draft: PaymentDraft
   accounts: CustomerAccount[]
-  onEdit: () => void
+  onEdit: (resetFields: boolean) => void
 }) {
+  const submission = useSubmitPayment()
   const sourceAccount = accounts.find(
     (account) =>
       account.id === draft.sourceAccountId,
@@ -66,6 +110,12 @@ function PaymentReview({
   ) {
     return null
   }
+
+  const retryableError =
+    submission.isError &&
+    isRetryablePaymentSubmissionError(
+      submission.error,
+    )
 
   return (
     <div className="payment-review">
@@ -113,34 +163,117 @@ function PaymentReview({
         </div>
       </dl>
 
-      <div
-        aria-live="polite"
-        className="payment-review__notice"
-        role="status"
-      >
-        <strong>
-          The payment has not been submitted
-        </strong>
+      {!submission.isSuccess && (
+        <div
+          aria-live="polite"
+          className="payment-review__notice"
+          role="status"
+        >
+          <strong>
+            The payment has not been submitted
+          </strong>
 
-        <p>
-          This review step has not moved or
-          reserved any funds.
-        </p>
+          <p>
+            This review step has not moved or
+            reserved any funds.
+          </p>
+        </div>
+      )}
+
+      {submission.isError && (
+        <div
+          className="status-message status-message--error"
+          role="alert"
+        >
+          <div>
+            <strong>
+              {submissionProblemTitle(
+                submission.error,
+              )}
+            </strong>
+
+            <p>
+              {submissionProblemDetail(
+                submission.error,
+              )}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {submission.isSuccess && (
+        <div
+          aria-live="polite"
+          className="payment-submission-success"
+          role="status"
+        >
+          <strong>Payment completed</strong>
+
+          <p>
+            The backend completed the payment
+            and returned payment identifier{' '}
+            <code>
+              {submission.data.paymentId}
+            </code>
+            .
+          </p>
+        </div>
+      )}
+
+      <div className="payment-review__actions">
+        {!submission.isSuccess &&
+          (
+            !submission.isError ||
+            retryableError
+          ) && (
+          <button
+            className="primary-button"
+            disabled={
+              submission.isPending ||
+              !submission.canSubmit
+            }
+            onClick={() => {
+              submission.mutate(draft)
+            }}
+            type="button"
+          >
+            {submission.isPending
+              ? 'Submitting payment…'
+              : retryableError
+                ? 'Retry payment'
+                : 'Submit payment'}
+          </button>
+        )}
+
+        <button
+          className="secondary-button"
+          disabled={submission.isPending}
+          onClick={() => {
+            submission.reset()
+            clearPaymentSubmissionEnvelope()
+            onEdit(submission.isSuccess)
+          }}
+          type="button"
+        >
+          {submission.isSuccess
+            ? 'Create another payment'
+            : 'Edit payment details'}
+        </button>
       </div>
 
-      <button
-        className="secondary-button"
-        onClick={onEdit}
-        type="button"
-      >
-        Edit payment details
-      </button>
+      {retryableError && (
+        <p className="payment-review__retry-note">
+          Retrying reuses the same idempotency
+          key for this exact draft.
+        </p>
+      )}
     </div>
   )
 }
 
 export function PaymentCreationForm() {
   const accountsQuery = useOwnedAccounts()
+  const currentSession = useCurrentSession()
   const idPrefix = useId()
   const errorSummaryRef =
     useRef<HTMLDivElement>(null)
@@ -156,6 +289,17 @@ export function PaymentCreationForm() {
   ] = useState(0)
   const [reviewDraft, setReviewDraft] =
     useState<PaymentDraft | null>(null)
+
+  const identityUserId =
+    currentSession.data?.userId
+
+  useEffect(() => {
+    if (identityUserId !== undefined) {
+      discardPaymentSubmissionEnvelopeForDifferentUser(
+        identityUserId,
+      )
+    }
+  }, [identityUserId])
 
   const accounts =
     accountsQuery.data ?? []
@@ -335,7 +479,11 @@ export function PaymentCreationForm() {
           <PaymentReview
             accounts={accounts}
             draft={reviewDraft}
-            onEdit={() => {
+            onEdit={(resetFields) => {
+              if (resetFields) {
+                setFields(initialFields)
+              }
+
               setReviewDraft(null)
             }}
           />

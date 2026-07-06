@@ -18,6 +18,8 @@ import { CustomerWorkspace } from './CustomerWorkspace'
 
 const accountsEndpoint =
   'http://localhost:5173/api/v1/accounts'
+const sessionEndpoint =
+  'http://localhost:5173/api/v1/identity/session'
 
 const firstAccount: CustomerAccount = {
   id:
@@ -46,6 +48,15 @@ beforeEach(() => {
         firstAccount,
         secondAccount,
       ])
+    }),
+
+    http.get(sessionEndpoint, () => {
+      return HttpResponse.json({
+        userId:
+          'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        email: 'customer@example.com',
+        roles: ['CUSTOMER'],
+      })
     }),
   )
 })

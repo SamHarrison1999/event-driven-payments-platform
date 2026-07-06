@@ -25,6 +25,7 @@ export interface ApiRequestOptions {
 export interface ApiJsonRequestOptions<T>
   extends ApiRequestOptions {
   contractName: string
+  expectedStatus?: number
   validate: JsonValidator<T>
 }
 
@@ -273,6 +274,15 @@ export async function apiRequestJson<T>(
     return throwResponseError(
       response,
       options.contractName,
+    )
+  }
+
+  if (
+    options.expectedStatus !== undefined &&
+    response.status !== options.expectedStatus
+  ) {
+    throw new ApiContractError(
+      `${options.contractName} response used unexpected HTTP status ${response.status}.`,
     )
   }
 

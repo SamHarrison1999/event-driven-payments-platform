@@ -15,6 +15,7 @@ import {
 } from 'vitest'
 
 import { clearCsrfToken } from '../../../shared/api/csrfToken'
+import { customerSessionStorageKeys } from '../../../shared/storage/customerSessionStorage'
 import { renderWithQueryClient } from '../../../test/renderWithQueryClient'
 import { server } from '../../../test/server'
 import type { IdentitySession } from '../api/identitySession'
@@ -67,6 +68,7 @@ function csrfResponse(
 
 beforeEach(() => {
   clearCsrfToken()
+  window.sessionStorage.clear()
 })
 
 describe('SessionBoundary', () => {
@@ -114,6 +116,12 @@ describe('SessionBoundary', () => {
         }),
       )
 
+      window.sessionStorage.setItem(
+        customerSessionStorageKeys
+          .paymentSubmission,
+        'unresolved-payment',
+      )
+
       renderWithQueryClient(
         <SessionBoundary />,
       )
@@ -124,6 +132,13 @@ describe('SessionBoundary', () => {
           name: 'Sign in',
         }),
       ).toBeInTheDocument()
+
+      expect(
+        window.sessionStorage.getItem(
+          customerSessionStorageKeys
+            .paymentSubmission,
+        ),
+      ).toBe('unresolved-payment')
 
       expect(
         screen.getByLabelText(
@@ -304,6 +319,12 @@ describe('SessionBoundary', () => {
 
       const user = userEvent.setup()
 
+      window.sessionStorage.setItem(
+        customerSessionStorageKeys
+          .paymentSubmission,
+        'unresolved-payment',
+      )
+
       renderWithQueryClient(
         <SessionBoundary />,
       )
@@ -327,6 +348,13 @@ describe('SessionBoundary', () => {
       expect(receivedToken).toBe(
         'logout-token',
       )
+
+      expect(
+        window.sessionStorage.getItem(
+          customerSessionStorageKeys
+            .paymentSubmission,
+        ),
+      ).toBeNull()
     },
   )
 
@@ -350,6 +378,12 @@ describe('SessionBoundary', () => {
       )
 
       const user = userEvent.setup()
+
+      window.sessionStorage.setItem(
+        customerSessionStorageKeys
+          .paymentSubmission,
+        'unresolved-payment',
+      )
 
       renderWithQueryClient(
         <SessionBoundary />,

@@ -1276,3 +1276,47 @@ main {
     text-align: left;
   }
 }
+
+.payment-review__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.payment-review__actions .primary-button:disabled,
+.payment-review__actions .secondary-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.payment-review__retry-note {
+  margin: 0;
+  color: #52677f;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.payment-submission-success {
+  padding: 1rem;
+  border: 1px solid #9fc7b2;
+  border-radius: 0.75rem;
+  color: #166534;
+  background: #f0fdf4;
+}
+
+.payment-submission-success strong {
+  display: block;
+}
+
+.payment-submission-success p {
+  margin: 0.35rem 0 0;
+  color: #276749;
+  line-height: 1.55;
+}
+
+.payment-submission-success code {
+  overflow-wrap: anywhere;
+  color: #14532d;
+  font-size: 0.8em;
+}

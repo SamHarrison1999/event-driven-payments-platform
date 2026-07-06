@@ -29,6 +29,7 @@ describe('PaymentReceipt', () => {
     () => {
       render(
         <PaymentReceipt
+          focusOnMount
           payment={{
             ...basePayment,
             status: 'COMPLETED',
@@ -43,12 +44,14 @@ describe('PaymentReceipt', () => {
         />,
       )
 
-      expect(
+      const heading =
         screen.getByRole('heading', {
           level: 5,
           name: 'Payment completed',
-        }),
-      ).toBeInTheDocument()
+        })
+
+      expect(heading).toBeInTheDocument()
+      expect(heading).toHaveFocus()
 
       expect(
         screen.getByText('£10.50'),
@@ -77,6 +80,7 @@ describe('PaymentReceipt', () => {
     () => {
       render(
         <PaymentReceipt
+          focusOnMount
           payment={{
             ...basePayment,
             status: 'REJECTED',
@@ -96,6 +100,35 @@ describe('PaymentReceipt', () => {
       expect(
         screen.getByText(
           'Source account has insufficient funds',
+        ),
+      ).toBeInTheDocument()
+    },
+  )
+
+  it(
+    'explains a bounded failed payment outcome',
+    () => {
+      render(
+        <PaymentReceipt
+          payment={{
+            ...basePayment,
+            status: 'FAILED',
+            failureReason:
+              'PAYMENT_PROCESSING_FAILED',
+          }}
+        />,
+      )
+
+      expect(
+        screen.getByRole('heading', {
+          level: 5,
+          name: 'Payment failed',
+        }),
+      ).toBeInTheDocument()
+
+      expect(
+        screen.getByText(
+          'Payment processing failed',
         ),
       ).toBeInTheDocument()
     },

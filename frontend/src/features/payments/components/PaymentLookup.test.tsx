@@ -2,14 +2,22 @@ import {
   HttpResponse,
   http,
 } from 'msw'
-import { screen } from '@testing-library/react'
+import {
+  screen,
+  waitFor,
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {
+  beforeEach,
   describe,
   expect,
   it,
 } from 'vitest'
 
+import { SessionBoundary } from '../../identity/components/SessionBoundary'
+import {
+  customerSessionStorageKeys,
+} from '../../../shared/storage/customerSessionStorage'
 import { renderWithQueryClient } from '../../../test/renderWithQueryClient'
 import { server } from '../../../test/server'
 import { PaymentLookup } from './PaymentLookup'
@@ -19,6 +27,9 @@ const paymentId =
 
 const endpoint =
   `http://localhost:5173/api/v1/payments/${paymentId}`
+
+const sessionEndpoint =
+  'http://localhost:5173/api/v1/identity/session'
 
 const processingPayment = {
   paymentId,
@@ -33,6 +44,10 @@ const processingPayment = {
   updatedAt: '2026-07-01T10:16:00Z',
   version: 1,
 }
+
+beforeEach(() => {
+  window.sessionStorage.clear()
+})
 
 describe('PaymentLookup', () => {
   it(
@@ -82,6 +97,75 @@ describe('PaymentLookup', () => {
   )
 
   it(
+    'marks the lookup region busy while one request is pending',
+    async () => {
+      let requests = 0
+      let releaseResponse:
+        (() => void) | undefined
+
+      const responseGate =
+        new Promise<void>((resolve) => {
+          releaseResponse = resolve
+        })
+
+      server.use(
+        http.get(endpoint, async () => {
+          requests += 1
+          await responseGate
+
+          return HttpResponse.json(
+            processingPayment,
+          )
+        }),
+      )
+
+      const user = userEvent.setup()
+
+      renderWithQueryClient(
+        <PaymentLookup />,
+      )
+
+      const input =
+        screen.getByRole('textbox', {
+          name: 'Payment identifier',
+        })
+
+      await user.type(input, paymentId)
+
+      const findButton =
+        screen.getByRole('button', {
+          name: 'Find payment',
+        })
+
+      await user.click(findButton)
+
+      await waitFor(() => {
+        expect(requests).toBe(1)
+      })
+
+      expect(findButton).toBeDisabled()
+
+      expect(
+        input.closest('section'),
+      ).toHaveAttribute(
+        'aria-busy',
+        'true',
+      )
+
+      releaseResponse?.()
+
+      expect(
+        await screen.findByRole(
+          'heading',
+          {
+            level: 5,
+            name: 'Payment processing',
+          },
+        ),
+      ).toBeInTheDocument()
+    },
+  )
+  it(
     'retrieves and displays an in-progress payment',
     async () => {
       server.use(
@@ -111,15 +195,17 @@ describe('PaymentLookup', () => {
         }),
       )
 
-      expect(
+      const heading =
         await screen.findByRole(
           'heading',
           {
             level: 5,
             name: 'Payment processing',
           },
-        ),
-      ).toBeInTheDocument()
+        )
+
+      expect(heading).toBeInTheDocument()
+      expect(heading).toHaveFocus()
 
       expect(
         screen.getByText('£25.40'),
@@ -176,14 +262,99 @@ describe('PaymentLookup', () => {
         }),
       )
 
-      expect(
-        await screen.findByRole('alert'),
-      ).toHaveTextContent(
+      const alert =
+        await screen.findByRole('alert')
+
+      expect(alert).toHaveTextContent(
         'No customer-owned payment is available for this identifier.',
       )
+
+      expect(alert).toHaveFocus()
     },
   )
 
+  it(
+    'returns to sign in when the lookup session expires without clearing retry state',
+    async () => {
+      server.use(
+        http.get(sessionEndpoint, () => {
+          return HttpResponse.json({
+            userId:
+              'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            email: 'customer@example.com',
+            roles: ['CUSTOMER'],
+          })
+        }),
+
+        http.get(endpoint, () => {
+          return HttpResponse.json(
+            {
+              type:
+                'urn:problem:security:authentication-required',
+              title:
+                'Authentication required',
+              status: 401,
+              detail:
+                'Authentication is required to retrieve a payment.',
+              code:
+                'SECURITY_AUTHENTICATION_REQUIRED',
+            },
+            {
+              status: 401,
+              headers: {
+                'Content-Type':
+                  'application/problem+json',
+              },
+            },
+          )
+        }),
+      )
+
+      window.sessionStorage.setItem(
+        customerSessionStorageKeys
+          .paymentSubmission,
+        'unresolved-payment',
+      )
+
+      const user = userEvent.setup()
+
+      renderWithQueryClient(
+        <SessionBoundary>
+          <PaymentLookup />
+        </SessionBoundary>,
+      )
+
+      await user.type(
+        await screen.findByRole(
+          'textbox',
+          {
+            name: 'Payment identifier',
+          },
+        ),
+        paymentId,
+      )
+
+      await user.click(
+        screen.getByRole('button', {
+          name: 'Find payment',
+        }),
+      )
+
+      expect(
+        await screen.findByRole('heading', {
+          level: 3,
+          name: 'Sign in',
+        }),
+      ).toBeInTheDocument()
+
+      expect(
+        window.sessionStorage.getItem(
+          customerSessionStorageKeys
+            .paymentSubmission,
+        ),
+      ).toBe('unresolved-payment')
+    },
+  )
   it(
     'shows a recoverable message for a network failure',
     async () => {

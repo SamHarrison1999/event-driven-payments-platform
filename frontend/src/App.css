@@ -1307,6 +1307,17 @@ main {
   justify-self: start;
 }
 
+.payment-lookup-form .primary-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.status-message:focus,
+.payment-receipt__header h5:focus {
+  outline: 3px solid rgba(51, 102, 163, 0.24);
+  outline-offset: 3px;
+}
+
 .payment-receipt {
   display: grid;
   gap: 1rem;

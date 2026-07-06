@@ -1,4 +1,8 @@
-import { useId } from 'react'
+import {
+  useEffect,
+  useId,
+  useRef,
+} from 'react'
 
 import { formatGbpMinorUnits } from '../../../shared/money/gbp'
 import type {
@@ -102,12 +106,25 @@ function formatInstant(
 
 export function PaymentReceipt({
   payment,
+  focusOnMount = false,
 }: {
   payment: PaymentReceiptData
+  focusOnMount?: boolean
 }) {
   const titleId = useId()
+  const titleRef =
+    useRef<HTMLHeadingElement>(null)
   const details =
     statusDetails[payment.status]
+
+  useEffect(() => {
+    if (focusOnMount) {
+      titleRef.current?.focus()
+    }
+  }, [
+    focusOnMount,
+    payment.paymentId,
+  ])
 
   return (
     <article
@@ -124,7 +141,13 @@ export function PaymentReceipt({
             Receipt
           </p>
 
-          <h5 id={titleId}>
+          <h5
+            id={titleId}
+            ref={titleRef}
+            tabIndex={
+              focusOnMount ? -1 : undefined
+            }
+          >
             {details.title}
           </h5>
         </div>

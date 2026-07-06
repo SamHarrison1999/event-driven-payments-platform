@@ -79,6 +79,8 @@ export function PaymentLookup() {
   const idPrefix = useId()
   const inputRef =
     useRef<HTMLInputElement>(null)
+  const errorRef =
+    useRef<HTMLDivElement>(null)
   const [
     paymentId,
     setPaymentId,
@@ -110,6 +112,12 @@ export function PaymentLookup() {
     }
   }, [focusRequest])
 
+  useEffect(() => {
+    if (lookup.isError) {
+      errorRef.current?.focus()
+    }
+  }, [lookup.isError])
+
   const handleChange = (
     event: ChangeEvent<HTMLInputElement>,
   ) => {
@@ -138,6 +146,7 @@ export function PaymentLookup() {
 
   return (
     <section
+      aria-busy={lookup.isPending}
       aria-labelledby="payment-lookup-title"
       className="workspace-card"
       id="payment-lookup"
@@ -223,7 +232,9 @@ export function PaymentLookup() {
       {lookup.isError && (
         <div
           className="status-message status-message--error"
+          ref={errorRef}
           role="alert"
+          tabIndex={-1}
         >
           <div>
             <strong>
@@ -243,6 +254,7 @@ export function PaymentLookup() {
 
       {lookup.isSuccess && (
         <PaymentReceipt
+          focusOnMount
           payment={lookup.data}
         />
       )}

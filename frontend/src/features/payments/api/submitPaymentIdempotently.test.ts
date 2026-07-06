@@ -224,6 +224,54 @@ describe(
       },
     )
     it(
+      'retains the key when authentication expires',
+      async () => {
+        useCsrfHandler()
+
+        server.use(
+          http.post(paymentEndpoint, () => {
+            return HttpResponse.json(
+              {
+                type:
+                  'urn:problem:security:authentication-required',
+                title:
+                  'Authentication required',
+                status: 401,
+                detail:
+                  'Authentication is required to submit a payment.',
+                code:
+                  'SECURITY_AUTHENTICATION_REQUIRED',
+              },
+              {
+                status: 401,
+                headers: {
+                  'Content-Type':
+                    'application/problem+json',
+                },
+              },
+            )
+          }),
+        )
+
+        await expect(
+          submitPaymentIdempotently(
+            userId,
+            draft,
+          ),
+        ).rejects.toBeInstanceOf(
+          ApiProblemError,
+        )
+
+        expect(
+          window.sessionStorage.getItem(
+            customerSessionStorageKeys
+              .paymentSubmission,
+          ),
+        ).not.toBeNull()
+      },
+    )
+
+    it(
       'clears the key after a terminal problem response',
       async () => {
         useCsrfHandler()

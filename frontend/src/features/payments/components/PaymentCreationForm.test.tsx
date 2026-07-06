@@ -15,7 +15,9 @@ import {
 } from 'vitest'
 
 import type { CustomerAccount } from '../../accounts/api/customerAccount'
+import { SessionBoundary } from '../../identity/components/SessionBoundary'
 import { clearCsrfToken } from '../../../shared/api/csrfToken'
+import { customerSessionStorageKeys } from '../../../shared/storage/customerSessionStorage'
 import { renderWithQueryClient } from '../../../test/renderWithQueryClient'
 import { server } from '../../../test/server'
 import { PaymentCreationForm } from './PaymentCreationForm'
@@ -436,15 +438,22 @@ describe('PaymentCreationForm', () => {
         }),
       )
 
-      expect(
+      const completedHeading =
         await screen.findByRole(
           'heading',
           {
             level: 5,
             name: 'Payment completed',
           },
-        ),
+        )
+
+      expect(
+        completedHeading,
       ).toBeInTheDocument()
+
+      expect(
+        completedHeading,
+      ).toHaveFocus()
 
       expect(
         screen.getByText(
@@ -476,6 +485,107 @@ describe('PaymentCreationForm', () => {
     },
   )
 
+  it(
+    'prevents a second submission while the first request is pending',
+    async () => {
+      useAccounts([
+        sourceAccount,
+        destinationAccount,
+      ])
+
+      let requests = 0
+      let releaseResponse:
+        (() => void) | undefined
+
+      const responseGate =
+        new Promise<void>((resolve) => {
+          releaseResponse = resolve
+        })
+
+      server.use(
+        http.get(csrfEndpoint, () => {
+          return HttpResponse.json({
+            headerName: 'X-CSRF-TOKEN',
+            parameterName: '_csrf',
+            token: 'payment-csrf-token',
+          })
+        }),
+
+        http.post(
+          paymentEndpoint,
+          async () => {
+            requests += 1
+            await responseGate
+
+            return HttpResponse.json(
+              {
+                paymentId:
+                  '33333333-3333-4333-8333-333333333333',
+                status: 'COMPLETED',
+                ledgerTransactionId:
+                  '44444444-4444-4444-8444-444444444444',
+              },
+              {
+                status: 201,
+              },
+            )
+          },
+        ),
+      )
+
+      const user = userEvent.setup()
+
+      renderWithQueryClient(
+        <PaymentCreationForm />,
+      )
+
+      await prepareReview(user)
+
+      const submitButton =
+        screen.getByRole('button', {
+          name: 'Submit payment',
+        })
+
+      await user.click(submitButton)
+
+      await waitFor(() => {
+        expect(requests).toBe(1)
+      })
+
+      expect(submitButton).toBeDisabled()
+
+      expect(
+        submitButton.closest(
+          '.payment-review',
+        ),
+      ).toHaveAttribute(
+        'aria-busy',
+        'true',
+      )
+
+      expect(
+        screen.getByText(
+          'Submitting payment',
+        ),
+      ).toBeInTheDocument()
+
+      await user.click(submitButton)
+
+      expect(requests).toBe(1)
+
+      releaseResponse?.()
+
+      expect(
+        await screen.findByRole(
+          'heading',
+          {
+            level: 5,
+            name: 'Payment completed',
+          },
+        ),
+      ).toBeInTheDocument()
+    },
+  )
   it(
     'reuses the same key when an uncertain result is retried',
     async () => {
@@ -566,6 +676,118 @@ describe('PaymentCreationForm', () => {
   )
 
   it(
+    'reuses unresolved retry state after the form is remounted',
+    async () => {
+      useAccounts([
+        sourceAccount,
+        destinationAccount,
+      ])
+
+      const receivedKeys: string[] = []
+      let attempts = 0
+
+      server.use(
+        http.get(csrfEndpoint, () => {
+          return HttpResponse.json({
+            headerName: 'X-CSRF-TOKEN',
+            parameterName: '_csrf',
+            token: 'payment-csrf-token',
+          })
+        }),
+
+        http.post(
+          paymentEndpoint,
+          ({ request }) => {
+            receivedKeys.push(
+              request.headers.get(
+                'Idempotency-Key',
+              ) ?? '',
+            )
+            attempts += 1
+
+            if (attempts === 1) {
+              return HttpResponse.error()
+            }
+
+            return HttpResponse.json(
+              {
+                paymentId:
+                  '33333333-3333-4333-8333-333333333333',
+                status: 'COMPLETED',
+                ledgerTransactionId:
+                  '44444444-4444-4444-8444-444444444444',
+              },
+              {
+                status: 201,
+              },
+            )
+          },
+        ),
+      )
+
+      const user = userEvent.setup()
+      const firstRender =
+        renderWithQueryClient(
+          <PaymentCreationForm />,
+        )
+
+      await prepareReview(user)
+
+      await user.click(
+        screen.getByRole('button', {
+          name: 'Submit payment',
+        }),
+      )
+
+      await screen.findByText(
+        'Payment result not confirmed',
+      )
+
+      expect(
+        window.sessionStorage.getItem(
+          customerSessionStorageKeys
+            .paymentSubmission,
+        ),
+      ).not.toBeNull()
+
+      firstRender.unmount()
+
+      renderWithQueryClient(
+        <PaymentCreationForm />,
+      )
+
+      await prepareReview(user)
+
+      await user.click(
+        screen.getByRole('button', {
+          name: 'Submit payment',
+        }),
+      )
+
+      expect(
+        await screen.findByRole(
+          'heading',
+          {
+            level: 5,
+            name: 'Payment completed',
+          },
+        ),
+      ).toBeInTheDocument()
+
+      expect(receivedKeys).toHaveLength(2)
+      expect(receivedKeys[0]).toBe(
+        receivedKeys[1],
+      )
+
+      expect(
+        window.sessionStorage.getItem(
+          customerSessionStorageKeys
+            .paymentSubmission,
+        ),
+      ).toBeNull()
+    },
+  )
+  it(
     'shows terminal backend rejection without offering an unsafe retry',
     async () => {
       useAccounts([
@@ -619,11 +841,14 @@ describe('PaymentCreationForm', () => {
         }),
       )
 
-      expect(
-        await screen.findByText(
-          'Payment rejected',
-        ),
-      ).toBeInTheDocument()
+      const rejectionAlert =
+        await screen.findByRole('alert')
+
+      expect(rejectionAlert).toHaveTextContent(
+        'Payment rejected',
+      )
+
+      expect(rejectionAlert).toHaveFocus()
 
       expect(
         screen.getByText(
@@ -639,6 +864,78 @@ describe('PaymentCreationForm', () => {
     },
   )
 
+  it(
+    'returns to sign in when the payment session expires without losing retry state',
+    async () => {
+      useAccounts([
+        sourceAccount,
+        destinationAccount,
+      ])
+
+      server.use(
+        http.get(csrfEndpoint, () => {
+          return HttpResponse.json({
+            headerName: 'X-CSRF-TOKEN',
+            parameterName: '_csrf',
+            token: 'payment-csrf-token',
+          })
+        }),
+
+        http.post(paymentEndpoint, () => {
+          return HttpResponse.json(
+            {
+              type:
+                'urn:problem:security:authentication-required',
+              title:
+                'Authentication required',
+              status: 401,
+              detail:
+                'Authentication is required to submit a payment.',
+              code:
+                'SECURITY_AUTHENTICATION_REQUIRED',
+            },
+            {
+              status: 401,
+              headers: {
+                'Content-Type':
+                  'application/problem+json',
+              },
+            },
+          )
+        }),
+      )
+
+      const user = userEvent.setup()
+
+      renderWithQueryClient(
+        <SessionBoundary>
+          <PaymentCreationForm />
+        </SessionBoundary>,
+      )
+
+      await prepareReview(user)
+
+      await user.click(
+        screen.getByRole('button', {
+          name: 'Submit payment',
+        }),
+      )
+
+      expect(
+        await screen.findByRole('heading', {
+          level: 3,
+          name: 'Sign in',
+        }),
+      ).toBeInTheDocument()
+
+      expect(
+        window.sessionStorage.getItem(
+          customerSessionStorageKeys
+            .paymentSubmission,
+        ),
+      ).not.toBeNull()
+    },
+  )
   it(
     'invalidates account data after completion',
     async () => {

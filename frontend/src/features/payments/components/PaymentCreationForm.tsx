@@ -96,6 +96,15 @@ function PaymentReview({
   onEdit: (resetFields: boolean) => void
 }) {
   const submission = useSubmitPayment()
+  const errorRef =
+    useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (submission.isError) {
+      errorRef.current?.focus()
+    }
+  }, [submission.isError])
+
   const sourceAccount = accounts.find(
     (account) =>
       account.id === draft.sourceAccountId,
@@ -141,7 +150,10 @@ function PaymentReview({
       : null
 
   return (
-    <div className="payment-review">
+    <div
+      aria-busy={submission.isPending}
+      className="payment-review"
+    >
       <div>
         <p className="workspace-card__label">
           Confirmation
@@ -193,12 +205,19 @@ function PaymentReview({
           role="status"
         >
           <strong>
-            The payment has not been submitted
+            {submission.isPending
+              ? 'Submitting payment'
+              : submission.isError
+                ? 'Payment result needs attention'
+                : 'The payment has not been submitted'}
           </strong>
 
           <p>
-            This review step has not moved or
-            reserved any funds.
+            {submission.isPending
+              ? 'The protected request is being sent. Duplicate submission is disabled.'
+              : submission.isError
+                ? 'Review the message below before retrying or editing this draft.'
+                : 'This review step has not moved or reserved any funds.'}
           </p>
         </div>
       )}
@@ -206,7 +225,9 @@ function PaymentReview({
       {submission.isError && (
         <div
           className="status-message status-message--error"
+          ref={errorRef}
           role="alert"
+          tabIndex={-1}
         >
           <div>
             <strong>
@@ -226,6 +247,7 @@ function PaymentReview({
 
       {completedReceipt !== null && (
         <PaymentReceipt
+          focusOnMount
           payment={completedReceipt}
         />
       )}

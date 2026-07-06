@@ -3,7 +3,9 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 
+import { isApiErrorWithStatus } from '../../../shared/api/apiError'
 import { accountQueryKeys } from '../../accounts/hooks/accountQueryKeys'
+import { expireCurrentSession } from '../../identity/hooks/expireCurrentSession'
 import { useCurrentSession } from '../../identity/hooks/useCurrentSession'
 import { submitPaymentIdempotently } from '../api/submitPaymentIdempotently'
 import type { PaymentDraft } from '../model/paymentDraft'
@@ -27,6 +29,11 @@ export function useSubmitPayment() {
         identityUserId,
         draft,
       )
+    },
+    onError: (error) => {
+      if (isApiErrorWithStatus(error, 401)) {
+        expireCurrentSession(queryClient)
+      }
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({

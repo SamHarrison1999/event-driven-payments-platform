@@ -1,20 +1,37 @@
 import {
-  render,
-  screen,
-} from '@testing-library/react'
+  HttpResponse,
+  http,
+} from 'msw'
+import { screen } from '@testing-library/react'
 import {
+  beforeEach,
   describe,
   expect,
   it,
 } from 'vitest'
 
+import { renderWithQueryClient } from '../../../test/renderWithQueryClient'
+import { server } from '../../../test/server'
 import { CustomerWorkspace } from './CustomerWorkspace'
+
+const accountsEndpoint =
+  'http://localhost:5173/api/v1/accounts'
+
+beforeEach(() => {
+  server.use(
+    http.get(accountsEndpoint, () => {
+      return HttpResponse.json([])
+    }),
+  )
+})
 
 describe('CustomerWorkspace', () => {
   it(
     'renders the authenticated workspace structure',
-    () => {
-      render(<CustomerWorkspace />)
+    async () => {
+      renderWithQueryClient(
+        <CustomerWorkspace />,
+      )
 
       expect(
         screen.getByRole('heading', {
@@ -43,13 +60,21 @@ describe('CustomerWorkspace', () => {
           name: 'Find a payment',
         }),
       ).toBeInTheDocument()
+
+      expect(
+        await screen.findByText(
+          'No accounts available',
+        ),
+      ).toBeInTheDocument()
     },
   )
 
   it(
     'provides in-page workspace navigation',
     () => {
-      render(<CustomerWorkspace />)
+      renderWithQueryClient(
+        <CustomerWorkspace />,
+      )
 
       expect(
         screen.getByRole('link', {

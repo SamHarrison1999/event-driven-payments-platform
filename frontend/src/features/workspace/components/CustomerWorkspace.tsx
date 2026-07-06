@@ -1,3 +1,5 @@
+import { CustomerAccountsPanel } from '../../accounts/components/CustomerAccountsPanel'
+
 const workspaceLinks = [
   {
     href: '#customer-accounts',
@@ -73,53 +75,7 @@ export function CustomerWorkspace() {
         </header>
 
         <div className="workspace-grid">
-          <section
-            aria-labelledby="customer-accounts-title"
-            className="workspace-card workspace-card--primary"
-            id="customer-accounts"
-          >
-            <div className="workspace-card__heading">
-              <div>
-                <p className="workspace-card__label">
-                  Accounts
-                </p>
-
-                <h4 id="customer-accounts-title">
-                  Your GBP accounts
-                </h4>
-              </div>
-
-              <span className="workspace-status-pill">
-                Account data next
-              </span>
-            </div>
-
-            <p>
-              Securely retrieved account balances
-              and availability will appear in this
-              area.
-            </p>
-
-            <div className="workspace-placeholder">
-              <span
-                aria-hidden="true"
-                className="workspace-placeholder__icon"
-              >
-                GBP
-              </span>
-
-              <div>
-                <strong>
-                  Account workspace ready
-                </strong>
-
-                <p>
-                  Waiting for the owned-account
-                  API integration.
-                </p>
-              </div>
-            </div>
-          </section>
+          <CustomerAccountsPanel />
 
           <section
             aria-labelledby="create-payment-title"

@@ -44,6 +44,13 @@ beforeEach(() => {
     http.get(sessionEndpoint, () => {
       return HttpResponse.json(session)
     }),
+
+    http.get(
+      'http://localhost:5173/api/v1/accounts',
+      () => {
+        return HttpResponse.json([])
+      },
+    ),
   )
 })
 

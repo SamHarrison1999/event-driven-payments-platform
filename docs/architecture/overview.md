@@ -94,6 +94,25 @@ Phase 5 implemented:
 - privileged payment investigation for `OPERATIONS` and `ADMIN`; and
 - HTTP, method-security, PostgreSQL and Spring Modulith verification.
 
+### Phase 6 — Frontend payment experience
+
+Phase 6 is current and will implement:
+
+- an authenticated React customer workspace over the existing server-side
+  browser session;
+- shared JSON and problem-response handling with runtime contract validation;
+- in-memory CSRF handling for browser mutations;
+- owned-account and exact GBP balance presentation;
+- exact GBP text-to-minor-unit conversion without floating-point arithmetic;
+- confirmation and retry-safe idempotent payment submission;
+- bounded session-storage recovery for one unresolved payment request;
+- completed, rejected, failed and in-progress outcome presentation;
+- customer-owned payment lookup; and
+- accessible Vitest, Testing Library and MSW workflow verification.
+
+No Phase 6 implementation has been accepted yet. ADR 0010 records the accepted
+scope, browser-security and interaction decisions.
+
 Reconciliation, notification, reporting and asynchronous event capabilities are
 introduced in later phases. The Kafka-compatible broker, asynchronous consumers
 and observability stack also remain planned components.

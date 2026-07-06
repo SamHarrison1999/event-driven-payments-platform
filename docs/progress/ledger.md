@@ -1,12 +1,12 @@
 # Progress ledger
 
-Last updated: 2026-07-03
+Last updated: 2026-07-06
 
 ## Status meanings
 
 - **Completed:** acceptance criteria were executed and observed.
-- **Current:** implementation is locally accepted but a remaining phase gate is
-  still pending.
+- **Current:** the active phase has implementation or a remaining gate in
+  progress.
 - **Not started:** no implementation has been accepted.
 - **Blocked:** an external issue prevents progress.
 
@@ -26,7 +26,7 @@ Last updated: 2026-07-03
 | Docker execution | Completed | `hello-world` container succeeded |
 | jq | Completed | jq 1.8.1 |
 | IntelliJ repository | Completed | Repository and Gradle project configured |
-| Current Git phase branch | Completed | `feat/phase-5-synchronous-payments` |
+| Current Git phase branch | Current | `feat/phase-6-frontend-payments` from Phase 5 merge `5005574` |
 
 ## Phase progress
 
@@ -37,8 +37,8 @@ Last updated: 2026-07-03
 | 2 — Identity and access | Completed | PR #2 merged; local and GitHub Actions verification passed |
 | 3 — Customers and accounts | Completed | PR #3 merged; local and GitHub Actions verification passed |
 | 4 — Double-entry ledger | Completed | PR #4 merged; local and GitHub Actions verification passed |
-| 5 — Synchronous payments | Completed | PR #5 ready to merge; local and GitHub Actions verification passed |
-| 6 — Frontend payment experience | Not started | None |
+| 5 — Synchronous payments | Completed | PR #5 merged; local and GitHub Actions verification passed |
+| 6 — Frontend payment experience | Current | Branch created from Phase 5 merge; ADR 0010 defines the implementation boundary |
 | 7 — Asynchronous events and outbox | Not started | None |
 | 8 — Notifications and dead letters | Not started | None |
 | 9 — Settlement and reconciliation | Not started | None |
@@ -335,6 +335,24 @@ Phase 1 verification passed.
 | PowerShell and Bash Phase 5 verifiers exist | Completed | `scripts/verify-phase-5.ps1` and `.sh` |
 | Composite Phase 5 verifier passes | Completed | PowerShell verifier passed on 2026-07-03 |
 | Required GitHub Actions checks pass | Completed | Repository, Backend and Frontend checks passed on PR #5 |
+
+## Phase 6 acceptance evidence
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Frontend payment boundaries and browser-security decisions are documented | Completed | ADR 0010 |
+| Shared authenticated API and problem handling exists | Not started | None |
+| Session bootstrap, login and logout work | Not started | None |
+| Customer-owned accounts and exact GBP balances are displayed | Not started | None |
+| GBP input converts directly to integer minor units | Not started | None |
+| One logical payment keeps one idempotency key across retries | Not started | None |
+| Successful, rejected, failed and in-progress outcomes are accessible | Not started | None |
+| Customer-owned payment lookup works | Not started | None |
+| Frontend lint, tests and production build pass | Not started | None |
+| PowerShell and Bash Phase 6 verifiers exist | Not started | None |
+| Composite Phase 6 verifier passes | Not started | None |
+| Required GitHub Actions checks pass | Not started | None |
+
 ## Decision history
 
 | Date | Decision |
@@ -373,9 +391,15 @@ Phase 1 verification passed.
 | 2026-06-29 | Retry the complete payment transaction at most three times after concurrency conflicts |
 | 2026-06-29 | Extend the posting transaction with outbox and audit records only in their later phases |
 | 2026-07-03 | Persist exact bounded terminal idempotency responses for 24 hours using explicit `PROCESSING` and `COMPLETED` record states |
+| 2026-07-06 | Keep browser credentials and CSRF tokens out of persistent browser storage |
+| 2026-07-06 | Validate API responses at runtime and use TanStack Query for server state |
+| 2026-07-06 | Convert GBP text directly to integer minor units without floating-point arithmetic |
+| 2026-07-06 | Bind one idempotency key to one exact payment draft and reuse it for retries |
+| 2026-07-06 | Retain at most one unresolved idempotency envelope in bounded session storage |
+| 2026-07-06 | Keep Phase 6 in one accessible workspace without adding a routing dependency |
 
 ## Next verified action
 
-Commit and push the Phase 5 pull-request verification evidence. Confirm the
-required GitHub Actions checks pass again on the updated pull-request head, then
-merge PR #5 and synchronise `main`.
+Review and commit ADR 0010 together with the Phase 6 status and acceptance
+baseline. Then implement the shared authenticated frontend API client with
+runtime JSON and problem-response validation.

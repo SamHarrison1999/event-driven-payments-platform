@@ -10,19 +10,20 @@ asynchronous event delivery and settlement reconciliation.
 
 Current phase:
 
-**Phase 5 — Synchronous payments**
+**Phase 6 — Frontend payment experience**
 
-Phase 4 is complete and merged. The platform now has an immutable balanced
-ledger foundation with exact GBP minor-unit posting and verification.
+Phase 5 is complete and merged through PR #5. The platform now provides
+authenticated synchronous internal GBP payments with durable idempotency,
+atomic account-and-ledger posting, deterministic rejection and ownership-aware
+payment lookup.
 
-Phase 5 now implements the synchronous internal-payment boundary: authenticated
-source ownership, durable idempotency reservation and exact response replay, an
-explicit payment state machine, atomic account-and-ledger posting, bounded
-whole-transaction concurrency retries, and ownership-aware payment lookup.
+Phase 6 is now current. It will replace the foundation-only browser shell with
+an authenticated customer workspace for session management, owned-account
+views, exact GBP payment entry, retry-safe idempotent submission, payment
+receipts and payment lookup.
 
-The complete Phase 5 composite verifier passed locally on 3 July 2026,
-including repository, backend, frontend, documentation and migration checks.
-The remaining phase gate is pull-request CI.
+No Phase 6 implementation has been accepted yet. Work begins with the frontend
+architecture, browser-security and interaction decisions recorded in ADR 0010.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.

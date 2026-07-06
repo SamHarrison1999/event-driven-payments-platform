@@ -1,3 +1,6 @@
+import { apiRequestJson } from '../../../shared/api/apiClient'
+import { isJsonObject } from '../../../shared/api/apiValidation'
+
 export interface SystemInfo {
   name: string
   description: string
@@ -6,12 +9,10 @@ export interface SystemInfo {
   realMoneyProcessing: boolean
 }
 
-function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
-}
-
-function isSystemInfo(value: unknown): value is SystemInfo {
-  if (!isObject(value)) {
+function isSystemInfo(
+  value: unknown,
+): value is SystemInfo {
+  if (!isJsonObject(value)) {
     return false
   }
 
@@ -20,52 +21,20 @@ function isSystemInfo(value: unknown): value is SystemInfo {
     typeof value.description === 'string' &&
     typeof value.version === 'string' &&
     typeof value.educational === 'boolean' &&
-    typeof value.realMoneyProcessing === 'boolean'
+    typeof value.realMoneyProcessing ===
+      'boolean'
   )
 }
 
-function resolveApiOrigin(): string {
-  const configuredOrigin = import.meta.env.VITE_API_BASE_URL
-
-  if (
-    typeof configuredOrigin === 'string' &&
-    configuredOrigin.trim().length > 0
-  ) {
-    return configuredOrigin
-  }
-
-  return window.location.origin
-}
-
-export async function getSystemInfo(
+export function getSystemInfo(
   signal?: AbortSignal,
 ): Promise<SystemInfo> {
-  const url = new URL(
+  return apiRequestJson(
     '/api/v1/system/info',
-    resolveApiOrigin(),
-  )
-
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      Accept: 'application/json',
+    {
+      contractName: 'System information',
+      validate: isSystemInfo,
+      signal,
     },
-    signal,
-  })
-
-  if (!response.ok) {
-    throw new Error(
-      `System information request failed with status ${response.status}.`,
-    )
-  }
-
-  const payload: unknown = await response.json()
-
-  if (!isSystemInfo(payload)) {
-    throw new Error(
-      'System information response did not match the expected contract.',
-    )
-  }
-
-  return payload
+  )
 }

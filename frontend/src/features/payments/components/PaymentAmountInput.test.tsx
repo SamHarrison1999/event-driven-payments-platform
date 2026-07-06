@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import {
+  useState,
+} from 'react'
 import {
   render,
   screen,
@@ -12,13 +14,23 @@ import {
 
 import { PaymentAmountInput } from './PaymentAmountInput'
 
-function PaymentAmountInputHarness() {
+function PaymentAmountInputHarness({
+  externalError = null,
+  validationRequested = false,
+}: {
+  externalError?: string | null
+  validationRequested?: boolean
+}) {
   const [value, setValue] =
     useState('')
 
   return (
     <PaymentAmountInput
+      externalError={externalError}
       onChange={setValue}
+      validationRequested={
+        validationRequested
+      }
       value={value}
     />
   )
@@ -136,6 +148,35 @@ describe('PaymentAmountInput', () => {
       expect(
         screen.getByText('1 minor units'),
       ).toBeInTheDocument()
+    },
+  )
+
+  it(
+    'shows parent validation and business-rule errors',
+    () => {
+      const { rerender } = render(
+        <PaymentAmountInputHarness
+          validationRequested
+        />,
+      )
+
+      expect(
+        screen.getByRole('alert'),
+      ).toHaveTextContent(
+        'Enter a payment amount.',
+      )
+
+      rerender(
+        <PaymentAmountInputHarness
+          externalError="The payment amount exceeds the source account balance."
+        />,
+      )
+
+      expect(
+        screen.getByRole('alert'),
+      ).toHaveTextContent(
+        'The payment amount exceeds the source account balance.',
+      )
     },
   )
 })

@@ -1,7 +1,5 @@
-import { useState } from 'react'
-
 import { CustomerAccountsPanel } from '../../accounts/components/CustomerAccountsPanel'
-import { PaymentAmountInput } from '../../payments/components/PaymentAmountInput'
+import { PaymentCreationForm } from '../../payments/components/PaymentCreationForm'
 
 const workspaceLinks = [
   {
@@ -25,11 +23,6 @@ const workspaceLinks = [
 ]
 
 export function CustomerWorkspace() {
-  const [
-    paymentAmount,
-    setPaymentAmount,
-  ] = useState('')
-
   return (
     <div
       className="customer-workspace"
@@ -85,35 +78,7 @@ export function CustomerWorkspace() {
         <div className="workspace-grid">
           <CustomerAccountsPanel />
 
-          <section
-            aria-labelledby="create-payment-title"
-            className="workspace-card"
-            id="create-payment"
-          >
-            <p className="workspace-card__label">
-              Payment
-            </p>
-
-            <h4 id="create-payment-title">
-              Create an internal payment
-            </h4>
-
-            <p>
-              Enter an exact positive GBP amount.
-              Account selection and submission
-              will be added in the next workflow
-              checkpoint.
-            </p>
-
-            <PaymentAmountInput
-              onChange={setPaymentAmount}
-              value={paymentAmount}
-            />
-
-            <span className="workspace-card__state">
-              Exact amount validation ready
-            </span>
-          </section>
+          <PaymentCreationForm />
 
           <section
             aria-labelledby="payment-lookup-title"

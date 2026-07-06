@@ -11,11 +11,15 @@ import {
 interface PaymentAmountInputProps {
   value: string
   onChange: (value: string) => void
+  validationRequested?: boolean
+  externalError?: string | null
 }
 
 export function PaymentAmountInput({
   value,
   onChange,
+  validationRequested = false,
+  externalError = null,
 }: PaymentAmountInputProps) {
   const inputId = useId()
   const hintId = `${inputId}-hint`
@@ -26,10 +30,15 @@ export function PaymentAmountInput({
 
   const parsedAmount =
     parsePositiveGbpAmount(value)
-  const error =
-    touched && !parsedAmount.ok
+  const parserError =
+    !parsedAmount.ok
       ? parsedAmount.message
       : null
+  const error =
+    externalError ??
+    (touched || validationRequested
+      ? parserError
+      : null)
   const formattedAmount =
     parsedAmount.ok
       ? formatGbpMinorUnits(

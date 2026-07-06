@@ -2,6 +2,7 @@ import './App.css'
 
 import { SessionBoundary } from './features/identity/components/SessionBoundary'
 import { SystemStatusPanel } from './features/system/components/SystemStatusPanel'
+import { CustomerWorkspace } from './features/workspace/components/CustomerWorkspace'
 
 const foundations = [
   {
@@ -46,7 +47,7 @@ function App() {
         <nav aria-label="Primary navigation">
           <a href="#overview">Overview</a>
           <a href="#customer-session">
-            Customer access
+            Customer workspace
           </a>
           <a href="#foundations">Foundations</a>
           <a href="#system-status">
@@ -113,7 +114,9 @@ function App() {
           </aside>
         </section>
 
-        <SessionBoundary />
+        <SessionBoundary>
+          <CustomerWorkspace />
+        </SessionBoundary>
 
         <section
           aria-labelledby="foundations-title"

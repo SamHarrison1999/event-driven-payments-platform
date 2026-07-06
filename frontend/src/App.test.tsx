@@ -49,7 +49,7 @@ beforeEach(() => {
 
 describe('App', () => {
   it(
-    'renders the platform shell, session and system information',
+    'renders the platform shell, customer workspace and system information',
     async () => {
       server.use(
         http.get(systemEndpoint, () => {
@@ -71,6 +71,22 @@ describe('App', () => {
           session.email,
         ),
       ).toBeInTheDocument()
+
+      expect(
+        screen.getByRole('heading', {
+          level: 3,
+          name: 'Manage simulated payments',
+        }),
+      ).toBeInTheDocument()
+
+      expect(
+        screen.getByRole('link', {
+          name: 'Accounts',
+        }),
+      ).toHaveAttribute(
+        'href',
+        '#customer-accounts',
+      )
 
       expect(
         await screen.findByText(systemInfo.name),

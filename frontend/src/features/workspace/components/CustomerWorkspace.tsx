@@ -1,5 +1,6 @@
 import { CustomerAccountsPanel } from '../../accounts/components/CustomerAccountsPanel'
 import { PaymentCreationForm } from '../../payments/components/PaymentCreationForm'
+import { PaymentLookup } from '../../payments/components/PaymentLookup'
 
 const workspaceLinks = [
   {
@@ -80,29 +81,7 @@ export function CustomerWorkspace() {
 
           <PaymentCreationForm />
 
-          <section
-            aria-labelledby="payment-lookup-title"
-            className="workspace-card"
-            id="payment-lookup"
-          >
-            <p className="workspace-card__label">
-              Retrieval
-            </p>
-
-            <h4 id="payment-lookup-title">
-              Find a payment
-            </h4>
-
-            <p>
-              Retrieve a customer-owned payment
-              by UUID and review its terminal or
-              in-progress status.
-            </p>
-
-            <span className="workspace-card__state">
-              Lookup workflow planned
-            </span>
-          </section>
+          <PaymentLookup />
         </div>
       </div>
     </div>

@@ -1297,26 +1297,123 @@ main {
   line-height: 1.5;
 }
 
-.payment-submission-success {
-  padding: 1rem;
-  border: 1px solid #9fc7b2;
-  border-radius: 0.75rem;
-  color: #166534;
+.payment-lookup-form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.payment-lookup-form .primary-button {
+  justify-self: start;
+}
+
+.payment-receipt {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  padding: 1.25rem;
+  border: 1px solid #c8d6e5;
+  border-radius: 0.85rem;
+  background: #f8fafc;
+}
+
+.payment-receipt--completed {
+  border-color: #9fc7b2;
   background: #f0fdf4;
 }
 
-.payment-submission-success strong {
-  display: block;
+.payment-receipt--rejected,
+.payment-receipt--failed {
+  border-color: #f2b8b5;
+  background: #fff4f3;
 }
 
-.payment-submission-success p {
-  margin: 0.35rem 0 0;
-  color: #276749;
-  line-height: 1.55;
+.payment-receipt__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
-.payment-submission-success code {
+.payment-receipt__header h5 {
+  margin: 0;
+  color: #172b45;
+  font-size: 1.15rem;
+}
+
+.payment-receipt__status {
+  flex-shrink: 0;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: #315d8f;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.payment-receipt--completed
+  .payment-receipt__status {
+  color: #166534;
+}
+
+.payment-receipt--rejected
+  .payment-receipt__status,
+.payment-receipt--failed
+  .payment-receipt__status {
+  color: #9b2c24;
+}
+
+.payment-receipt__message {
+  margin: 0;
+  color: #52677f;
+  line-height: 1.6;
+}
+
+.payment-receipt__details {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  border-top: 1px solid #dce3eb;
+}
+
+.payment-receipt__details div {
+  display: grid;
+  grid-template-columns:
+    minmax(7rem, 0.35fr) 1fr;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid #dce3eb;
+}
+
+.payment-receipt__details dt {
+  color: #667085;
+  font-size: 0.82rem;
+}
+
+.payment-receipt__details dd {
+  min-width: 0;
+  margin: 0;
+  color: #24364d;
+  font-weight: 750;
+  text-align: right;
+}
+
+.payment-receipt__details code {
   overflow-wrap: anywhere;
-  color: #14532d;
   font-size: 0.8em;
+}
+
+@media (max-width: 600px) {
+  .payment-receipt__header {
+    flex-direction: column;
+  }
+
+  .payment-receipt__details div {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+
+  .payment-receipt__details dd {
+    text-align: left;
+  }
 }

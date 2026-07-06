@@ -105,6 +105,18 @@ describe('CustomerWorkspace', () => {
           name: 'Find a payment',
         }),
       ).toBeInTheDocument()
+
+      expect(
+        screen.getByRole('textbox', {
+          name: 'Payment identifier',
+        }),
+      ).toBeInTheDocument()
+
+      expect(
+        screen.getByRole('button', {
+          name: 'Find payment',
+        }),
+      ).toBeEnabled()
     },
   )
 

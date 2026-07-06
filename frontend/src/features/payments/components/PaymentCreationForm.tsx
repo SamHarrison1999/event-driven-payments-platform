@@ -25,12 +25,14 @@ import {
 } from '../api/submitPaymentIdempotently'
 import { useSubmitPayment } from '../hooks/useSubmitPayment'
 import { PaymentAmountInput } from './PaymentAmountInput'
+import { PaymentReceipt } from './PaymentReceipt'
 import {
   type PaymentDraft,
   type PaymentDraftErrors,
   type PaymentDraftFields,
   validatePaymentDraft,
 } from '../model/paymentDraft'
+import type { PaymentReceiptData } from '../model/payment'
 
 const initialFields: PaymentDraftFields = {
   sourceAccountId: '',
@@ -117,6 +119,27 @@ function PaymentReview({
       submission.error,
     )
 
+  const completedReceipt:
+    | PaymentReceiptData
+    | null =
+    submission.isSuccess
+      ? {
+          paymentId:
+            submission.data.paymentId,
+          sourceAccountId:
+            draft.sourceAccountId,
+          destinationAccountId:
+            draft.destinationAccountId,
+          amountMinorUnits:
+            draft.amountMinorUnits,
+          currency: 'GBP',
+          status: 'COMPLETED',
+          ledgerTransactionId:
+            submission.data
+              .ledgerTransactionId,
+        }
+      : null
+
   return (
     <div className="payment-review">
       <div>
@@ -201,23 +224,10 @@ function PaymentReview({
         </div>
       )}
 
-      {submission.isSuccess && (
-        <div
-          aria-live="polite"
-          className="payment-submission-success"
-          role="status"
-        >
-          <strong>Payment completed</strong>
-
-          <p>
-            The backend completed the payment
-            and returned payment identifier{' '}
-            <code>
-              {submission.data.paymentId}
-            </code>
-            .
-          </p>
-        </div>
+      {completedReceipt !== null && (
+        <PaymentReceipt
+          payment={completedReceipt}
+        />
       )}
 
       <div className="payment-review__actions">

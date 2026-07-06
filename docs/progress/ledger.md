@@ -38,7 +38,7 @@ Last updated: 2026-07-06
 | 3 — Customers and accounts | Completed | PR #3 merged; local and GitHub Actions verification passed |
 | 4 — Double-entry ledger | Completed | PR #4 merged; local and GitHub Actions verification passed |
 | 5 — Synchronous payments | Completed | PR #5 merged; local and GitHub Actions verification passed |
-| 6 — Frontend payment experience | Current | Implementation and local composite verification complete; pull-request checks pending |
+| 6 — Frontend payment experience | Completed | PR #6 ready to merge; local and GitHub Actions verification passed |
 | 7 — Asynchronous events and outbox | Not started | None |
 | 8 — Notifications and dead letters | Not started | None |
 | 9 — Settlement and reconciliation | Not started | None |
@@ -351,7 +351,7 @@ Phase 1 verification passed.
 | Frontend lint, tests and production build pass | Completed | ESLint, 23 test files and 127 tests, and Vite build on 2026-07-06 |
 | PowerShell and Bash Phase 6 verifiers exist | Completed | `scripts/verify-phase-6.ps1` and `.sh` |
 | Composite Phase 6 verifier passes | Completed | PowerShell verifier passed on 2026-07-06 |
-| Required GitHub Actions checks pass | Current | Pending Phase 6 pull request |
+| Required GitHub Actions checks pass | Completed | Repository, Backend and Frontend checks passed on PR #6 |
 
 ## Decision history
 
@@ -400,6 +400,6 @@ Phase 1 verification passed.
 
 ## Next verified action
 
-Review and commit the Phase 6 completion evidence, push the branch and open the
-frontend-payment-experience pull request. Record the required GitHub Actions
-results after they complete.
+Commit and push the Phase 6 pull-request verification evidence. Confirm the
+required GitHub Actions checks pass again on the updated pull-request head, then
+merge PR #6 and synchronise `main`.

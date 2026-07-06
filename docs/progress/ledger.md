@@ -38,7 +38,7 @@ Last updated: 2026-07-06
 | 3 — Customers and accounts | Completed | PR #3 merged; local and GitHub Actions verification passed |
 | 4 — Double-entry ledger | Completed | PR #4 merged; local and GitHub Actions verification passed |
 | 5 — Synchronous payments | Completed | PR #5 merged; local and GitHub Actions verification passed |
-| 6 — Frontend payment experience | Current | Branch created from Phase 5 merge; ADR 0010 defines the implementation boundary |
+| 6 — Frontend payment experience | Current | Implementation and local composite verification complete; pull-request checks pending |
 | 7 — Asynchronous events and outbox | Not started | None |
 | 8 — Notifications and dead letters | Not started | None |
 | 9 — Settlement and reconciliation | Not started | None |
@@ -341,17 +341,17 @@ Phase 1 verification passed.
 | Criterion | Status | Evidence |
 |---|---|---|
 | Frontend payment boundaries and browser-security decisions are documented | Completed | ADR 0010 |
-| Shared authenticated API and problem handling exists | Not started | None |
-| Session bootstrap, login and logout work | Not started | None |
-| Customer-owned accounts and exact GBP balances are displayed | Not started | None |
-| GBP input converts directly to integer minor units | Not started | None |
-| One logical payment keeps one idempotency key across retries | Not started | None |
-| Successful, rejected, failed and in-progress outcomes are accessible | Not started | None |
-| Customer-owned payment lookup works | Not started | None |
-| Frontend lint, tests and production build pass | Not started | None |
-| PowerShell and Bash Phase 6 verifiers exist | Not started | None |
-| Composite Phase 6 verifier passes | Not started | None |
-| Required GitHub Actions checks pass | Not started | None |
+| Shared authenticated API and problem handling exists | Completed | `apiClient.ts`, `apiProblem.ts` and API-client tests |
+| Session bootstrap, login and logout work | Completed | `SessionBoundary` and identity-session workflow tests |
+| Customer-owned accounts and exact GBP balances are displayed | Completed | `CustomerAccountsPanel` component tests |
+| GBP input converts directly to integer minor units | Completed | GBP model and `PaymentAmountInput` tests |
+| One logical payment keeps one idempotency key across retries | Completed | Submission API and payment-envelope tests |
+| Successful, rejected, failed and in-progress outcomes are accessible | Completed | Payment form and receipt workflow tests |
+| Customer-owned payment lookup works | Completed | `PaymentLookup` API and component tests |
+| Frontend lint, tests and production build pass | Completed | ESLint, 23 test files and 127 tests, and Vite build on 2026-07-06 |
+| PowerShell and Bash Phase 6 verifiers exist | Completed | `scripts/verify-phase-6.ps1` and `.sh` |
+| Composite Phase 6 verifier passes | Completed | PowerShell verifier passed on 2026-07-06 |
+| Required GitHub Actions checks pass | Current | Pending Phase 6 pull request |
 
 ## Decision history
 
@@ -400,6 +400,6 @@ Phase 1 verification passed.
 
 ## Next verified action
 
-Review and commit ADR 0010 together with the Phase 6 status and acceptance
-baseline. Then implement the shared authenticated frontend API client with
-runtime JSON and problem-response validation.
+Review and commit the Phase 6 completion evidence, push the branch and open the
+frontend-payment-experience pull request. Record the required GitHub Actions
+results after they complete.

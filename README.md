@@ -17,13 +17,13 @@ authenticated synchronous internal GBP payments with durable idempotency,
 atomic account-and-ledger posting, deterministic rejection and ownership-aware
 payment lookup.
 
-Phase 6 is now current. It will replace the foundation-only browser shell with
-an authenticated customer workspace for session management, owned-account
-views, exact GBP payment entry, retry-safe idempotent submission, payment
-receipts and payment lookup.
+Phase 6 now provides an authenticated customer workspace for session
+management, customer-owned account views, exact GBP payment entry, retry-safe
+idempotent submission, accessible payment outcomes and customer-owned payment
+lookup.
 
-No Phase 6 implementation has been accepted yet. Work begins with the frontend
-architecture, browser-security and interaction decisions recorded in ADR 0010.
+The Phase 6 implementation and composite local verification gate have passed.
+Final documentation review and pull-request checks remain in progress.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.
@@ -184,14 +184,18 @@ Phase 5 payment-read permission.
 The frontend currently provides:
 
 - a React and TypeScript application built with Vite;
-- TanStack Query server-state management;
-- a typed backend client with runtime response validation;
-- loading, connected and unavailable backend states;
-- manual connection retry behaviour;
-- an accessible and responsive platform shell;
-- Vitest component and API-client tests;
-- Mock Service Worker network simulation; and
-- ESLint static analysis.
+- TanStack Query server-state management and customer-scoped cache isolation;
+- a typed authenticated API client with runtime JSON and problem validation;
+- server-side session bootstrap, login, logout and CSRF-protected mutations;
+- customer-owned account and exact GBP balance presentation;
+- direct GBP text-to-minor-unit conversion without floating-point arithmetic;
+- reviewable payment drafts with retry-safe idempotent submission;
+- bounded session-storage recovery for one unresolved payment request;
+- accessible completed, rejected, failed and in-progress payment outcomes;
+- customer-owned payment lookup with privacy-preserving unavailable results;
+- session-expiry recovery that preserves safe retry state;
+- Vitest, Testing Library and Mock Service Worker workflow tests; and
+- ESLint static analysis and Vite production builds.
 
 ### Delivery
 

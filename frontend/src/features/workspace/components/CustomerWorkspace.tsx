@@ -1,4 +1,7 @@
+import { useState } from 'react'
+
 import { CustomerAccountsPanel } from '../../accounts/components/CustomerAccountsPanel'
+import { PaymentAmountInput } from '../../payments/components/PaymentAmountInput'
 
 const workspaceLinks = [
   {
@@ -22,6 +25,11 @@ const workspaceLinks = [
 ]
 
 export function CustomerWorkspace() {
+  const [
+    paymentAmount,
+    setPaymentAmount,
+  ] = useState('')
+
   return (
     <div
       className="customer-workspace"
@@ -91,13 +99,19 @@ export function CustomerWorkspace() {
             </h4>
 
             <p>
-              Choose two eligible accounts and
-              enter an exact GBP amount without
-              floating-point conversion.
+              Enter an exact positive GBP amount.
+              Account selection and submission
+              will be added in the next workflow
+              checkpoint.
             </p>
 
+            <PaymentAmountInput
+              onChange={setPaymentAmount}
+              value={paymentAmount}
+            />
+
             <span className="workspace-card__state">
-              Payment form follows account data
+              Exact amount validation ready
             </span>
           </section>
 

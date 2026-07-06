@@ -4,7 +4,10 @@ import {
   it,
 } from 'vitest'
 
-import { formatGbpMinorUnits } from './gbp'
+import {
+  formatGbpMinorUnits,
+  parsePositiveGbpAmount,
+} from './gbp'
 
 describe('formatGbpMinorUnits', () => {
   it(
@@ -59,6 +62,109 @@ describe('formatGbpMinorUnits', () => {
           Number.MAX_SAFE_INTEGER + 1,
         )
       }).toThrow(RangeError)
+    },
+  )
+})
+
+describe('parsePositiveGbpAmount', () => {
+  it.each([
+    ['10', 1000],
+    ['10.5', 1050],
+    ['10.50', 1050],
+    ['0.01', 1],
+    ['00010.05', 1005],
+    [
+      '90071992547409.91',
+      Number.MAX_SAFE_INTEGER,
+    ],
+  ])(
+    'parses %s directly to exact minor units',
+    (value, expectedMinorUnits) => {
+      expect(
+        parsePositiveGbpAmount(value),
+      ).toEqual({
+        ok: true,
+        minorUnits: expectedMinorUnits,
+      })
+    },
+  )
+
+  it(
+    'ignores surrounding whitespace',
+    () => {
+      expect(
+        parsePositiveGbpAmount(
+          '  12.34  ',
+        ),
+      ).toEqual({
+        ok: true,
+        minorUnits: 1234,
+      })
+    },
+  )
+
+  it.each([
+    '10.',
+    '.50',
+    '1.234',
+    '1e2',
+    '-1',
+    '+1',
+    '£10',
+    '1,000.00',
+  ])(
+    'rejects malformed amount %s',
+    (value) => {
+      expect(
+        parsePositiveGbpAmount(value),
+      ).toMatchObject({
+        ok: false,
+        code: 'format',
+      })
+    },
+  )
+
+  it.each(['0', '0.0', '0.00'])(
+    'rejects non-positive amount %s',
+    (value) => {
+      expect(
+        parsePositiveGbpAmount(value),
+      ).toEqual({
+        ok: false,
+        code: 'positive',
+        message:
+          'Enter an amount greater than £0.00.',
+      })
+    },
+  )
+
+  it(
+    'rejects an empty amount',
+    () => {
+      expect(
+        parsePositiveGbpAmount('  '),
+      ).toEqual({
+        ok: false,
+        code: 'required',
+        message:
+          'Enter a payment amount.',
+      })
+    },
+  )
+
+  it(
+    'rejects an amount outside the safe integer range',
+    () => {
+      expect(
+        parsePositiveGbpAmount(
+          '90071992547409.92',
+        ),
+      ).toEqual({
+        ok: false,
+        code: 'range',
+        message:
+          'Enter a smaller GBP amount.',
+      })
     },
   )
 })

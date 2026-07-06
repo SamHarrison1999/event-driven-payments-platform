@@ -3,6 +3,7 @@ import {
   http,
 } from 'msw'
 import { screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import {
   beforeEach,
   describe,
@@ -51,6 +52,12 @@ describe('CustomerWorkspace', () => {
         screen.getByRole('heading', {
           level: 4,
           name: 'Create an internal payment',
+        }),
+      ).toBeInTheDocument()
+
+      expect(
+        screen.getByRole('textbox', {
+          name: 'Payment amount',
         }),
       ).toBeInTheDocument()
 
@@ -106,6 +113,34 @@ describe('CustomerWorkspace', () => {
       expect(
         screen.getByText(
           'This workspace uses synthetic data and never moves real funds.',
+        ),
+      ).toBeInTheDocument()
+    },
+  )
+
+  it(
+    'keeps the exact payment amount in workspace state',
+    async () => {
+      const user = userEvent.setup()
+
+      renderWithQueryClient(
+        <CustomerWorkspace />,
+      )
+
+      await user.type(
+        screen.getByRole('textbox', {
+          name: 'Payment amount',
+        }),
+        '25.4',
+      )
+
+      expect(
+        screen.getByText('£25.40'),
+      ).toBeInTheDocument()
+
+      expect(
+        screen.getByText(
+          '2540 minor units',
         ),
       ).toBeInTheDocument()
     },

@@ -109,7 +109,7 @@ done
 
 readonly REQUIRED_LEDGER_TEXT=(
   "Phase 5 acceptance evidence"
-  "Synchronous payments | Current"
+  "Synchronous payments | Completed"
   "Domain, persistence and idempotency"
   "Account mutation and atomic processing"
   "HTTP, security and verification"

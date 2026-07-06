@@ -422,6 +422,37 @@ On Linux, macOS or WSL:
 ./scripts/verify-phase-5.sh
 ```
 
+## Phase 6 verification
+
+### Windows PowerShell
+
+From the repository root:
+
+```powershell
+.\scripts\verify-phase-6.ps1
+```
+
+A successful run ends with:
+
+```text
+Phase 6 verification passed.
+```
+
+The Phase 6 verifier checks the authenticated payment workspace, customer
+session and cache isolation, exact GBP handling, idempotent submission,
+accessible payment outcomes, customer-owned payment lookup and documentation.
+It then runs the complete Phase 5 baseline, which performs backend verification
+and executes frontend dependency installation, lint, all frontend tests and the
+production build once.
+
+### Bash
+
+On Linux, macOS or WSL:
+
+```bash
+./scripts/verify-phase-6.sh
+```
+
 ## Architecture
 
 The application is structured as a modular monolith with a separately built

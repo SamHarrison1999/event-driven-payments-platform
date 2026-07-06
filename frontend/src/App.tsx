@@ -1,5 +1,6 @@
 import './App.css'
 
+import { SessionBoundary } from './features/identity/components/SessionBoundary'
 import { SystemStatusPanel } from './features/system/components/SystemStatusPanel'
 
 const foundations = [
@@ -44,8 +45,13 @@ function App() {
 
         <nav aria-label="Primary navigation">
           <a href="#overview">Overview</a>
+          <a href="#customer-session">
+            Customer access
+          </a>
           <a href="#foundations">Foundations</a>
-          <a href="#system-status">System status</a>
+          <a href="#system-status">
+            System status
+          </a>
         </nav>
       </header>
 
@@ -90,20 +96,24 @@ function App() {
               Current milestone
             </p>
 
-            <strong>Platform foundation</strong>
+            <strong>
+              Frontend payment experience
+            </strong>
 
             <p>
-              Establishing modular architecture, service
-              health, database migrations and the operator
-              interface.
+              Building authenticated customer
+              access, exact GBP entry and
+              retry-safe payment submission.
             </p>
 
             <div className="scope-card__progress">
-              <span>Foundation progress</span>
-              <strong>Phase 1</strong>
+              <span>Delivery progress</span>
+              <strong>Phase 6</strong>
             </div>
           </aside>
         </section>
+
+        <SessionBoundary />
 
         <section
           aria-labelledby="foundations-title"

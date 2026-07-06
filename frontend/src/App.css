@@ -464,3 +464,203 @@ main {
     animation-duration: 1.8s;
   }
 }
+
+.session-panel {
+  padding: 5rem 0;
+  border-top: 1px solid rgba(24, 34, 48, 0.1);
+}
+
+.session-card {
+  max-width: 760px;
+  padding: 2rem;
+  border: 1px solid #dce3eb;
+  border-radius: 1.1rem;
+  background: #ffffff;
+  box-shadow: 0 1rem 3rem rgba(24, 59, 103, 0.08);
+}
+
+.session-card--loading {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #344054;
+}
+
+.session-card--loading strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.session-card--loading p,
+.session-card__heading p,
+.session-user p {
+  margin-top: 0;
+  color: #667085;
+  line-height: 1.6;
+}
+
+.session-card__heading {
+  max-width: 580px;
+  margin-bottom: 1.5rem;
+}
+
+.session-card__heading h3,
+.session-user h3 {
+  margin: 0 0 0.6rem;
+  color: #172b45;
+  font-size: 1.5rem;
+}
+
+.login-form {
+  display: grid;
+  max-width: 34rem;
+  gap: 1.25rem;
+}
+
+.form-field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.form-field label {
+  color: #24364d;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.form-field input {
+  width: 100%;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid #b8c5d3;
+  border-radius: 0.65rem;
+  color: #101828;
+  background: #ffffff;
+  font: inherit;
+}
+
+.form-field input:focus {
+  border-color: #3366a3;
+  outline: 3px solid rgba(51, 102, 163, 0.2);
+}
+
+.form-field input[aria-invalid='true'] {
+  border-color: #b8453c;
+}
+
+.form-field__error {
+  margin: 0;
+  color: #9b2c24;
+  font-size: 0.84rem;
+}
+
+.form-error-summary {
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  border: 1px solid #f2b8b5;
+  border-radius: 0.75rem;
+  color: #7a271a;
+  background: #fff4f3;
+}
+
+.form-error-summary:focus {
+  outline: 3px solid rgba(184, 69, 60, 0.22);
+  outline-offset: 2px;
+}
+
+.form-error-summary strong {
+  display: block;
+}
+
+.form-error-summary p {
+  margin: 0.35rem 0 0;
+  line-height: 1.5;
+}
+
+.primary-button {
+  justify-self: start;
+  padding: 0.8rem 1.15rem;
+  border: 1px solid #183b67;
+  border-radius: 0.65rem;
+  color: #ffffff;
+  background: #183b67;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary-button:hover {
+  background: #102f55;
+}
+
+.primary-button:focus-visible,
+.secondary-button:focus-visible {
+  outline: 3px solid rgba(51, 102, 163, 0.25);
+  outline-offset: 2px;
+}
+
+.primary-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.session-card--authenticated {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.session-user {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.session-user__email {
+  margin-bottom: 0;
+  color: #24364d;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.session-metadata {
+  margin: 0;
+  border-top: 1px solid #e6ebf1;
+}
+
+.session-metadata div {
+  display: grid;
+  grid-template-columns: minmax(9rem, 0.35fr) 1fr;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid #e6ebf1;
+}
+
+.session-metadata dt {
+  color: #667085;
+}
+
+.session-metadata dd {
+  margin: 0;
+  color: #24364d;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 600px) {
+  .session-panel {
+    padding: 3.5rem 0;
+  }
+
+  .session-card {
+    padding: 1.25rem;
+  }
+
+  .session-user {
+    flex-direction: column;
+  }
+
+  .session-metadata div {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+}

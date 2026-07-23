@@ -1,4 +1,5 @@
 import { CustomerAccountsPanel } from '../../accounts/components/CustomerAccountsPanel'
+import { NotificationPanel } from '../../notifications/components/NotificationPanel'
 import { PaymentCreationForm } from '../../payments/components/PaymentCreationForm'
 import { PaymentLookup } from '../../payments/components/PaymentLookup'
 
@@ -8,6 +9,12 @@ const workspaceLinks = [
     label: 'Accounts',
     description:
       'Review owned GBP accounts and balances.',
+  },
+  {
+    href: '#payment-notifications',
+    label: 'Notifications',
+    description:
+      'Review simulated payment delivery records.',
   },
   {
     href: '#create-payment',
@@ -69,15 +76,17 @@ export function CustomerWorkspace() {
           <h3>Manage simulated payments</h3>
 
           <p>
-            Review account information, create
-            an internal payment and retrieve a
-            previous result from one protected
+            Review account information, simulated
+            payment notifications, payment creation
+            and previous results from one protected
             browser workspace.
           </p>
         </header>
 
         <div className="workspace-grid">
           <CustomerAccountsPanel />
+
+          <NotificationPanel />
 
           <PaymentCreationForm />
 

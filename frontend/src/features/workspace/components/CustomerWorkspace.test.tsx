@@ -20,6 +20,8 @@ const accountsEndpoint =
   'http://localhost:5173/api/v1/accounts'
 const sessionEndpoint =
   'http://localhost:5173/api/v1/identity/session'
+const notificationsEndpoint =
+  'http://localhost:5173/api/v1/notifications'
 
 const firstAccount: CustomerAccount = {
   id:
@@ -58,6 +60,10 @@ beforeEach(() => {
         roles: ['CUSTOMER'],
       })
     }),
+
+    http.get(notificationsEndpoint, () => {
+      return HttpResponse.json([])
+    }),
   )
 })
 
@@ -81,6 +87,19 @@ describe('CustomerWorkspace', () => {
           level: 4,
           name: 'Your GBP accounts',
         }),
+      ).toBeInTheDocument()
+
+      expect(
+        screen.getByRole('heading', {
+          level: 4,
+          name: 'Payment notifications',
+        }),
+      ).toBeInTheDocument()
+
+      expect(
+        await screen.findByText(
+          'No notifications yet',
+        ),
       ).toBeInTheDocument()
 
       expect(
@@ -134,6 +153,15 @@ describe('CustomerWorkspace', () => {
       ).toHaveAttribute(
         'href',
         '#customer-accounts',
+      )
+
+      expect(
+        screen.getByRole('link', {
+          name: 'Notifications',
+        }),
+      ).toHaveAttribute(
+        'href',
+        '#payment-notifications',
       )
 
       expect(

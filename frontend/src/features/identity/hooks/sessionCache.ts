@@ -1,7 +1,11 @@
 import type { QueryClient } from '@tanstack/react-query'
 
 const customerQueryRoots =
-  new Set(['accounts', 'payments'])
+  new Set([
+    'accounts',
+    'notifications',
+    'payments',
+  ])
 
 export function clearCustomerQueries(
   queryClient: QueryClient,

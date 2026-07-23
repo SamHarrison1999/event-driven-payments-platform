@@ -114,10 +114,28 @@ Phase 6 implemented:
 ADR 0010 records the accepted scope, browser-security and interaction
 decisions. The complete local Phase 6 verifier exercises the cumulative backend
 and frontend regression gate.
+### Phase 7 — Asynchronous events and outbox
 
-Reconciliation, notification, reporting and asynchronous event capabilities are
-introduced in later phases. The Kafka-compatible broker, asynchronous consumers
-and observability stack also remain planned components.
+Phase 7 is current and will implement:
+
+- a project-owned outbox module and Flyway-managed PostgreSQL schema;
+- a narrow `payment.completed.v1` event contract for successful internal
+  payments;
+- outbox creation inside the existing payment processing transaction;
+- JSON payload validation for non-sensitive event data;
+- bounded batch claiming with owner tokens and processing leases;
+- simulated publication without requiring broker infrastructure;
+- retry scheduling for transient publication failures;
+- dead-letter classification for exhausted events; and
+- focused domain, persistence and processing verification.
+
+ADR 0011 records the Phase 7 event contract, transaction boundary, claiming and
+retry decisions.
+
+Notification, reconciliation, reporting and full broker-backed consumer
+capabilities are introduced in later phases. Phase 7 establishes the persisted
+outbox boundary first; the Kafka-compatible broker, extracted asynchronous
+consumers and observability stack remain planned components.
 ## C4 context diagram
 
 ```mermaid

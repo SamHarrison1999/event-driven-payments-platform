@@ -10,20 +10,20 @@ asynchronous event delivery and settlement reconciliation.
 
 Current phase:
 
-**Phase 6 — Frontend payment experience**
+**Phase 7 — Asynchronous events and outbox**
 
-Phase 5 is complete and merged through PR #5. The platform now provides
-authenticated synchronous internal GBP payments with durable idempotency,
-atomic account-and-ledger posting, deterministic rejection and ownership-aware
-payment lookup.
+Phase 6 is complete and merged through PR #6. The platform now provides an
+authenticated customer workspace for session management, customer-owned account
+views, exact GBP payment entry, retry-safe idempotent submission, accessible
+payment outcomes and customer-owned payment lookup.
 
-Phase 6 now provides an authenticated customer workspace for session
-management, customer-owned account views, exact GBP payment entry, retry-safe
-idempotent submission, accessible payment outcomes and customer-owned payment
-lookup.
+Phase 7 is now current. It will extend the synchronous payment transaction with
+a persisted transactional outbox, a narrow `payment.completed.v1` event
+contract, bounded event claiming, simulated publication, retry scheduling and
+dead-letter classification.
 
-The Phase 6 implementation and composite local verification gate have passed.
-Final documentation review and pull-request checks remain in progress.
+No Phase 7 implementation has been accepted yet. Work begins with the
+asynchronous event and outbox decisions recorded in ADR 0011.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.
@@ -540,9 +540,9 @@ The completed platform is intended to allow authorised users to:
 
 Identity registration, authentication and access management are implemented.
 Customer profiles, GBP accounts, ownership views, account lifecycle management,
-the immutable double-entry ledger, synchronous payment submission and
-ownership-aware payment lookup are also implemented. Frontend payment flows,
-asynchronous event delivery, settlement, notification and reporting remain
+the immutable double-entry ledger, synchronous payment submission,
+ownership-aware payment lookup and frontend payment flows are also implemented.
+Asynchronous event delivery, settlement, notification and reporting remain
 planned work.
 
 ## Engineering principles

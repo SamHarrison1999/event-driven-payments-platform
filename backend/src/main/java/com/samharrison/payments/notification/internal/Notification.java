@@ -42,6 +42,8 @@ import java.util.UUID;
 )
 class Notification {
 
+    static final int MAX_ATTEMPTS = 5;
+
     @Id
     @Column(
         name = "id",
@@ -209,6 +211,190 @@ class Notification {
         );
     }
 
+    void claim(
+        UUID ownerToken,
+        Instant leaseExpiresAt,
+        Instant claimedAt
+    ) {
+        UUID requiredOwner =
+            Objects.requireNonNull(
+                ownerToken,
+                "ownerToken must not be null"
+            );
+
+        Instant timestamp =
+            requireTimestamp(claimedAt);
+
+        boolean pendingAndDue =
+            status == NotificationStatus.PENDING
+                && nextAttemptAt != null
+                && !nextAttemptAt.isAfter(timestamp);
+
+        boolean expiredLease =
+            status == NotificationStatus.DELIVERING
+                && deliveryLeaseExpiresAt != null
+                && !deliveryLeaseExpiresAt
+                    .isAfter(timestamp);
+
+        if (!pendingAndDue && !expiredLease) {
+            throw new InvalidNotificationStateException(
+                "Notification is not claimable."
+            );
+        }
+
+        Instant requiredLease =
+            Objects.requireNonNull(
+                leaseExpiresAt,
+                "leaseExpiresAt must not be null"
+            );
+
+        if (!requiredLease.isAfter(timestamp)) {
+            throw new IllegalArgumentException(
+                "leaseExpiresAt must be after claimedAt"
+            );
+        }
+
+        status = NotificationStatus.DELIVERING;
+        deliveryOwnerToken = requiredOwner;
+        deliveryLeaseExpiresAt = requiredLease;
+        nextAttemptAt = null;
+        attemptCount = Math.addExact(attemptCount, 1);
+        updatedAt = timestamp;
+    }
+
+    void markDelivered(
+        UUID ownerToken,
+        Instant deliveryTime
+    ) {
+        requireDeliveryOwner(ownerToken);
+
+        Instant timestamp =
+            requireTimestamp(deliveryTime);
+
+        status = NotificationStatus.DELIVERED;
+        deliveryOwnerToken = null;
+        deliveryLeaseExpiresAt = null;
+        nextAttemptAt = null;
+        lastErrorCategory = null;
+        lastErrorMessage = null;
+        deliveredAt = timestamp;
+        updatedAt = timestamp;
+    }
+
+    void markFailure(
+        UUID ownerToken,
+        String errorCategory,
+        String errorMessage,
+        Instant retryAt,
+        Instant failedAt,
+        boolean permanent
+    ) {
+        requireDeliveryOwner(ownerToken);
+
+        Instant timestamp =
+            requireTimestamp(failedAt);
+
+        lastErrorCategory =
+            requireDiagnostic(
+                errorCategory,
+                "errorCategory",
+                64
+            );
+
+        lastErrorMessage =
+            requireDiagnostic(
+                errorMessage,
+                "errorMessage",
+                512
+            );
+
+        deliveryOwnerToken = null;
+        deliveryLeaseExpiresAt = null;
+        deliveredAt = null;
+        updatedAt = timestamp;
+
+        if (
+            permanent
+                || attemptCount >= MAX_ATTEMPTS
+        ) {
+            status = NotificationStatus.DEAD_LETTER;
+            nextAttemptAt = null;
+            return;
+        }
+
+        Instant requiredRetryAt =
+            Objects.requireNonNull(
+                retryAt,
+                "retryAt must not be null"
+            );
+
+        if (!requiredRetryAt.isAfter(timestamp)) {
+            throw new IllegalArgumentException(
+                "retryAt must be after failedAt"
+            );
+        }
+
+        status = NotificationStatus.PENDING;
+        nextAttemptAt = requiredRetryAt;
+    }
+
+    private void requireDeliveryOwner(
+        UUID ownerToken
+    ) {
+        if (
+            status != NotificationStatus.DELIVERING
+                || !Objects.equals(
+                    deliveryOwnerToken,
+                    ownerToken
+                )
+        ) {
+            throw new InvalidNotificationStateException(
+                "Notification delivery owner does not match."
+            );
+        }
+    }
+
+    private Instant requireTimestamp(
+        Instant value
+    ) {
+        Instant timestamp =
+            Objects.requireNonNull(
+                value,
+                "timestamp must not be null"
+            );
+
+        if (timestamp.isBefore(updatedAt)) {
+            throw new InvalidNotificationStateException(
+                "Notification time moved backwards."
+            );
+        }
+
+        return timestamp;
+    }
+
+    private static String requireDiagnostic(
+        String value,
+        String fieldName,
+        int maximumLength
+    ) {
+        String required =
+            Objects.requireNonNull(
+                value,
+                fieldName + " must not be null"
+            );
+
+        if (
+            required.isBlank()
+                || required.length() > maximumLength
+        ) {
+            throw new IllegalArgumentException(
+                fieldName + " is invalid"
+            );
+        }
+
+        return required;
+    }
+
     UUID id() {
         return id;
     }
@@ -247,5 +433,37 @@ class Notification {
 
     Instant nextAttemptAt() {
         return nextAttemptAt;
+    }
+
+    UUID deliveryOwnerToken() {
+        return deliveryOwnerToken;
+    }
+
+    Instant deliveryLeaseExpiresAt() {
+        return deliveryLeaseExpiresAt;
+    }
+
+    String lastErrorCategory() {
+        return lastErrorCategory;
+    }
+
+    String lastErrorMessage() {
+        return lastErrorMessage;
+    }
+
+    Instant createdAt() {
+        return createdAt;
+    }
+
+    Instant updatedAt() {
+        return updatedAt;
+    }
+
+    Instant deliveredAt() {
+        return deliveredAt;
+    }
+
+    long version() {
+        return version;
     }
 }

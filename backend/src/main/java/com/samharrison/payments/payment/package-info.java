@@ -6,6 +6,7 @@
         "risk",
         "audit",
         "identity",
+        "outbox",
         "shared"
     }
 )

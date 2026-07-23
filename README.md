@@ -24,8 +24,8 @@ version evidence and records an immutable replay-audit entry containing the
 administrator identity, reason and timestamp. ADR 0012 records the accepted
 consumer, delivery, security and replay decisions.
 
-The cumulative Phase 8 PowerShell verifier passed on 2026-07-23. Required
-GitHub Actions checks remain before merge.
+The cumulative Phase 8 PowerShell verifier and all three required GitHub
+Actions checks passed on PR #8 at commit `5031c66`. Phase 8 is ready to merge.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.

@@ -40,7 +40,7 @@ Last updated: 2026-07-23
 | 5 — Synchronous payments | Completed | PR #5 merged; local and GitHub Actions verification passed |
 | 6 — Frontend payment experience | Completed | PR #6 merged; local and GitHub Actions verification passed |
 | 7 — Asynchronous events and outbox | Completed | PR #7 merged; local and GitHub Actions verification passed |
-| 8 — Notifications and dead letters | Current | Implementation and cumulative local verification complete; pull request and required CI checks pending |
+| 8 — Notifications and dead letters | Current | Implementation, cumulative local verification and required CI checks complete; PR #8 ready to merge |
 | 9 — Settlement and reconciliation | Not started | None |
 | 10 — Audit and reporting | Not started | None |
 | 11 — Observability and performance | Not started | None |
@@ -393,7 +393,7 @@ Phase 1 verification passed.
 | Focused Phase 8 backend and frontend suites pass | Completed | Backend notification suites, 16 focused frontend tests, lint and build passed on 2026-07-23 |
 | PowerShell and Bash Phase 8 verifiers exist | Completed | `scripts/verify-phase-8.ps1` and `scripts/verify-phase-8.sh` |
 | Composite Phase 8 verifier passes | Completed | PowerShell verifier passed on 2026-07-23 |
-| Required GitHub Actions checks pass | Not started | Pending Phase 8 pull request |
+| Required GitHub Actions checks pass | Completed | Repository, Backend and Frontend checks passed on PR #8 at `5031c66` on 2026-07-23 |
 ## Decision history
 
 | Date | Decision |
@@ -448,6 +448,5 @@ Phase 1 verification passed.
 
 ## Next verified action
 
-Commit and push the Phase 8 verification batch, then open the pull request and
-wait for the required repository, backend and frontend GitHub Actions checks.
-After CI passes, record the pull-request and workflow evidence before merge.
+Merge PR #8. Then synchronise local `main`, remove the Phase 8 feature branch
+locally and remotely, and record the merge commit before starting Phase 9.

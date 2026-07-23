@@ -140,17 +140,22 @@ outbox boundary first; the Kafka-compatible broker, extracted asynchronous
 consumers and observability stack remain planned components.
 ### Phase 8 — Notifications and dead letters
 
-Phase 8 design introduces:
+Phase 8 implements:
 
-- a narrow public outbox reader for bounded published-event pages;
+- a narrow public outbox reader for stable bounded published-event pages;
+- Migration version 14 provides notification, checkpoint and consumer-failure
+  persistence;
 - a durable notification consumer checkpoint;
 - unique source-event deduplication;
-- structured `payment.completed.v1` notification projection;
-- independent notification delivery attempts, leases and retries;
-- customer-owned read-only notification queries;
+- structured `payment.completed.v1` schema-version-1 notification projection;
+- inspectable terminal failures for invalid supported payloads;
+- independent notification delivery attempts, owner-token leases and retries;
+- customer-owned read-only notification queries and browser presentation;
+- Migration version 15 provides outbox replay metadata and immutable audit;
 - administrator-only outbox dead-letter inspection;
-- controlled replay without payload mutation; and
-- immutable replay-audit evidence.
+- controlled replay without payload mutation;
+- optimistic version protection and immutable replay-audit evidence; and
+- a role-gated React recovery interface with CSRF-protected replay.
 
 Notification persistence and checkpoint advancement share one PostgreSQL
 transaction. At-least-once publication remains visible: replay or lease recovery
@@ -245,8 +250,10 @@ flowchart TB
     ledger --> shared
     reconciliation --> payment
     reconciliation --> audit
-    notification -.-> payment
+    notification --> identity
+    notification --> outbox
     notification --> audit
+    notification --> shared
     reporting --> account
     reporting --> payment
     reporting --> reconciliation
@@ -323,11 +330,14 @@ Owns:
 - versioned JSON payloads and event metadata;
 - claim owner tokens and publication leases;
 - publication attempts and retry schedules;
-- successful publication timestamps; and
-- dead-letter classification.
+- successful publication timestamps;
+- dead-letter classification;
+- replay counters and last-replayed timestamps; and
+- immutable administrator replay-audit evidence.
 
 The outbox does not own payment state or ledger records. Payment code supplies a
-public event request while the outbox owns persistence and delivery lifecycle.
+public event request while the outbox owns persistence, publication lifecycle
+and the narrow controlled-replay boundary.
 ### Risk
 
 Owns deterministic payment-validation rules.
@@ -356,9 +366,11 @@ Owns:
 - notification dead-letter state; and
 - customer-owned notification queries.
 
-The notification module depends on the public outbox event-reading boundary,
+The notification consumer depends on the public outbox event-reading boundary,
 not outbox internals. It consumes only documented event contracts and does not
-mutate payment, account, ledger or outbox records.
+mutate payment, account or ledger records. Administrator orchestration invokes
+the separate public outbox dead-letter operations boundary for eligible replay;
+the notification module still cannot edit event payloads or outbox internals.
 
 ### Audit
 

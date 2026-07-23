@@ -125,6 +125,22 @@ tasks.withType<JavaCompile> {
 tasks.withType<Test> {
     useJUnitPlatform()
 
+    systemProperty(
+        "spring.session.jdbc.cleanup-cron",
+        "-"
+    )
+
+    systemProperty(
+        "logging.level.com.zaxxer.hikari",
+        "ERROR"
+    )
+
+    systemProperty(
+        "logging.level.org.springframework.orm.jpa." +
+            "LocalContainerEntityManagerFactoryBean",
+        "ERROR"
+    )
+
     testLogging {
         events("failed", "skipped")
     }

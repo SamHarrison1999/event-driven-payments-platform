@@ -40,7 +40,7 @@ Last updated: 2026-07-23
 | 5 — Synchronous payments | Completed | PR #5 merged; local and GitHub Actions verification passed |
 | 6 — Frontend payment experience | Completed | PR #6 merged; local and GitHub Actions verification passed |
 | 7 — Asynchronous events and outbox | Completed | PR #7 merged; local and GitHub Actions verification passed |
-| 8 — Notifications and dead letters | Current | ADR 0012 and acceptance criteria defined; implementation pending |
+| 8 — Notifications and dead letters | Current | Implementation and cumulative local verification complete; pull request and required CI checks pending |
 | 9 — Settlement and reconciliation | Not started | None |
 | 10 — Audit and reporting | Not started | None |
 | 11 — Observability and performance | Not started | None |
@@ -375,24 +375,24 @@ Phase 1 verification passed.
 
 | Criterion | Status | Evidence |
 |---|---|---|
-| Notification and dead-letter boundaries are documented | Current | ADR 0012 added; implementation pending |
-| Published outbox events are exposed through a narrow public read API | Not started | None |
-| Notification consumer checkpoint is durable | Not started | None |
-| Notification creation is idempotent by source event identifier | Not started | None |
-| `payment.completed.v1` creates one structured notification | Not started | None |
-| Invalid supported payloads become inspectable consumer failures | Not started | None |
-| Notification delivery uses bounded owner-token leases | Not started | None |
-| Retryable notification failures schedule bounded retries | Not started | None |
-| Permanent or exhausted notification failures enter dead letter | Not started | None |
-| Customers can read only their own simulated notifications | Not started | None |
-| Administrators can inspect outbox dead-letter events | Not started | None |
-| Administrators can replay only eligible dead-letter events | Not started | None |
-| Replay preserves the immutable event contract and records audit evidence | Not started | None |
-| Replayed source events do not duplicate notification side effects | Not started | None |
-| Spring Modulith boundaries remain valid | Not started | None |
-| Focused Phase 8 backend and frontend suites pass | Not started | None |
-| PowerShell and Bash Phase 8 verifiers exist | Not started | None |
-| Composite Phase 8 verifier passes | Not started | None |
+| Notification and dead-letter boundaries are documented | Completed | ADR 0012 and architecture overview |
+| Published outbox events are exposed through a narrow public read API | Completed | `PublishedOutboxEventReader` and stable-page integration coverage |
+| Notification consumer checkpoint is durable | Completed | Flyway migration V14 and `NotificationEventConsumerIntegrationTest` |
+| Notification creation is idempotent by source event identifier | Completed | Unique database constraint and duplicate-replay integration test |
+| `payment.completed.v1` creates one structured notification | Completed | Strict payload mapper and PostgreSQL consumer integration test |
+| Invalid supported payloads become inspectable consumer failures | Completed | Durable consumer-failure persistence and progress test |
+| Notification delivery uses bounded owner-token leases | Completed | `NotificationClaimingService` and delivery integration tests |
+| Retryable notification failures schedule bounded retries | Completed | Delivery retry and deterministic-jitter integration coverage |
+| Permanent or exhausted notification failures enter dead letter | Completed | Permanent and exhausted delivery integration tests |
+| Customers can read only their own simulated notifications | Completed | Method-security, MockMvc and React notification tests |
+| Administrators can inspect outbox dead-letter events | Completed | Admin service, HTTP integration and recovery-interface tests |
+| Administrators can replay only eligible dead-letter events | Completed | Dead-letter state, role, CSRF and optimistic-version checks |
+| Replay preserves the immutable event contract and records audit evidence | Completed | Flyway migration V15, replay service and immutable audit trigger |
+| Replayed source events do not duplicate notification side effects | Completed | Unique source-event deduplication and repeated-consumption coverage |
+| Spring Modulith boundaries remain valid | Completed | `ModularityTest` passed in focused Phase 8 suites |
+| Focused Phase 8 backend and frontend suites pass | Completed | Backend notification suites, 16 focused frontend tests, lint and build passed on 2026-07-23 |
+| PowerShell and Bash Phase 8 verifiers exist | Completed | `scripts/verify-phase-8.ps1` and `scripts/verify-phase-8.sh` |
+| Composite Phase 8 verifier passes | Completed | PowerShell verifier passed on 2026-07-23 |
 | Required GitHub Actions checks pass | Not started | Pending Phase 8 pull request |
 ## Decision history
 
@@ -448,6 +448,6 @@ Phase 1 verification passed.
 
 ## Next verified action
 
-Commit and push the Phase 8 architecture decision. Then implement the published
-event reader, notification persistence and deduplicating consumer as one focused
-backend batch before adding delivery and administrator recovery APIs.
+Commit and push the Phase 8 verification batch, then open the pull request and
+wait for the required repository, backend and frontend GitHub Actions checks.
+After CI passes, record the pull-request and workflow evidence before merge.

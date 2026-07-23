@@ -12,18 +12,20 @@ Current phase:
 
 **Phase 8 — Notifications and dead letters**
 
-Phase 7 is complete and merged through PR #7. The platform now provides a
-persisted transactional outbox, a stable `payment.completed.v1` event contract,
-atomic completed-payment event creation, bounded `FOR UPDATE SKIP LOCKED`
-claiming, simulated publication, retry scheduling, lease recovery and
-dead-letter classification.
+Phase 7 is complete and merged through PR #7. Phase 8 implementation is now
+complete on the feature branch. The platform provides a narrow published-event
+reader, a durable notification consumer checkpoint, source-event
+deduplication, simulated notification delivery with independent retries and
+leases, customer-owned notification queries and administrator-only outbox
+dead-letter recovery.
 
-Phase 8 begins the durable consumer side of the event flow. ADR 0012 defines
-database-backed simulated notifications, consumer deduplication, independent
-notification retry state, customer-owned notification queries, administrator
-dead-letter inspection and controlled replay with immutable replay evidence.
+Controlled replay preserves the original event contract, uses optimistic
+version evidence and records an immutable replay-audit entry containing the
+administrator identity, reason and timestamp. ADR 0012 records the accepted
+consumer, delivery, security and replay decisions.
 
-Phase 8 implementation and verification are now in progress.
+The cumulative Phase 8 PowerShell verifier passed on 2026-07-23. Required
+GitHub Actions checks remain before merge.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.
@@ -197,8 +199,39 @@ The outbox module currently provides:
 - PostgreSQL and domain verification of payload and lifecycle constraints.
 
 Publication is at least once. Duplicate delivery remains possible after lease
-recovery, so later consumers must implement idempotency. Notification APIs,
-administrator dead-letter inspection and controlled replay remain Phase 8 work.
+recovery, so consumers implement idempotency through a unique source-event
+identifier.
+
+### Notifications and dead-letter operations
+
+The notification and outbox modules now provide:
+
+- stable published-event pages ordered by publication time and event identifier;
+- a durable consumer checkpoint advanced in the same PostgreSQL transaction as
+  notification or terminal consumer-failure persistence;
+- strict `payment.completed.v1` schema-version-1 projection;
+- unique source-event deduplication;
+- inspectable failures for invalid supported payloads;
+- notification lifecycle states `PENDING`, `DELIVERING`, `DELIVERED` and
+  `DEAD_LETTER`;
+- bounded notification claims using `FOR UPDATE SKIP LOCKED`, owner tokens and
+  expiring leases;
+- bounded retry scheduling with deterministic jitter;
+- customer-owned notification history derived from the authenticated identity;
+- administrator-only outbox dead-letter inspection;
+- controlled replay only from `DEAD_LETTER`;
+- immutable payload preservation, replay metadata and replay-audit evidence; and
+- PostgreSQL, method-security, HTTP and frontend workflow verification.
+
+Implemented Phase 8 endpoints include:
+
+    GET  /api/v1/notifications
+    GET  /api/v1/admin/outbox/dead-letters
+    POST /api/v1/admin/outbox/dead-letters/{eventId}/replay
+
+The customer notification endpoint requires `CUSTOMER`. Dead-letter inspection
+and replay require `ADMIN`; replay is also CSRF protected.
+
 ### Frontend
 
 The frontend currently provides:
@@ -213,7 +246,13 @@ The frontend currently provides:
 - bounded session-storage recovery for one unresolved payment request;
 - accessible completed, rejected, failed and in-progress payment outcomes;
 - customer-owned payment lookup with privacy-preserving unavailable results;
-- session-expiry recovery that preserves safe retry state;
+- customer-owned simulated payment notifications with loading, empty, error and
+  delivered states;
+- administrator-only outbox dead-letter inspection, payload review and
+  CSRF-protected replay;
+- optimistic replay-conflict handling and replay-success feedback;
+- session-expiry recovery that clears customer and administrator query caches
+  while preserving safe payment retry state;
 - Vitest, Testing Library and Mock Service Worker workflow tests; and
 - ESLint static analysis and Vite production builds.
 
@@ -620,3 +659,52 @@ planned work.
 ## Licence
 
 This project is licensed under the MIT License.
+### Start the frontend
+
+In a third terminal:
+
+```powershell
+cd frontend
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+### Verification gates
+
+The cumulative verifiers retain the earlier acceptance gates:
+
+- Phase 2 verification: `scripts/verify-phase-2.ps1` and
+  `scripts/verify-phase-2.sh`;
+- Phase 3 verification: `scripts/verify-phase-3.ps1` and
+  `scripts/verify-phase-3.sh`;
+- Phase 4 verification: `scripts/verify-phase-4.ps1` and
+  `scripts/verify-phase-4.sh`;
+- Phase 5 verification: `scripts/verify-phase-5.ps1` and
+  `scripts/verify-phase-5.sh`;
+- Phase 6 verification: `scripts/verify-phase-6.ps1` and
+  `scripts/verify-phase-6.sh`; and
+- Phase 7 verification: `scripts/verify-phase-7.ps1` and
+  `scripts/verify-phase-7.sh`.
+
+The Phase 6 gate verifies the authenticated payment workspace and
+customer-owned payment lookup. The later gates retain that complete baseline.
+
+### Phase 8 verification
+
+From the repository root on Windows:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-phase-8.ps1
+```
+
+From WSL or another Bash environment:
+
+```bash
+bash scripts/verify-phase-8.sh
+```
+
+The Phase 8 verifier checks the notification and replay contracts, Flyway
+migrations 1 through 15, documentation and required files. It then runs the
+complete Phase 7 baseline. That baseline recursively executes the full backend
+`clean test bootJar` gate, frozen frontend install, ESLint, all Vitest tests,
+the Vite production build and repository whitespace checks.

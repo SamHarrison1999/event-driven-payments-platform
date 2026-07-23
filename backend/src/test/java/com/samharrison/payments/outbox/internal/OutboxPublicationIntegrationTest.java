@@ -81,7 +81,11 @@ class OutboxPublicationIntegrationTest {
     @BeforeEach
     void cleanDatabase() {
         jdbcTemplate.execute(
-            "TRUNCATE TABLE outbox_event"
+            """
+            TRUNCATE TABLE
+                outbox_replay_audit,
+                outbox_event
+            """
         );
         clock.setInstant(START_TIME);
         transport.reset();

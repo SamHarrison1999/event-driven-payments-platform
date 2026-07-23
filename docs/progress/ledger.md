@@ -1,6 +1,6 @@
 # Progress ledger
 
-Last updated: 2026-07-06
+Last updated: 2026-07-23
 
 ## Status meanings
 
@@ -26,7 +26,7 @@ Last updated: 2026-07-06
 | Docker execution | Completed | `hello-world` container succeeded |
 | jq | Completed | jq 1.8.1 |
 | IntelliJ repository | Completed | Repository and Gradle project configured |
-| Current Git phase branch | Current | `feat/phase-7-asynchronous-events-outbox` from Phase 6 merge `a0d9f6e` |
+| Current Git phase branch | Current | `feat/phase-8-notifications-dead-letters` from Phase 7 merge `1eff8e9` |
 
 ## Phase progress
 
@@ -39,8 +39,8 @@ Last updated: 2026-07-06
 | 4 — Double-entry ledger | Completed | PR #4 merged; local and GitHub Actions verification passed |
 | 5 — Synchronous payments | Completed | PR #5 merged; local and GitHub Actions verification passed |
 | 6 — Frontend payment experience | Completed | PR #6 merged; local and GitHub Actions verification passed |
-| 7 — Asynchronous events and outbox | Completed | Local and GitHub Actions verification passed; PR #7 ready to merge |
-| 8 — Notifications and dead letters | Not started | None |
+| 7 — Asynchronous events and outbox | Completed | PR #7 merged; local and GitHub Actions verification passed |
+| 8 — Notifications and dead letters | Current | Implementation, cumulative local verification and required CI checks complete; PR #8 ready to merge |
 | 9 — Settlement and reconciliation | Not started | None |
 | 10 — Audit and reporting | Not started | None |
 | 11 — Observability and performance | Not started | None |
@@ -371,6 +371,29 @@ Phase 1 verification passed.
 | PowerShell and Bash Phase 7 verifiers exist | Completed | `scripts/verify-phase-7.ps1` and `.sh` |
 | Composite Phase 7 verifier passes | Completed | PowerShell verifier passed on 2026-07-23 |
 | Required GitHub Actions checks pass | Completed | Repository, Backend and Frontend checks passed on PR #7 |
+## Phase 8 acceptance evidence
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Notification and dead-letter boundaries are documented | Completed | ADR 0012 and architecture overview |
+| Published outbox events are exposed through a narrow public read API | Completed | `PublishedOutboxEventReader` and stable-page integration coverage |
+| Notification consumer checkpoint is durable | Completed | Flyway migration V14 and `NotificationEventConsumerIntegrationTest` |
+| Notification creation is idempotent by source event identifier | Completed | Unique database constraint and duplicate-replay integration test |
+| `payment.completed.v1` creates one structured notification | Completed | Strict payload mapper and PostgreSQL consumer integration test |
+| Invalid supported payloads become inspectable consumer failures | Completed | Durable consumer-failure persistence and progress test |
+| Notification delivery uses bounded owner-token leases | Completed | `NotificationClaimingService` and delivery integration tests |
+| Retryable notification failures schedule bounded retries | Completed | Delivery retry and deterministic-jitter integration coverage |
+| Permanent or exhausted notification failures enter dead letter | Completed | Permanent and exhausted delivery integration tests |
+| Customers can read only their own simulated notifications | Completed | Method-security, MockMvc and React notification tests |
+| Administrators can inspect outbox dead-letter events | Completed | Admin service, HTTP integration and recovery-interface tests |
+| Administrators can replay only eligible dead-letter events | Completed | Dead-letter state, role, CSRF and optimistic-version checks |
+| Replay preserves the immutable event contract and records audit evidence | Completed | Flyway migration V15, replay service and immutable audit trigger |
+| Replayed source events do not duplicate notification side effects | Completed | Unique source-event deduplication and repeated-consumption coverage |
+| Spring Modulith boundaries remain valid | Completed | `ModularityTest` passed in focused Phase 8 suites |
+| Focused Phase 8 backend and frontend suites pass | Completed | Backend notification suites, 16 focused frontend tests, lint and build passed on 2026-07-23 |
+| PowerShell and Bash Phase 8 verifiers exist | Completed | `scripts/verify-phase-8.ps1` and `scripts/verify-phase-8.sh` |
+| Composite Phase 8 verifier passes | Completed | PowerShell verifier passed on 2026-07-23 |
+| Required GitHub Actions checks pass | Completed | Repository, Backend and Frontend checks passed on PR #8 at `5031c66` on 2026-07-23 |
 ## Decision history
 
 | Date | Decision |
@@ -418,8 +441,12 @@ Phase 1 verification passed.
 | 2026-07-06 | Establish the Phase 7 outbox before adding broker infrastructure |
 | 2026-07-06 | Publish only successful `payment.completed.v1` events in the first asynchronous boundary |
 | 2026-07-06 | Use owner-token leases for bounded outbox publication claims |
+| 2026-07-23 | Deduplicate notifications with a unique source outbox event identifier |
+| 2026-07-23 | Keep notification delivery retries independent of payment and outbox publication |
+| 2026-07-23 | Restrict outbox dead-letter inspection and controlled replay to administrators |
+| 2026-07-23 | Preserve event payloads during replay and record immutable replay evidence |
 
 ## Next verified action
 
-Commit and push the Phase 7 CI evidence, confirm the required checks remain
-green on the final pull-request head, then merge PR #7 into `main`.
+Merge PR #8. Then synchronise local `main`, remove the Phase 8 feature branch
+locally and remotely, and record the merge commit before starting Phase 9.

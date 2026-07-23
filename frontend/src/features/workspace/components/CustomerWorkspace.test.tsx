@@ -20,6 +20,10 @@ const accountsEndpoint =
   'http://localhost:5173/api/v1/accounts'
 const sessionEndpoint =
   'http://localhost:5173/api/v1/identity/session'
+const notificationsEndpoint =
+  'http://localhost:5173/api/v1/notifications'
+const deadLettersEndpoint =
+  'http://localhost:5173/api/v1/admin/outbox/dead-letters'
 
 const firstAccount: CustomerAccount = {
   id:
@@ -58,6 +62,10 @@ beforeEach(() => {
         roles: ['CUSTOMER'],
       })
     }),
+
+    http.get(notificationsEndpoint, () => {
+      return HttpResponse.json([])
+    }),
   )
 })
 
@@ -81,6 +89,19 @@ describe('CustomerWorkspace', () => {
           level: 4,
           name: 'Your GBP accounts',
         }),
+      ).toBeInTheDocument()
+
+      expect(
+        screen.getByRole('heading', {
+          level: 4,
+          name: 'Payment notifications',
+        }),
+      ).toBeInTheDocument()
+
+      expect(
+        await screen.findByText(
+          'No notifications yet',
+        ),
       ).toBeInTheDocument()
 
       expect(
@@ -138,6 +159,15 @@ describe('CustomerWorkspace', () => {
 
       expect(
         screen.getByRole('link', {
+          name: 'Notifications',
+        }),
+      ).toHaveAttribute(
+        'href',
+        '#payment-notifications',
+      )
+
+      expect(
+        screen.getByRole('link', {
           name: 'Create payment',
         }),
       ).toHaveAttribute(
@@ -155,8 +185,60 @@ describe('CustomerWorkspace', () => {
       )
 
       expect(
+        screen.queryByRole('link', {
+          name: 'Dead letters',
+        }),
+      ).not.toBeInTheDocument()
+
+      expect(
         screen.getByText(
           'This workspace uses synthetic data and never moves real funds.',
+        ),
+      ).toBeInTheDocument()
+    },
+  )
+
+  it(
+    'shows administrator dead-letter recovery only to administrators',
+    async () => {
+      server.use(
+        http.get(sessionEndpoint, () => {
+          return HttpResponse.json({
+            userId:
+              'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            email: 'admin@example.com',
+            roles: ['CUSTOMER', 'ADMIN'],
+          })
+        }),
+
+        http.get(deadLettersEndpoint, () => {
+          return HttpResponse.json([])
+        }),
+      )
+
+      renderWithQueryClient(
+        <CustomerWorkspace />,
+      )
+
+      expect(
+        await screen.findByRole('link', {
+          name: 'Dead letters',
+        }),
+      ).toHaveAttribute(
+        'href',
+        '#outbox-dead-letters',
+      )
+
+      expect(
+        screen.getByRole('heading', {
+          level: 4,
+          name: 'Outbox dead-letter recovery',
+        }),
+      ).toBeInTheDocument()
+
+      expect(
+        await screen.findByText(
+          'No dead-letter events',
         ),
       ).toBeInTheDocument()
     },

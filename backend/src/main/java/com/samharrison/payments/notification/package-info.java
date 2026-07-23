@@ -3,6 +3,8 @@
     allowedDependencies = {
         "payment",
         "audit",
+        "identity",
+        "outbox",
         "shared"
     }
 )

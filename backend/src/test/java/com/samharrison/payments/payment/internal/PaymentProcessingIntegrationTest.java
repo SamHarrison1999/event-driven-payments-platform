@@ -95,6 +95,7 @@ class PaymentProcessingIntegrationTest {
         jdbcTemplate.execute(
             """
             TRUNCATE TABLE
+                outbox_replay_audit,
                 outbox_event,
                 payment_idempotency,
                 payment,

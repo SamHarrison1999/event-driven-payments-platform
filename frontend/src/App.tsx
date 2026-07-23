@@ -98,18 +98,18 @@ function App() {
             </p>
 
             <strong>
-              Frontend payment experience
+              Durable notifications and recovery
             </strong>
 
             <p>
-              Building authenticated customer
-              access, exact GBP entry and
-              retry-safe payment submission.
+              Demonstrating duplicate-safe event
+              consumption, simulated notification
+              delivery and audited dead-letter replay.
             </p>
 
             <div className="scope-card__progress">
               <span>Delivery progress</span>
-              <strong>Phase 6</strong>
+              <strong>Phase 8</strong>
             </div>
           </aside>
         </section>

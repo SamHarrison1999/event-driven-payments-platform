@@ -1,4 +1,7 @@
 import { CustomerAccountsPanel } from '../../accounts/components/CustomerAccountsPanel'
+import { useCurrentSession } from '../../identity/hooks/useCurrentSession'
+import { NotificationPanel } from '../../notifications/components/NotificationPanel'
+import { DeadLetterPanel } from '../../operations/components/DeadLetterPanel'
 import { PaymentCreationForm } from '../../payments/components/PaymentCreationForm'
 import { PaymentLookup } from '../../payments/components/PaymentLookup'
 
@@ -8,6 +11,12 @@ const workspaceLinks = [
     label: 'Accounts',
     description:
       'Review owned GBP accounts and balances.',
+  },
+  {
+    href: '#payment-notifications',
+    label: 'Notifications',
+    description:
+      'Review simulated payment delivery records.',
   },
   {
     href: '#create-payment',
@@ -21,9 +30,28 @@ const workspaceLinks = [
     description:
       'Retrieve a payment by its identifier.',
   },
+  {
+    href: '#outbox-dead-letters',
+    label: 'Dead letters',
+    description:
+      'Inspect and replay failed outbox events.',
+    adminOnly: true,
+  },
 ]
 
 export function CustomerWorkspace() {
+  const currentSession = useCurrentSession()
+  const isAdministrator =
+    currentSession.data?.roles.includes(
+      'ADMIN',
+    ) === true
+  const visibleWorkspaceLinks =
+    workspaceLinks.filter(
+      (link) =>
+        link.adminOnly !== true ||
+        isAdministrator,
+    )
+
   return (
     <div
       className="customer-workspace"
@@ -36,7 +64,7 @@ export function CustomerWorkspace() {
 
         <nav aria-label="Customer workspace">
           <ul className="workspace-navigation">
-            {workspaceLinks.map((link) => (
+            {visibleWorkspaceLinks.map((link) => (
               <li key={link.href}>
                 <a
                   aria-label={link.label}
@@ -69,9 +97,9 @@ export function CustomerWorkspace() {
           <h3>Manage simulated payments</h3>
 
           <p>
-            Review account information, create
-            an internal payment and retrieve a
-            previous result from one protected
+            Review account information, simulated
+            payment notifications, payment creation
+            and previous results from one protected
             browser workspace.
           </p>
         </header>
@@ -79,9 +107,15 @@ export function CustomerWorkspace() {
         <div className="workspace-grid">
           <CustomerAccountsPanel />
 
+          <NotificationPanel />
+
           <PaymentCreationForm />
 
           <PaymentLookup />
+
+          {isAdministrator && (
+            <DeadLetterPanel />
+          )}
         </div>
       </div>
     </div>

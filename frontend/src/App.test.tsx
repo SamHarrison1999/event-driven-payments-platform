@@ -51,6 +51,13 @@ beforeEach(() => {
         return HttpResponse.json([])
       },
     ),
+
+    http.get(
+      'http://localhost:5173/api/v1/notifications',
+      () => {
+        return HttpResponse.json([])
+      },
+    ),
   )
 })
 
@@ -93,6 +100,15 @@ describe('App', () => {
       ).toHaveAttribute(
         'href',
         '#customer-accounts',
+      )
+
+      expect(
+        screen.getByRole('link', {
+          name: 'Notifications',
+        }),
+      ).toHaveAttribute(
+        'href',
+        '#payment-notifications',
       )
 
       expect(

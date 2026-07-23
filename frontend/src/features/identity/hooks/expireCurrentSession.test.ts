@@ -44,6 +44,16 @@ describe('expireCurrentSession', () => {
         },
       )
 
+      queryClient.setQueryData(
+        ['notifications', 'owned'],
+        ['private-notification-data'],
+      )
+
+      queryClient.setQueryData(
+        ['outbox-dead-letters', 'list'],
+        ['private-administrator-data'],
+      )
+
       window.sessionStorage.setItem(
         customerSessionStorageKeys
           .paymentSubmission,
@@ -71,6 +81,18 @@ describe('expireCurrentSession', () => {
             'detail',
             'payment-id',
           ],
+        ),
+      ).toBeUndefined()
+
+      expect(
+        queryClient.getQueryData(
+          ['notifications', 'owned'],
+        ),
+      ).toBeUndefined()
+
+      expect(
+        queryClient.getQueryData(
+          ['outbox-dead-letters', 'list'],
         ),
       ).toBeUndefined()
 

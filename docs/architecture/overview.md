@@ -138,6 +138,36 @@ Notification, reconciliation, reporting and full broker-backed consumer
 capabilities are introduced in later phases. Phase 7 establishes the persisted
 outbox boundary first; the Kafka-compatible broker, extracted asynchronous
 consumers and observability stack remain planned components.
+### Phase 8 — Notifications and dead letters
+
+Phase 8 implements:
+
+- a narrow public outbox reader for stable bounded published-event pages;
+- Migration version 14 provides notification, checkpoint and consumer-failure
+  persistence;
+- a durable notification consumer checkpoint;
+- unique source-event deduplication;
+- structured `payment.completed.v1` schema-version-1 notification projection;
+- inspectable terminal failures for invalid supported payloads;
+- independent notification delivery attempts, owner-token leases and retries;
+- customer-owned read-only notification queries and browser presentation;
+- Migration version 15 provides outbox replay metadata and immutable audit;
+- administrator-only outbox dead-letter inspection;
+- controlled replay without payload mutation;
+- optimistic version protection and immutable replay-audit evidence; and
+- a role-gated React recovery interface with CSRF-protected replay.
+
+Notification persistence and checkpoint advancement share one PostgreSQL
+transaction. At-least-once publication remains visible: replay or lease recovery
+may deliver the same source event again, while the notification source-event
+constraint prevents a duplicate notification side effect.
+
+The Phase 8 delivery sink remains simulated. Kafka-compatible transport, real
+email or SMS providers, bulk replay and notification preferences remain outside
+this phase.
+
+ADR 0012 records the consumer, notification lifecycle, security and replay
+decisions.
 ## C4 context diagram
 
 ```mermaid
@@ -220,8 +250,10 @@ flowchart TB
     ledger --> shared
     reconciliation --> payment
     reconciliation --> audit
-    notification -.-> payment
+    notification --> identity
+    notification --> outbox
     notification --> audit
+    notification --> shared
     reporting --> account
     reporting --> payment
     reporting --> reconciliation
@@ -298,11 +330,14 @@ Owns:
 - versioned JSON payloads and event metadata;
 - claim owner tokens and publication leases;
 - publication attempts and retry schedules;
-- successful publication timestamps; and
-- dead-letter classification.
+- successful publication timestamps;
+- dead-letter classification;
+- replay counters and last-replayed timestamps; and
+- immutable administrator replay-audit evidence.
 
 The outbox does not own payment state or ledger records. Payment code supplies a
-public event request while the outbox owns persistence and delivery lifecycle.
+public event request while the outbox owns persistence, publication lifecycle
+and the narrow controlled-replay boundary.
 ### Risk
 
 Owns deterministic payment-validation rules.
@@ -324,10 +359,18 @@ Owns:
 
 Owns:
 
+- durable projection of supported published events;
+- consumer checkpoint and source-event deduplication;
 - simulated notification delivery;
-- notification attempts;
-- retry state; and
-- consumer deduplication.
+- notification attempts, leases and retry state;
+- notification dead-letter state; and
+- customer-owned notification queries.
+
+The notification consumer depends on the public outbox event-reading boundary,
+not outbox internals. It consumes only documented event contracts and does not
+mutate payment, account or ledger records. Administrator orchestration invokes
+the separate public outbox dead-letter operations boundary for eligible replay;
+the notification module still cannot edit event payloads or outbox internals.
 
 ### Audit
 

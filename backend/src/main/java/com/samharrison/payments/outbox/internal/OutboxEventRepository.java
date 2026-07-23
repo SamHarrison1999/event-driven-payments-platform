@@ -33,4 +33,27 @@ interface OutboxEventRepository
         @Param("claimTime") Instant claimTime,
         @Param("batchSize") int batchSize
     );
+
+    @Query(
+        value = """
+            SELECT *
+            FROM outbox_event
+            WHERE status = 'PUBLISHED'
+              AND (
+                  published_at > :publishedAt
+                  OR (
+                      published_at = :publishedAt
+                      AND id > :eventId
+                  )
+              )
+            ORDER BY published_at, id
+            LIMIT :batchSize
+            """,
+        nativeQuery = true
+    )
+    List<OutboxEvent> findPublishedAfter(
+        @Param("publishedAt") Instant publishedAt,
+        @Param("eventId") UUID eventId,
+        @Param("batchSize") int batchSize
+    );
 }

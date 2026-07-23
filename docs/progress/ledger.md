@@ -26,7 +26,7 @@ Last updated: 2026-07-06
 | Docker execution | Completed | `hello-world` container succeeded |
 | jq | Completed | jq 1.8.1 |
 | IntelliJ repository | Completed | Repository and Gradle project configured |
-| Current Git phase branch | Current | `feat/phase-6-frontend-payments` from Phase 5 merge `5005574` |
+| Current Git phase branch | Current | `feat/phase-7-asynchronous-events-outbox` from Phase 6 merge `a0d9f6e` |
 
 ## Phase progress
 
@@ -38,8 +38,8 @@ Last updated: 2026-07-06
 | 3 — Customers and accounts | Completed | PR #3 merged; local and GitHub Actions verification passed |
 | 4 — Double-entry ledger | Completed | PR #4 merged; local and GitHub Actions verification passed |
 | 5 — Synchronous payments | Completed | PR #5 merged; local and GitHub Actions verification passed |
-| 6 — Frontend payment experience | Completed | PR #6 ready to merge; local and GitHub Actions verification passed |
-| 7 — Asynchronous events and outbox | Not started | None |
+| 6 — Frontend payment experience | Completed | PR #6 merged; local and GitHub Actions verification passed |
+| 7 — Asynchronous events and outbox | Completed | Local and GitHub Actions verification passed; PR #7 ready to merge |
 | 8 — Notifications and dead letters | Not started | None |
 | 9 — Settlement and reconciliation | Not started | None |
 | 10 — Audit and reporting | Not started | None |
@@ -353,6 +353,24 @@ Phase 1 verification passed.
 | Composite Phase 6 verifier passes | Completed | PowerShell verifier passed on 2026-07-06 |
 | Required GitHub Actions checks pass | Completed | Repository, Backend and Frontend checks passed on PR #6 |
 
+## Phase 7 acceptance evidence
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Asynchronous event and outbox boundaries are documented | Completed | ADR 0011 |
+| Outbox schema persists event, payload and delivery metadata | Completed | Flyway migration V13 and PostgreSQL integration tests |
+| Completed payments create one outbox event atomically | Completed | `PaymentProcessingIntegrationTest` |
+| Rejected and failed payments do not create completed-payment events | Completed | `PaymentProcessingIntegrationTest` |
+| Event payloads use stable non-sensitive `payment.completed.v1` JSON | Completed | `PaymentCompletedOutboxEventFactoryTest` |
+| Bounded event claiming uses owner tokens and leases | Completed | Outbox domain and publication integration tests |
+| Successful simulated publication marks events as published | Completed | `OutboxPublicationIntegrationTest` |
+| Retryable publication failure increments attempts and schedules retry | Completed | `OutboxPublicationIntegrationTest` |
+| Exhausted publication failure moves events to dead letter | Completed | `OutboxEventTest` exhaustion coverage |
+| Spring Modulith boundaries remain valid | Completed | `ModularityTest` passed in the composite verifier |
+| Focused Phase 7 backend suite passes | Completed | Outbox, payment-event and modularity suite passed on 2026-07-23 |
+| PowerShell and Bash Phase 7 verifiers exist | Completed | `scripts/verify-phase-7.ps1` and `.sh` |
+| Composite Phase 7 verifier passes | Completed | PowerShell verifier passed on 2026-07-23 |
+| Required GitHub Actions checks pass | Completed | Repository, Backend and Frontend checks passed on PR #7 |
 ## Decision history
 
 | Date | Decision |
@@ -397,9 +415,11 @@ Phase 1 verification passed.
 | 2026-07-06 | Bind one idempotency key to one exact payment draft and reuse it for retries |
 | 2026-07-06 | Retain at most one unresolved idempotency envelope in bounded session storage |
 | 2026-07-06 | Keep Phase 6 in one accessible workspace without adding a routing dependency |
+| 2026-07-06 | Establish the Phase 7 outbox before adding broker infrastructure |
+| 2026-07-06 | Publish only successful `payment.completed.v1` events in the first asynchronous boundary |
+| 2026-07-06 | Use owner-token leases for bounded outbox publication claims |
 
 ## Next verified action
 
-Commit and push the Phase 6 pull-request verification evidence. Confirm the
-required GitHub Actions checks pass again on the updated pull-request head, then
-merge PR #6 and synchronise `main`.
+Commit and push the Phase 7 CI evidence, confirm the required checks remain
+green on the final pull-request head, then merge PR #7 into `main`.

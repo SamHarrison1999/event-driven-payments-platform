@@ -114,10 +114,30 @@ Phase 6 implemented:
 ADR 0010 records the accepted scope, browser-security and interaction
 decisions. The complete local Phase 6 verifier exercises the cumulative backend
 and frontend regression gate.
+### Phase 7 — Asynchronous events and outbox
 
-Reconciliation, notification, reporting and asynchronous event capabilities are
-introduced in later phases. The Kafka-compatible broker, asynchronous consumers
-and observability stack also remain planned components.
+Phase 7 implements:
+
+- a project-owned outbox module and Flyway-managed PostgreSQL schema;
+- a narrow `payment.completed.v1` event contract for successful internal
+  payments;
+- outbox creation inside the existing payment processing transaction;
+- PostgreSQL JSON-object and bounded metadata validation;
+- bounded `FOR UPDATE SKIP LOCKED` claiming with owner tokens and publication
+  leases;
+- simulated publication without requiring broker infrastructure;
+- expired-lease recovery for at-least-once delivery;
+- bounded exponential retry scheduling with deterministic jitter;
+- dead-letter classification for permanent or exhausted failures; and
+- focused domain, persistence, payment-atomicity and module verification.
+
+ADR 0011 records the Phase 7 event contract, transaction boundary, claiming and
+retry decisions.
+
+Notification, reconciliation, reporting and full broker-backed consumer
+capabilities are introduced in later phases. Phase 7 establishes the persisted
+outbox boundary first; the Kafka-compatible broker, extracted asynchronous
+consumers and observability stack remain planned components.
 ## C4 context diagram
 
 ```mermaid
@@ -149,7 +169,7 @@ flowchart LR
         web["React SPA<br/>TypeScript and Vite"]
         api["Modular Monolith<br/>Java, Spring Boot and Spring Modulith"]
         database[("PostgreSQL<br/>System of record")]
-        broker[("Kafka-compatible broker<br/>Introduced in Phase 7")]
+        broker[("Kafka-compatible broker<br/>Planned adapter")]
         consumer["Asynchronous Consumer<br/>Extracted only when justified"]
         telemetry["Observability Stack<br/>Introduced in Phase 11"]
     end
@@ -181,6 +201,7 @@ flowchart TB
     notification["notification"]
     audit["audit"]
     reporting["reporting"]
+    outbox["outbox"]
     shared["shared"]
 
     identity --> shared
@@ -194,6 +215,8 @@ flowchart TB
     payment --> ledger
     payment --> risk
     payment --> audit
+    payment --> outbox
+    outbox --> shared
     ledger --> shared
     reconciliation --> payment
     reconciliation --> audit
@@ -267,6 +290,19 @@ Owns:
 - immutable posting history; and
 - transaction, account-history and balance-verification queries.
 
+### Outbox
+
+Owns:
+
+- durable integration-event records;
+- versioned JSON payloads and event metadata;
+- claim owner tokens and publication leases;
+- publication attempts and retry schedules;
+- successful publication timestamps; and
+- dead-letter classification.
+
+The outbox does not own payment state or ledger records. Payment code supplies a
+public event request while the outbox owns persistence and delivery lifecycle.
 ### Risk
 
 Owns deterministic payment-validation rules.
@@ -393,8 +429,9 @@ The processing owner executes one PostgreSQL transaction that:
 4. atomically debits the source and credits the destination account snapshot;
 5. posts one balanced immutable ledger transaction;
 6. attaches the ledger transaction to the payment;
-7. moves the payment to `COMPLETED`; and
-8. stores the exact `201 Created` idempotent response.
+7. moves the payment to `COMPLETED`;
+8. writes one pending `payment.completed.v1` outbox event; and
+9. stores the exact `201 Created` idempotent response.
 
 A deterministic business refusal instead moves the payment to `REJECTED`,
 changes no balance or ledger record and stores a replayable `422 Unprocessable
@@ -404,9 +441,12 @@ Unexpected failures roll back the core transaction and are finalised separately
 as a bounded non-sensitive `FAILED` response. Retryable concurrency conflicts
 restart the whole core transaction at most three total times.
 
-Phase 5 does not create outbox or business-audit records. Those later phases
-must extend the existing core transaction boundary rather than write after
-commit.
+The completed payment, account snapshots, ledger posting, terminal idempotent
+response and outbox event commit atomically. An outbox constraint or persistence
+failure rolls back the financial posting before the coordinator finalises the
+payment as a bounded replayable failure in a separate transaction.
+
+Rejected and failed payments do not create `payment.completed.v1` events.
 ### Role change
 
 A role change transaction:
@@ -448,7 +488,7 @@ A financial correction requires a new compensating ledger transaction.
 
 ## Persistence principles
 
-### Implemented through Phase 5
+### Implemented through Phase 7
 
 - PostgreSQL is the application system of record.
 - Flyway owns forward-only schema migration history.
@@ -466,6 +506,8 @@ A financial correction requires a new compensating ledger transaction.
 - Migration version 11 creates payment and idempotency tables and constraints.
 - Migration version 12 allows unknown payment account references to be recorded
   as deterministic business rejections.
+- Migration version 13 creates the transactional outbox schema, lifecycle
+  constraints and claiming indexes.
 - Identity email uniqueness is protected by a database constraint.
 - Browser sessions are stored in PostgreSQL.
 - Role-change security events are append-only.
@@ -485,12 +527,18 @@ A financial correction requires a new compensating ledger transaction.
 - Completed idempotency records retain exact bounded terminal responses for 24
   hours.
 - Payment orchestration transactionally maintains account balance snapshots,
-  ledger posting, payment state and the terminal idempotent response.
+  ledger posting, payment state, the terminal idempotent response and one
+  completed-payment outbox event.
+- Outbox payloads are bounded JSON objects with database-constrained lifecycle
+  metadata.
+- Claimable events use an owner-token publication lease and PostgreSQL
+  `FOR UPDATE SKIP LOCKED`.
+- Published events retain their publication time; failed events retain bounded
+  diagnostics and retry metadata.
 - Database integration is tested with real PostgreSQL Testcontainers.
 
 ### Planned domain persistence guarantees
 
-- Transactional outbox records retain diagnostic and retry metadata.
 - Imported files retain synthetic source identifiers and fingerprints.
 - Financial schema changes use forward-only Flyway migrations.
 ## API principles

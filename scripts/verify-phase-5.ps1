@@ -95,8 +95,7 @@ try {
     'Migration version 12',
     'Payment reservation',
     'Core payment posting',
-    'PAYMENT_INSUFFICIENT_FUNDS',
-    'Phase 5 does not create outbox or business-audit records'
+    'PAYMENT_INSUFFICIENT_FUNDS'
   )
 
   foreach ($expectedText in $requiredArchitectureText) {
@@ -109,6 +108,30 @@ try {
         $expectedText
       )
     }
+  }
+
+  $legacyOutboxBoundary =
+    'Phase 5 does not create outbox or business-audit records'
+
+  $implementedOutboxBoundary =
+    'outbox event commit atomically'
+
+  $hasLegacyOutboxBoundary =
+    $architecture -match
+      [regex]::Escape($legacyOutboxBoundary)
+
+  $hasImplementedOutboxBoundary =
+    $architecture -match
+      [regex]::Escape($implementedOutboxBoundary)
+
+  if (
+    -not $hasLegacyOutboxBoundary -and
+    -not $hasImplementedOutboxBoundary
+  ) {
+    throw (
+      'Architecture overview is missing the Phase 5 or later ' +
+      'outbox transaction-boundary evidence.'
+    )
   }
 
   $ledger = Get-Content `

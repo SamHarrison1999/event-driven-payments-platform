@@ -95,6 +95,7 @@ class PaymentProcessingIntegrationTest {
         jdbcTemplate.execute(
             """
             TRUNCATE TABLE
+                outbox_event,
                 payment_idempotency,
                 payment,
                 ledger_entry,
@@ -226,6 +227,36 @@ class PaymentProcessingIntegrationTest {
         )
             .isEqualTo(payment.id().toString());
 
+        assertThat(
+            countRows("outbox_event")
+        )
+            .isEqualTo(1L);
+
+        assertThat(
+            outboxState(payment.id())
+        )
+            .isEqualTo(
+                new OutboxState(
+                    "payment",
+                    "payment.completed.v1",
+                    1,
+                    """
+                    {"paymentId":"%s","ledgerTransactionId":"%s","actorIdentityId":"%s","sourceAccountId":"%s","destinationAccountId":"%s","amountMinorUnits":400,"currency":"GBP","completedAt":"2026-07-03T12:00:30.654321Z"}
+                    """
+                        .strip()
+                        .formatted(
+                            payment.id(),
+                            payment.ledgerTransactionId(),
+                            fixture.actorId(),
+                            fixture.sourceAccountId(),
+                            fixture.destinationAccountId()
+                        ),
+                    payment.id().toString(),
+                    "PENDING",
+                    0
+                )
+            );
+
         assertStoredResponse(
             payment.id(),
             response
@@ -321,6 +352,11 @@ class PaymentProcessingIntegrationTest {
         )
             .isZero();
 
+        assertThat(
+            countRows("outbox_event")
+        )
+            .isZero();
+
         assertStoredResponse(
             payment.id(),
             response
@@ -403,6 +439,11 @@ class PaymentProcessingIntegrationTest {
 
         assertThat(
             countRows("ledger_transaction")
+        )
+            .isZero();
+
+        assertThat(
+            countRows("outbox_event")
         )
             .isZero();
 
@@ -505,6 +546,11 @@ class PaymentProcessingIntegrationTest {
         )
             .isZero();
 
+        assertThat(
+            countRows("outbox_event")
+        )
+            .isZero();
+
         assertStoredResponse(
             payment.id(),
             response
@@ -517,6 +563,106 @@ class PaymentProcessingIntegrationTest {
         );
     }
 
+    @Test
+    void outboxWriteFailureRollsBackFinancialPosting() {
+        PaymentFixture fixture =
+            paymentFixture(
+                1_000L,
+                250L,
+                400L
+            );
+
+        PaymentReservationResult.Acquired acquired =
+            reserve(
+                fixture,
+                "processing-outbox-rollback"
+            );
+
+        insertPendingOutboxEvent(
+            acquired.paymentId()
+        );
+
+        clock.setInstant(PROCESSED_AT);
+
+        StoredPaymentResponse response =
+            processingCoordinator.process(
+                acquired.paymentId(),
+                acquired.ownerToken()
+            );
+
+        Payment payment =
+            paymentRepository
+                .findById(acquired.paymentId())
+                .orElseThrow();
+
+        assertThat(payment.status())
+            .isEqualTo(PaymentStatus.FAILED);
+        assertThat(payment.failureReason())
+            .isEqualTo(
+                PaymentFailureReason.PROCESSING_FAILED
+            );
+        assertThat(payment.ledgerTransactionId())
+            .isNull();
+
+        assertThat(response)
+            .isEqualTo(
+                PaymentResponseFactory.failed(
+                    payment.id(),
+                    PaymentFailureReason
+                        .PROCESSING_FAILED
+                )
+            );
+
+        assertThat(
+            accountState(fixture.sourceAccountId())
+        )
+            .isEqualTo(
+                new AccountState(
+                    1_000L,
+                    ACCOUNT_TIME,
+                    0L
+                )
+            );
+
+        assertThat(
+            accountState(
+                fixture.destinationAccountId()
+            )
+        )
+            .isEqualTo(
+                new AccountState(
+                    250L,
+                    ACCOUNT_TIME,
+                    0L
+                )
+            );
+
+        assertThat(
+            countRows("ledger_transaction")
+        )
+            .isZero();
+
+        assertThat(
+            countRows("ledger_entry")
+        )
+            .isZero();
+
+        assertThat(
+            countRows("outbox_event")
+        )
+            .isEqualTo(1L);
+
+        assertStoredResponse(
+            payment.id(),
+            response
+        );
+
+        assertReplay(
+            fixture,
+            "processing-outbox-rollback",
+            response
+        );
+    }
     private PaymentReservationResult.Acquired reserve(
         PaymentFixture fixture,
         String key
@@ -835,6 +981,116 @@ class PaymentProcessingIntegrationTest {
             String.class,
             transactionId
         );
+    }
+
+    private void insertPendingOutboxEvent(
+        UUID paymentId
+    ) {
+        jdbcTemplate.update(
+            """
+            INSERT INTO outbox_event (
+                id,
+                aggregate_type,
+                aggregate_id,
+                event_type,
+                schema_version,
+                payload,
+                correlation_id,
+                causation_id,
+                created_at,
+                updated_at,
+                status,
+                attempt_count,
+                next_attempt_at,
+                version
+            )
+            VALUES (
+                ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?
+            )
+            """,
+            UUID.randomUUID(),
+            "payment",
+            paymentId,
+            "payment.completed.v1",
+            1,
+            """
+            {"paymentId":"%s"}
+            """
+                .strip()
+                .formatted(paymentId),
+            "duplicate-event-test",
+            paymentId.toString(),
+            RESERVED_AT.atOffset(
+                ZoneOffset.UTC
+            ),
+            RESERVED_AT.atOffset(
+                ZoneOffset.UTC
+            ),
+            "PENDING",
+            0,
+            RESERVED_AT.atOffset(
+                ZoneOffset.UTC
+            ),
+            0L
+        );
+    }
+
+    private OutboxState outboxState(
+        UUID paymentId
+    ) {
+        return jdbcTemplate.queryForObject(
+            """
+            SELECT
+                aggregate_type,
+                event_type,
+                schema_version,
+                payload,
+                causation_id,
+                status,
+                attempt_count
+            FROM outbox_event
+            WHERE aggregate_id = ?
+            """,
+            (
+                resultSet,
+                rowNumber
+            ) ->
+                new OutboxState(
+                    resultSet.getString(
+                        "aggregate_type"
+                    ),
+                    resultSet.getString(
+                        "event_type"
+                    ),
+                    resultSet.getInt(
+                        "schema_version"
+                    ),
+                    resultSet.getString(
+                        "payload"
+                    ),
+                    resultSet.getString(
+                        "causation_id"
+                    ),
+                    resultSet.getString(
+                        "status"
+                    ),
+                    resultSet.getInt(
+                        "attempt_count"
+                    )
+                ),
+            paymentId
+        );
+    }
+    private record OutboxState(
+        String aggregateType,
+        String eventType,
+        int schemaVersion,
+        String payload,
+        String causationIdentifier,
+        String status,
+        int attemptCount
+    ) {
     }
 
     private record PaymentFixture(

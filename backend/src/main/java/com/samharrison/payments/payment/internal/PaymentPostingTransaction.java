@@ -7,6 +7,7 @@ import com.samharrison.payments.ledger.LedgerPostingCommand;
 import com.samharrison.payments.ledger.LedgerPostingEntry;
 import com.samharrison.payments.ledger.LedgerPostingService;
 import com.samharrison.payments.ledger.PostedLedgerTransaction;
+import com.samharrison.payments.outbox.OutboxEventAppender;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -32,6 +33,8 @@ class PaymentPostingTransaction {
 
     private final LedgerPostingService ledgerPostingService;
 
+    private final OutboxEventAppender outboxEventAppender;
+
     private final Clock clock;
 
     PaymentPostingTransaction(
@@ -40,6 +43,7 @@ class PaymentPostingTransaction {
             idempotencyRepository,
         AccountPaymentMutation accountPaymentMutation,
         LedgerPostingService ledgerPostingService,
+        OutboxEventAppender outboxEventAppender,
         Clock clock
     ) {
         this.paymentRepository =
@@ -64,6 +68,12 @@ class PaymentPostingTransaction {
             Objects.requireNonNull(
                 ledgerPostingService,
                 "ledgerPostingService must not be null"
+            );
+
+        this.outboxEventAppender =
+            Objects.requireNonNull(
+                outboxEventAppender,
+                "outboxEventAppender must not be null"
             );
 
         this.clock =
@@ -172,6 +182,16 @@ class PaymentPostingTransaction {
             payment.complete(
                 posted.id(),
                 completedAt
+            );
+
+            outboxEventAppender.append(
+                PaymentCompletedOutboxEventFactory
+                    .create(
+                        payment,
+                        request,
+                        posted.id(),
+                        completedAt
+                    )
             );
 
             response =

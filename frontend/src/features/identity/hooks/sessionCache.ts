@@ -4,6 +4,7 @@ const customerQueryRoots =
   new Set([
     'accounts',
     'notifications',
+    'outbox-dead-letters',
     'payments',
   ])
 

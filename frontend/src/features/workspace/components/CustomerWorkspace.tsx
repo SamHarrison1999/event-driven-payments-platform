@@ -1,5 +1,7 @@
 import { CustomerAccountsPanel } from '../../accounts/components/CustomerAccountsPanel'
+import { useCurrentSession } from '../../identity/hooks/useCurrentSession'
 import { NotificationPanel } from '../../notifications/components/NotificationPanel'
+import { DeadLetterPanel } from '../../operations/components/DeadLetterPanel'
 import { PaymentCreationForm } from '../../payments/components/PaymentCreationForm'
 import { PaymentLookup } from '../../payments/components/PaymentLookup'
 
@@ -28,9 +30,28 @@ const workspaceLinks = [
     description:
       'Retrieve a payment by its identifier.',
   },
+  {
+    href: '#outbox-dead-letters',
+    label: 'Dead letters',
+    description:
+      'Inspect and replay failed outbox events.',
+    adminOnly: true,
+  },
 ]
 
 export function CustomerWorkspace() {
+  const currentSession = useCurrentSession()
+  const isAdministrator =
+    currentSession.data?.roles.includes(
+      'ADMIN',
+    ) === true
+  const visibleWorkspaceLinks =
+    workspaceLinks.filter(
+      (link) =>
+        link.adminOnly !== true ||
+        isAdministrator,
+    )
+
   return (
     <div
       className="customer-workspace"
@@ -43,7 +64,7 @@ export function CustomerWorkspace() {
 
         <nav aria-label="Customer workspace">
           <ul className="workspace-navigation">
-            {workspaceLinks.map((link) => (
+            {visibleWorkspaceLinks.map((link) => (
               <li key={link.href}>
                 <a
                   aria-label={link.label}
@@ -91,6 +112,10 @@ export function CustomerWorkspace() {
           <PaymentCreationForm />
 
           <PaymentLookup />
+
+          {isAdministrator && (
+            <DeadLetterPanel />
+          )}
         </div>
       </div>
     </div>

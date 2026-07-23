@@ -25,8 +25,8 @@ adding broker infrastructure or weakening existing payment guarantees.
 
 Phase 7 will add a project-owned outbox module and database schema.
 
-Payment completion will write a `payment.completed.v1` outbox event in the same
-PostgreSQL transaction that completes the payment, records the ledger
+Payment completion will write a `payment.completed.v1` outbox event in the
+same PostgreSQL transaction that completes the payment, records the ledger
 transaction and stores the terminal idempotent response.
 
 Rejected and failed payments will remain terminal payment outcomes, but Phase 7

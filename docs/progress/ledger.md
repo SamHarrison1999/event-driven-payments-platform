@@ -39,7 +39,7 @@ Last updated: 2026-07-06
 | 4 — Double-entry ledger | Completed | PR #4 merged; local and GitHub Actions verification passed |
 | 5 — Synchronous payments | Completed | PR #5 merged; local and GitHub Actions verification passed |
 | 6 — Frontend payment experience | Completed | PR #6 merged; local and GitHub Actions verification passed |
-| 7 — Asynchronous events and outbox | Current | Branch created from Phase 6 merge; ADR 0011 defines the implementation boundary |
+| 7 — Asynchronous events and outbox | Completed | Local composite verifier passed; pull-request checks pending |
 | 8 — Notifications and dead letters | Not started | None |
 | 9 — Settlement and reconciliation | Not started | None |
 | 10 — Audit and reporting | Not started | None |
@@ -358,19 +358,19 @@ Phase 1 verification passed.
 | Criterion | Status | Evidence |
 |---|---|---|
 | Asynchronous event and outbox boundaries are documented | Completed | ADR 0011 |
-| Outbox schema persists event, payload and delivery metadata | Not started | None |
-| Completed payments create one outbox event atomically | Not started | None |
-| Rejected and failed payments do not create completed-payment events | Not started | None |
-| Event payloads use stable non-sensitive `payment.completed.v1` JSON | Not started | None |
-| Bounded event claiming uses owner tokens and leases | Not started | None |
-| Successful simulated publication marks events as published | Not started | None |
-| Retryable publication failure increments attempts and schedules retry | Not started | None |
-| Exhausted publication failure moves events to dead letter | Not started | None |
-| Spring Modulith boundaries remain valid | Not started | None |
-| Focused Phase 7 backend suite passes | Not started | None |
-| PowerShell and Bash Phase 7 verifiers exist | Not started | None |
-| Composite Phase 7 verifier passes | Not started | None |
-| Required GitHub Actions checks pass | Not started | None |
+| Outbox schema persists event, payload and delivery metadata | Completed | Flyway migration V13 and PostgreSQL integration tests |
+| Completed payments create one outbox event atomically | Completed | `PaymentProcessingIntegrationTest` |
+| Rejected and failed payments do not create completed-payment events | Completed | `PaymentProcessingIntegrationTest` |
+| Event payloads use stable non-sensitive `payment.completed.v1` JSON | Completed | `PaymentCompletedOutboxEventFactoryTest` |
+| Bounded event claiming uses owner tokens and leases | Completed | Outbox domain and publication integration tests |
+| Successful simulated publication marks events as published | Completed | `OutboxPublicationIntegrationTest` |
+| Retryable publication failure increments attempts and schedules retry | Completed | `OutboxPublicationIntegrationTest` |
+| Exhausted publication failure moves events to dead letter | Completed | `OutboxEventTest` exhaustion coverage |
+| Spring Modulith boundaries remain valid | Completed | `ModularityTest` passed in the composite verifier |
+| Focused Phase 7 backend suite passes | Completed | Outbox, payment-event and modularity suite passed on 2026-07-23 |
+| PowerShell and Bash Phase 7 verifiers exist | Completed | `scripts/verify-phase-7.ps1` and `.sh` |
+| Composite Phase 7 verifier passes | Completed | PowerShell verifier passed on 2026-07-23 |
+| Required GitHub Actions checks pass | Not started | Pending Phase 7 pull request |
 ## Decision history
 
 | Date | Decision |
@@ -421,5 +421,6 @@ Phase 1 verification passed.
 
 ## Next verified action
 
-Review and commit ADR 0011 together with the Phase 7 status and acceptance
-baseline. Then implement the persisted outbox schema and domain model.
+Commit and push the Phase 7 verification gate and local completion evidence.
+Open the Phase 7 pull request, confirm the required Repository, Backend and
+Frontend checks pass, then record the CI evidence.

@@ -103,6 +103,89 @@ class OutboxEventTest {
             .isNull();
     }
 
+    @Test
+    void expiredPublicationLeaseCanBeReclaimed() {
+        OutboxEvent event = event();
+        UUID firstOwner = UUID.randomUUID();
+        Instant leaseExpiry =
+            CREATED_AT.plusSeconds(30);
+
+        event.claim(
+            firstOwner,
+            leaseExpiry,
+            CREATED_AT
+        );
+
+        UUID recoveryOwner = UUID.randomUUID();
+
+        event.claim(
+            recoveryOwner,
+            leaseExpiry.plusSeconds(30),
+            leaseExpiry
+        );
+
+        assertThat(event.status())
+            .isEqualTo(
+                OutboxEventStatus.PUBLISHING
+            );
+        assertThat(event.publicationOwnerToken())
+            .isEqualTo(recoveryOwner);
+        assertThat(event.attemptCount())
+            .isEqualTo(2);
+    }
+
+    @Test
+    void exhaustedRetryMovesToDeadLetter() {
+        OutboxEvent event = event();
+        Instant attemptAt = CREATED_AT;
+
+        for (
+            int attempt = 1;
+            attempt <= OutboxEvent.MAX_ATTEMPTS;
+            attempt++
+        ) {
+            UUID owner = UUID.randomUUID();
+
+            event.claim(
+                owner,
+                attemptAt.plusSeconds(30),
+                attemptAt
+            );
+
+            Instant failedAt =
+                attemptAt.plusSeconds(1);
+
+            event.markFailure(
+                owner,
+                "NETWORK",
+                "Temporary outage",
+                failedAt.plusSeconds(5),
+                failedAt,
+                false
+            );
+
+            if (attempt < OutboxEvent.MAX_ATTEMPTS) {
+                assertThat(event.status())
+                    .isEqualTo(
+                        OutboxEventStatus.PENDING
+                    );
+
+                attemptAt =
+                    event.nextAttemptAt();
+            }
+        }
+
+        assertThat(event.status())
+            .isEqualTo(
+                OutboxEventStatus.DEAD_LETTER
+            );
+        assertThat(event.attemptCount())
+            .isEqualTo(
+                OutboxEvent.MAX_ATTEMPTS
+            );
+        assertThat(event.nextAttemptAt())
+            .isNull();
+    }
     private static OutboxEvent event() {
         UUID paymentId = UUID.randomUUID();
 

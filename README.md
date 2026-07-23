@@ -17,13 +17,14 @@ authenticated customer workspace for session management, customer-owned account
 views, exact GBP payment entry, retry-safe idempotent submission, accessible
 payment outcomes and customer-owned payment lookup.
 
-Phase 7 is now current. It will extend the synchronous payment transaction with
-a persisted transactional outbox, a narrow `payment.completed.v1` event
-contract, bounded event claiming, simulated publication, retry scheduling and
-dead-letter classification.
+Phase 7 now implements a persisted transactional outbox, a narrow
+`payment.completed.v1` event contract, atomic completed-payment event creation,
+bounded `FOR UPDATE SKIP LOCKED` claiming, simulated publication, retry
+scheduling, processing-lease recovery and dead-letter classification.
 
-No Phase 7 implementation has been accepted yet. Work begins with the
-asynchronous event and outbox decisions recorded in ADR 0011.
+The complete Phase 7 composite verifier passed locally on 23 July 2026,
+including the cumulative backend and frontend regression gate. Pull-request
+checks remain pending.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.
@@ -179,6 +180,26 @@ Customers may read only payments they submitted. `OPERATIONS` and `ADMIN` may
 read any payment for investigation, while `RECONCILIATION_ANALYST` has no
 Phase 5 payment-read permission.
 
+### Transactional outbox
+
+The outbox module currently provides:
+
+- Flyway-managed event, payload and publication metadata in PostgreSQL;
+- one stable `payment.completed.v1` JSON event for each completed payment;
+- atomic event creation inside the account, ledger, payment and idempotency
+  transaction;
+- no completed-payment event for rejected or failed payments;
+- bounded `FOR UPDATE SKIP LOCKED` batch claiming;
+- owner-token publication leases with expired-lease recovery;
+- a simulated logging transport that does not require broker infrastructure;
+- successful transition from `PENDING` through `PUBLISHING` to `PUBLISHED`;
+- bounded exponential retry scheduling with deterministic jitter;
+- transition to `DEAD_LETTER` after permanent or exhausted failure; and
+- PostgreSQL and domain verification of payload and lifecycle constraints.
+
+Publication is at least once. Duplicate delivery remains possible after lease
+recovery, so later consumers must implement idempotency. Notification APIs,
+administrator dead-letter inspection and controlled replay remain Phase 8 work.
 ### Frontend
 
 The frontend currently provides:
@@ -456,8 +477,37 @@ On Linux, macOS or WSL:
 ```bash
 ./scripts/verify-phase-6.sh
 ```
+## Phase 7 verification
 
+### Windows PowerShell
+
+From the repository root:
+
+```powershell
+.\scripts\verify-phase-7.ps1
+```
+
+A successful run ends with:
+
+```text
+Phase 7 verification passed.
+```
+
+The Phase 7 verifier checks the outbox schema and lifecycle, stable
+`payment.completed.v1` contract, atomic payment-event creation, claiming leases,
+retry and dead-letter implementation, migration sequence and documentation. It
+then runs the complete Phase 6 baseline, which executes the backend and frontend
+regression gate once.
+
+### Bash
+
+On Linux, macOS or WSL:
+
+```bash
+./scripts/verify-phase-7.sh
+```
 ## Architecture
+
 
 The application is structured as a modular monolith with a separately built
 browser client.
@@ -473,7 +523,8 @@ The backend currently declares the following modules:
 - reconciliation;
 - notification;
 - audit;
-- reporting; and
+- reporting;
+- outbox; and
 - shared.
 
 Business functionality will be introduced incrementally without bypassing the

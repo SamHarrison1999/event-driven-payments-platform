@@ -95,7 +95,6 @@ readonly REQUIRED_ARCHITECTURE_TEXT=(
   "Payment reservation"
   "Core payment posting"
   "PAYMENT_INSUFFICIENT_FUNDS"
-  "Phase 5 does not create outbox or business-audit records"
 )
 
 for expected_text in "${REQUIRED_ARCHITECTURE_TEXT[@]}"; do
@@ -106,6 +105,16 @@ for expected_text in "${REQUIRED_ARCHITECTURE_TEXT[@]}"; do
       "architecture overview is missing required text: ${expected_text}"
   fi
 done
+
+if ! grep -Fq \
+  "Phase 5 does not create outbox or business-audit records" \
+  docs/architecture/overview.md &&
+  ! grep -Fq \
+    "outbox event commit atomically" \
+    docs/architecture/overview.md; then
+  fail \
+    "architecture overview is missing the Phase 5 or later outbox transaction-boundary evidence"
+fi
 
 readonly REQUIRED_LEDGER_TEXT=(
   "Phase 5 acceptance evidence"

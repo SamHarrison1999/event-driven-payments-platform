@@ -74,6 +74,7 @@ class NotificationEventConsumerIntegrationTest {
         jdbcTemplate.execute(
             """
             TRUNCATE TABLE
+                outbox_replay_audit,
                 notification_consumer_failure,
                 notification,
                 outbox_event

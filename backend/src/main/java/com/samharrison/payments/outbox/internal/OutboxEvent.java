@@ -161,6 +161,15 @@ public class OutboxEvent {
     @Column(name = "published_at")
     private Instant publishedAt;
 
+    @Column(
+        name = "replay_count",
+        nullable = false
+    )
+    private int replayCount;
+
+    @Column(name = "last_replayed_at")
+    private Instant lastReplayedAt;
+
     @Version
     @Column(
         name = "version",
@@ -342,6 +351,31 @@ public class OutboxEvent {
         nextAttemptAt = requiredRetryAt;
     }
 
+    void replay(
+        Instant replayedAt
+    ) {
+        if (status != OutboxEventStatus.DEAD_LETTER) {
+            throw new InvalidOutboxStateException(
+                "Only dead-letter events can be replayed."
+            );
+        }
+
+        Instant timestamp =
+            requireTimestamp(replayedAt);
+
+        status = OutboxEventStatus.PENDING;
+        attemptCount = 0;
+        nextAttemptAt = timestamp;
+        publicationOwnerToken = null;
+        publicationLeaseExpiresAt = null;
+        lastErrorCategory = null;
+        lastErrorMessage = null;
+        publishedAt = null;
+        replayCount = Math.addExact(replayCount, 1);
+        lastReplayedAt = timestamp;
+        updatedAt = timestamp;
+    }
+
     private void requirePublishingOwner(
         UUID ownerToken
     ) {
@@ -469,6 +503,14 @@ public class OutboxEvent {
 
     Instant publishedAt() {
         return publishedAt;
+    }
+
+    int replayCount() {
+        return replayCount;
+    }
+
+    Instant lastReplayedAt() {
+        return lastReplayedAt;
     }
 
     long version() {

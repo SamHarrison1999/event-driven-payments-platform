@@ -35,4 +35,21 @@ interface NotificationRepository
         @Param("claimTime") Instant claimTime,
         @Param("batchSize") int batchSize
     );
+
+    @Query(
+        value = """
+            SELECT *
+            FROM notification
+            WHERE recipient_identity_user_id
+                = :recipientIdentityUserId
+            ORDER BY created_at DESC, id DESC
+            LIMIT :batchSize
+            """,
+        nativeQuery = true
+    )
+    List<Notification> findOwned(
+        @Param("recipientIdentityUserId")
+        UUID recipientIdentityUserId,
+        @Param("batchSize") int batchSize
+    );
 }

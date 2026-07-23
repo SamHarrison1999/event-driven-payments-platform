@@ -56,4 +56,18 @@ interface OutboxEventRepository
         @Param("eventId") UUID eventId,
         @Param("batchSize") int batchSize
     );
+
+    @Query(
+        value = """
+            SELECT *
+            FROM outbox_event
+            WHERE status = 'DEAD_LETTER'
+            ORDER BY updated_at DESC, id DESC
+            LIMIT :batchSize
+            """,
+        nativeQuery = true
+    )
+    List<OutboxEvent> findDeadLetters(
+        @Param("batchSize") int batchSize
+    );
 }

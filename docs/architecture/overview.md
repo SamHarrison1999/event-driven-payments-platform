@@ -138,6 +138,31 @@ Notification, reconciliation, reporting and full broker-backed consumer
 capabilities are introduced in later phases. Phase 7 establishes the persisted
 outbox boundary first; the Kafka-compatible broker, extracted asynchronous
 consumers and observability stack remain planned components.
+### Phase 8 — Notifications and dead letters
+
+Phase 8 design introduces:
+
+- a narrow public outbox reader for bounded published-event pages;
+- a durable notification consumer checkpoint;
+- unique source-event deduplication;
+- structured `payment.completed.v1` notification projection;
+- independent notification delivery attempts, leases and retries;
+- customer-owned read-only notification queries;
+- administrator-only outbox dead-letter inspection;
+- controlled replay without payload mutation; and
+- immutable replay-audit evidence.
+
+Notification persistence and checkpoint advancement share one PostgreSQL
+transaction. At-least-once publication remains visible: replay or lease recovery
+may deliver the same source event again, while the notification source-event
+constraint prevents a duplicate notification side effect.
+
+The Phase 8 delivery sink remains simulated. Kafka-compatible transport, real
+email or SMS providers, bulk replay and notification preferences remain outside
+this phase.
+
+ADR 0012 records the consumer, notification lifecycle, security and replay
+decisions.
 ## C4 context diagram
 
 ```mermaid
@@ -324,10 +349,16 @@ Owns:
 
 Owns:
 
+- durable projection of supported published events;
+- consumer checkpoint and source-event deduplication;
 - simulated notification delivery;
-- notification attempts;
-- retry state; and
-- consumer deduplication.
+- notification attempts, leases and retry state;
+- notification dead-letter state; and
+- customer-owned notification queries.
+
+The notification module depends on the public outbox event-reading boundary,
+not outbox internals. It consumes only documented event contracts and does not
+mutate payment, account, ledger or outbox records.
 
 ### Audit
 

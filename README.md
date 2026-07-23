@@ -10,21 +10,20 @@ asynchronous event delivery and settlement reconciliation.
 
 Current phase:
 
-**Phase 7 — Asynchronous events and outbox**
+**Phase 8 — Notifications and dead letters**
 
-Phase 6 is complete and merged through PR #6. The platform now provides an
-authenticated customer workspace for session management, customer-owned account
-views, exact GBP payment entry, retry-safe idempotent submission, accessible
-payment outcomes and customer-owned payment lookup.
+Phase 7 is complete and merged through PR #7. The platform now provides a
+persisted transactional outbox, a stable `payment.completed.v1` event contract,
+atomic completed-payment event creation, bounded `FOR UPDATE SKIP LOCKED`
+claiming, simulated publication, retry scheduling, lease recovery and
+dead-letter classification.
 
-Phase 7 now implements a persisted transactional outbox, a narrow
-`payment.completed.v1` event contract, atomic completed-payment event creation,
-bounded `FOR UPDATE SKIP LOCKED` claiming, simulated publication, retry
-scheduling, processing-lease recovery and dead-letter classification.
+Phase 8 begins the durable consumer side of the event flow. ADR 0012 defines
+database-backed simulated notifications, consumer deduplication, independent
+notification retry state, customer-owned notification queries, administrator
+dead-letter inspection and controlled replay with immutable replay evidence.
 
-The complete Phase 7 composite verifier passed locally on 23 July 2026,
-including the cumulative backend and frontend regression gate. The required
-Repository, Backend and Frontend checks also passed on PR #7; merge is pending.
+Phase 8 implementation and verification are now in progress.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.

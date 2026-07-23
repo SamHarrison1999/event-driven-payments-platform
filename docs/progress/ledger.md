@@ -39,7 +39,7 @@ Last updated: 2026-07-06
 | 4 — Double-entry ledger | Completed | PR #4 merged; local and GitHub Actions verification passed |
 | 5 — Synchronous payments | Completed | PR #5 merged; local and GitHub Actions verification passed |
 | 6 — Frontend payment experience | Completed | PR #6 merged; local and GitHub Actions verification passed |
-| 7 — Asynchronous events and outbox | Completed | Local composite verifier passed; pull-request checks pending |
+| 7 — Asynchronous events and outbox | Completed | Local and GitHub Actions verification passed; PR #7 ready to merge |
 | 8 — Notifications and dead letters | Not started | None |
 | 9 — Settlement and reconciliation | Not started | None |
 | 10 — Audit and reporting | Not started | None |
@@ -370,7 +370,7 @@ Phase 1 verification passed.
 | Focused Phase 7 backend suite passes | Completed | Outbox, payment-event and modularity suite passed on 2026-07-23 |
 | PowerShell and Bash Phase 7 verifiers exist | Completed | `scripts/verify-phase-7.ps1` and `.sh` |
 | Composite Phase 7 verifier passes | Completed | PowerShell verifier passed on 2026-07-23 |
-| Required GitHub Actions checks pass | Not started | Pending Phase 7 pull request |
+| Required GitHub Actions checks pass | Completed | Repository, Backend and Frontend checks passed on PR #7 |
 ## Decision history
 
 | Date | Decision |
@@ -421,6 +421,5 @@ Phase 1 verification passed.
 
 ## Next verified action
 
-Commit and push the Phase 7 verification gate and local completion evidence.
-Open the Phase 7 pull request, confirm the required Repository, Backend and
-Frontend checks pass, then record the CI evidence.
+Commit and push the Phase 7 CI evidence, confirm the required checks remain
+green on the final pull-request head, then merge PR #7 into `main`.

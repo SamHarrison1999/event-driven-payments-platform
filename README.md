@@ -23,8 +23,8 @@ bounded `FOR UPDATE SKIP LOCKED` claiming, simulated publication, retry
 scheduling, processing-lease recovery and dead-letter classification.
 
 The complete Phase 7 composite verifier passed locally on 23 July 2026,
-including the cumulative backend and frontend regression gate. Pull-request
-checks remain pending.
+including the cumulative backend and frontend regression gate. The required
+Repository, Backend and Frontend checks also passed on PR #7; merge is pending.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.

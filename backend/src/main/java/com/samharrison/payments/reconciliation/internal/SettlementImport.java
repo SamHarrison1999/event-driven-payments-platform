@@ -254,12 +254,14 @@ class SettlementImport {
     private static String requireFilename(
         String originalFilename
     ) {
-        String required =
-            Objects.requireNonNull(
-                originalFilename,
-                "originalFilename must not be null"
+        if (originalFilename == null) {
+            throw new InvalidSettlementImportException(
+                "originalFilename must contain between "
+                    + "1 and 255 characters"
             );
-        String candidate = required.strip();
+        }
+
+        String candidate = originalFilename.strip();
 
         if (
             candidate.isEmpty()

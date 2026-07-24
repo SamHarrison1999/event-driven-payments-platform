@@ -49,6 +49,16 @@ class SettlementPersistenceIntegrationTest {
         recordRepository;
 
     @Autowired
+    private SettlementResultRepository resultRepository;
+
+    @Autowired
+    private SettlementDiscrepancyRepository
+        discrepancyRepository;
+
+    @Autowired
+    private SettlementMatchClaimStore matchClaimStore;
+
+    @Autowired
     private SettlementCsvParser parser;
 
     @Autowired
@@ -109,6 +119,43 @@ class SettlementPersistenceIntegrationTest {
                 .toList();
 
         recordRepository.saveAllAndFlush(records);
+
+        SettlementResult matchedResult =
+            SettlementResult.from(
+                records.getFirst(),
+                ReconciliationDecision.matched(),
+                CREATED_AT.plusMillis(500L)
+            );
+        SettlementResult discrepancyResult =
+            SettlementResult.from(
+                records.getLast(),
+                ReconciliationDecision.discrepancy(
+                    SettlementDiscrepancyCode
+                        .PAYMENT_NOT_FOUND
+                ),
+                CREATED_AT.plusMillis(500L)
+            );
+
+        assertThat(
+            matchClaimStore.claim(
+                records.getFirst(),
+                CREATED_AT.plusMillis(500L)
+            )
+        )
+            .isTrue();
+
+        resultRepository.saveAllAndFlush(
+            List.of(
+                matchedResult,
+                discrepancyResult
+            )
+        );
+        discrepancyRepository.saveAndFlush(
+            SettlementDiscrepancy.open(
+                discrepancyResult,
+                CREATED_AT.plusMillis(500L)
+            )
+        );
 
         settlementImport.complete(
             2,
@@ -290,6 +337,26 @@ class SettlementPersistenceIntegrationTest {
             importRepository
                 .findById(persisted.importId())
                 .orElseThrow();
+        ImportedSettlementRecord record =
+            recordRepository
+                .findById(persisted.recordId())
+                .orElseThrow();
+
+        assertThat(
+            matchClaimStore.claim(
+                record,
+                CREATED_AT.plusMillis(500L)
+            )
+        )
+            .isTrue();
+
+        resultRepository.saveAndFlush(
+            SettlementResult.from(
+                record,
+                ReconciliationDecision.matched(),
+                CREATED_AT.plusMillis(500L)
+            )
+        );
 
         settlementImport.complete(
             1,

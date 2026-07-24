@@ -171,7 +171,7 @@ decisions.
 
 ### Phase 9 — Settlement and reconciliation
 
-Phase 9 is designed to add:
+Phase 9 implements:
 
 - one exact UTF-8 settlement CSV contract with a 1 MiB raw-byte limit, between
   1 and 1,000 data rows, bounded fields and real CSV quoting;
@@ -197,8 +197,8 @@ evidence is owned by reconciliation and must not depend on identity-internal
 security events or outbox-internal replay evidence.
 
 ADR 0013 records the accepted import, matching, transaction, security and
-resolution boundaries. Backend implementation starts only after this
-architecture batch is inspected, committed and pushed.
+resolution boundaries. Focused parser, matching, persistence, workflow,
+authenticated HTTP, Spring Modulith and React tests verify the implementation.
 ## C4 context diagram
 
 ```mermaid
@@ -599,7 +599,7 @@ new compensating ledger transaction. Phase 9 records
 
 ## Persistence principles
 
-### Implemented through Phase 8
+### Implemented through Phase 9
 
 - PostgreSQL is the application system of record.
 - Flyway owns forward-only schema migration history.
@@ -623,6 +623,11 @@ new compensating ledger transaction. Phase 9 records
   persistence.
 - Migration version 15 adds outbox replay metadata and immutable replay
   evidence.
+- Migration version 16 creates settlement imports and immutable imported rows.
+- Migration version 17 creates immutable reconciliation results, accepted
+  payment-match claims and discrepancies.
+- Migration version 18 creates immutable resolution evidence and the
+  database-enforced one-time discrepancy lifecycle.
 - Identity email uniqueness is protected by a database constraint.
 - Browser sessions are stored in PostgreSQL.
 - Role-change security events are append-only.
@@ -652,11 +657,10 @@ new compensating ledger transaction. Phase 9 records
   diagnostics and retry metadata.
 - Database integration is tested with real PostgreSQL Testcontainers.
 
-### Phase 9 persistence design
+### Phase 9 persistence implementation
 
-- Migration version 16 will own settlement imports, immutable imported rows,
-  immutable results, discrepancies, accepted-payment match claims and immutable
-  resolution decisions.
+- Migration versions 16 through 18 separately own settlement imports and rows,
+  reconciliation results and claims, and immutable resolution evidence.
 - A unique lowercase SHA-256 fingerprint identifies one accepted raw file.
 - External settlement record identifiers are globally unique across accepted
   imports.
@@ -667,7 +671,7 @@ new compensating ledger transaction. Phase 9 records
 - Financial schema changes continue to use forward-only Flyway migrations.
 ## API principles
 
-### Implemented through Phase 8
+### Implemented through Phase 9
 
 - APIs are versioned under `/api/v1`.
 - `GET /api/v1/system/info` exposes non-sensitive platform metadata.
@@ -707,7 +711,7 @@ new compensating ledger transaction. Phase 9 records
 - Actuator exposes health, liveness and readiness.
 - OpenAPI output is available under `/v3/api-docs`.
 
-### Phase 9 API design
+### Phase 9 reconciliation API
 
 - Settlement and discrepancy operations require
   `RECONCILIATION_ANALYST` or `ADMIN` at the service boundary.

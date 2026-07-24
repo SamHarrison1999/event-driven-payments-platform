@@ -41,7 +41,7 @@ Last updated: 2026-07-24
 | 6 — Frontend payment experience | Completed | PR #6 merged; local and GitHub Actions verification passed |
 | 7 — Asynchronous events and outbox | Completed | PR #7 merged; local and GitHub Actions verification passed |
 | 8 — Notifications and dead letters | Completed | PR #8 merged at `179d793`; local and remote Phase 8 feature branches removed |
-| 9 — Settlement and reconciliation | Current | Architecture batch and ADR 0013 |
+| 9 — Settlement and reconciliation | Current | Implementation and cumulative local gate complete; pull-request CI remains |
 | 10 — Audit and reporting | Not started | None |
 | 11 — Observability and performance | Not started | None |
 | 12 — Security hardening | Not started | None |
@@ -401,28 +401,28 @@ Phase 1 verification passed.
 | Phase 8 merge and branch cleanup recorded | Completed | PR #8 merge commit `179d793` and Phase 9 baseline documentation |
 | ADR 0013 exists | Completed | `docs/adr/0013-settlement-and-reconciliation.md` |
 | Settlement and reconciliation boundaries are documented | Completed | ADR 0013, README and architecture overview |
-| Exact bounded CSV contract is implemented | Not started | Backend batch 2 |
-| Complete file is validated before persistence | Not started | Backend batch 2 |
-| Duplicate accepted uploads are idempotent by SHA-256 fingerprint | Not started | Backend batch 2 |
-| Imported settlement rows are immutable | Not started | Backend batch 2 and PostgreSQL tests |
-| External settlement record identifiers are globally unique | Not started | Backend batch 2 and PostgreSQL tests |
-| Payment data is accessed only through a public reconciliation reader | Not started | Backend batch 3 |
-| Payment snapshots are fetched in one bounded batch | Not started | Backend batch 3 |
-| Deterministic matching and discrepancy codes are implemented | Not started | Backend batch 3 |
-| One accepted settlement match per payment is database protected | Not started | Backend batch 3 and concurrency tests |
-| Import, rows, results and discrepancies commit atomically | Not started | Backend batch 3 and rollback tests |
-| Reconciliation never mutates payment, account, ledger or outbox history | Not started | Architecture and PostgreSQL integration tests |
-| Analyst and administrator security is enforced | Not started | Backend batch 4 |
-| Import and discrepancy APIs use no-store responses | Not started | Backend batch 4 |
-| Deterministic bounded keyset pagination exists | Not started | Backend batch 4 |
-| Discrepancy resolution uses strong ETags and `If-Match` | Not started | Backend batch 5 |
-| Immutable attributable resolution evidence exists | Not started | Backend batch 5 and PostgreSQL immutability tests |
-| Spring Modulith verification passes | Not started | Focused Phase 9 verification |
-| PostgreSQL integration tests pass | Not started | Focused Phase 9 verification |
-| Authenticated MockMvc tests pass | Not started | Focused Phase 9 verification |
-| React analyst workflow passes frontend tests | Not started | Frontend batch 6 |
-| Phase 9 PowerShell and Bash verifiers exist | Not started | Verification batch 7 |
-| Cumulative Phase 9 verifier passes | Not started | Verification batch 7 |
+| Exact bounded CSV contract is implemented | Completed | `SettlementCsvParser` and parser tests |
+| Complete file is validated before persistence | Completed | Parser-first import service and invalid-file rollback coverage |
+| Duplicate accepted uploads are idempotent by SHA-256 fingerprint | Completed | V16 unique fingerprint and import workflow replay tests |
+| Imported settlement rows are immutable | Completed | V16 mutation triggers and PostgreSQL integration tests |
+| External settlement record identifiers are globally unique | Completed | V16 unique constraint and conflicting-import rollback test |
+| Payment data is accessed only through a public reconciliation reader | Completed | `PaymentReconciliationReader` module boundary |
+| Payment snapshots are fetched in one bounded batch | Completed | `PaymentReconciliationReaderService` and focused unit test |
+| Deterministic matching and discrepancy codes are implemented | Completed | `SettlementMatcher` precedence tests |
+| One accepted settlement match per payment is database protected | Completed | V17 match claims and concurrency integration coverage |
+| Import, rows, results and discrepancies commit atomically | Completed | Import workflow and PostgreSQL rollback tests |
+| Reconciliation never mutates payment, account, ledger or outbox history | Completed | Read-only payment boundary and persistence integration tests |
+| Analyst and administrator security is enforced | Completed | Method-security and authenticated MockMvc tests |
+| Import and discrepancy APIs use no-store responses | Completed | HTTP integration tests |
+| Deterministic bounded keyset pagination exists | Completed | Result and discrepancy query services plus HTTP tests |
+| Discrepancy resolution uses strong ETags and `If-Match` | Completed | Version precondition and stale-write HTTP tests |
+| Immutable attributable resolution evidence exists | Completed | V18 triggers and resolution persistence tests |
+| Spring Modulith verification passes | Completed | `ModularityTest` passed in focused Phase 9 suites |
+| PostgreSQL integration tests pass | Completed | Import, reconciliation and resolution integration suites |
+| Authenticated MockMvc tests pass | Completed | Import and discrepancy HTTP integration suites |
+| React analyst workflow passes frontend tests | Completed | 22 focused tests, ESLint and production build passed on 2026-07-24 |
+| Phase 9 PowerShell and Bash verifiers exist | Completed | `scripts/verify-phase-9.ps1` and `scripts/verify-phase-9.sh` |
+| Cumulative Phase 9 verifier passes | Completed | PowerShell verifier passed on 2026-07-24 |
 | GitHub Repository, Backend and Frontend checks pass | Not started | Phase 9 pull request |
 ## Decision history
 
@@ -484,7 +484,6 @@ Phase 1 verification passed.
 
 ## Next verified action
 
-Inspect this architecture batch, confirm ADR 0013 and the documentation diff,
-then commit with `docs: define settlement and reconciliation` and push
-`feat/phase-9-settlement-reconciliation`. Do not begin backend implementation
-before that commit is verified and pushed.
+Commit and push this final verification batch, then open the Phase 9 pull
+request. Record the required Repository, Backend and Frontend check evidence
+only after GitHub Actions passes on the pull-request head.

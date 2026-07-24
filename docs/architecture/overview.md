@@ -199,6 +199,30 @@ security events or outbox-internal replay evidence.
 ADR 0013 records the accepted import, matching, transaction, security and
 resolution boundaries. Focused parser, matching, persistence, workflow,
 authenticated HTTP, Spring Modulith and React tests verify the implementation.
+
+### Phase 10 — Audit and operational reporting
+
+Phase 10 will implement:
+
+- one canonical append-only journal for new business-audit event types;
+- source-owned identity role-change, outbox replay and reconciliation
+  resolution evidence exposed through narrow read-only module boundaries;
+- one normalized audit projection without rewriting or duplicating historical
+  source evidence;
+- deterministic keyset audit search by time, category, type, actor, subject,
+  correlation identifier and source;
+- current and time-window payment, settlement and reconciliation summaries;
+- bounded synchronous CSV exports containing typed, allow-listed fields;
+- server-enforced audit and reporting visibility for `OPERATIONS`,
+  `RECONCILIATION_ANALYST` and `ADMIN`; and
+- a role-gated React workspace for audit search, operational summaries and
+  report download.
+
+Reporting remains read-only. It cannot update payments, accounts, ledger
+records, outbox events, settlement evidence or source-owned audit evidence.
+ADR 0014 defines event ownership, atomic recording, visibility, query,
+aggregation and export boundaries before implementation begins.
+
 ## C4 context diagram
 
 ```mermaid
@@ -411,17 +435,33 @@ the notification module still cannot edit event payloads or outbox internals.
 
 ### Audit
 
-Owns immutable business and security audit events.
+Owns:
+
+- the canonical append-only journal for new business-audit event types;
+- versioned event names and allow-listed metadata schemas;
+- actor, subject, source-record and correlation attribution;
+- idempotent source-event keys for distinct business occurrences; and
+- the public recording and bounded journal-reading boundaries.
+
+The audit module does not take ownership of identity role-change events, outbox
+replay evidence or reconciliation resolution evidence created before Phase 10.
+Those records remain immutable in their source modules. No migration invents
+historical canonical events or silently changes their meaning.
 
 ### Reporting
 
 Owns:
 
-- operational read queries;
-- dashboard projections; and
-- demonstration report exports.
+- normalized read-only audit projections across canonical and source-owned
+  evidence;
+- operational payment, settlement and reconciliation summaries;
+- deterministic filtering and bounded keyset pagination;
+- bounded, formula-safe CSV report exports; and
+- server-enforced visibility of audit categories and report families.
 
-Reporting code cannot mutate financial records.
+Reporting consumes only public module read models. It owns no business source
+of truth and cannot mutate financial records, operational lifecycles or audit
+evidence.
 
 ### Shared
 
@@ -669,6 +709,27 @@ new compensating ledger transaction. Phase 9 records
 - At most one result can hold the accepted match claim for a payment.
 - Resolution decisions are append-only and unique per discrepancy.
 - Financial schema changes continue to use forward-only Flyway migrations.
+
+### Planned Phase 10 persistence
+
+- Migration version 19 will create the canonical `business_audit_event`
+  journal and database immutability controls.
+- Canonical events use UUID identifiers, versioned event types, UTC instants,
+  actor kind, optional actor identity, subject type and identifier, source
+  module, source-record identity, a stable source-event identifier,
+  correlation identifier and bounded JSON metadata.
+- A unique source-event key makes recording retry safe.
+- Event-specific metadata is allow-listed and schema-versioned; arbitrary
+  request bodies, credentials, session identifiers, CSRF tokens, idempotency
+  keys, raw settlement rows and event payloads are forbidden.
+- Source-owned role-change, replay and resolution evidence is not copied or
+  backfilled into the canonical journal.
+- Reporting queries read canonical and source-owned records through public
+  boundaries and return a normalized projection with an explicit source.
+- Summary and export queries use read-only, repeatable-read PostgreSQL
+  transactions so each response observes one snapshot and never persists
+  derived financial state.
+
 ## API principles
 
 ### Implemented through Phase 9
@@ -731,6 +792,35 @@ new compensating ledger transaction. Phase 9 records
   `412 Precondition Failed`.
 - Validation and business failures use the established
   `application/problem+json` structure with stable codes and field paths.
+
+### Planned Phase 10 audit and reporting API
+
+- `GET /api/v1/audit-events` returns a normalized audit page ordered by
+  `(occurredAt DESC, eventId DESC)` with an opaque keyset cursor and a maximum
+  page size of 100.
+- Audit filters are conjunctive, bounded and allow-listed. Time windows use UTC
+  half-open intervals `[from, to)`.
+- `GET /api/v1/reports/operational-summary` returns typed payment, settlement
+  and reconciliation aggregates for a required bounded time window.
+- `GET /api/v1/reports/audit-events.csv`,
+  `GET /api/v1/reports/payments.csv`,
+  `GET /api/v1/reports/settlements.csv` and
+  `GET /api/v1/reports/reconciliation.csv` require a time window no longer
+  than 31 days and return at most 10,000 data rows.
+- CSV uses a fixed schema, UTF-8, RFC 4180 quoting and CRLF records. Exported
+  values are typed or enumerated and free-text evidence is excluded, preventing
+  spreadsheet-formula injection.
+- `ADMIN` can access every audit category and report family. `OPERATIONS` can
+  access operational payment and account evidence and reports.
+  `RECONCILIATION_ANALYST` can access settlement and reconciliation evidence
+  and reports. `CUSTOMER` has no Phase 10 access.
+- Visibility is applied in the service query before pagination, aggregation or
+  export. A client-supplied filter cannot widen the caller's scope.
+- Audit, summary and export responses use `Cache-Control: no-store`. Downloads
+  use fixed safe filenames and `X-Content-Type-Options: nosniff`.
+- These endpoints are read-only GET requests. They do not accept CSRF tokens or
+  expose a mutation path.
+
 ## Initial risk register
 
 | Risk | Consequence | Control |

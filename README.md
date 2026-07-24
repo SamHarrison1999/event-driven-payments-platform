@@ -10,19 +10,18 @@ asynchronous event delivery and settlement reconciliation.
 
 Current phase:
 
-**Phase 9 — Settlement and reconciliation**
+**Phase 10 — Audit and operational reporting**
 
-Phase 8 is complete and merged through PR #8 at merge commit `179d793`.
-Its remote feature branch has been removed. The stable main branch now includes
-durable notifications, customer-owned notification queries and
-administrator-only outbox dead-letter recovery with immutable replay evidence.
+Phase 9 is complete and merged through PR #9 at merge commit `43b697e`.
+Its local and remote feature branches have been removed. The stable `main`
+branch now includes strict synthetic settlement import, deterministic
+reconciliation, discrepancy review and immutable resolution evidence.
 
-Phase 9 settlement and reconciliation implementation and cumulative local
-verification are complete on its feature branch. PR #9 passed the required
-repository, backend and frontend checks at `a548c68` and is awaiting merge.
-ADR 0013 defines the strict synthetic CSV contract, raw-byte import
-idempotency, bounded payment-read boundary, deterministic discrepancy
-classification, atomic persistence boundary and immutable resolution evidence.
+Phase 10 begins with ADR 0014. It defines a canonical append-only business
+audit journal for new events, preserves existing source-owned security, replay
+and reconciliation evidence, and composes both through bounded read-only
+queries. It also defines operational payment, settlement and reconciliation
+summaries, formula-safe CSV exports and server-enforced role visibility.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.
@@ -666,10 +665,11 @@ Identity registration, authentication and access management are implemented.
 Customer profiles, GBP accounts, ownership views, account lifecycle management,
 the immutable double-entry ledger, synchronous payment submission,
 ownership-aware payment lookup and frontend payment flows are also implemented.
-The transactional outbox, durable simulated notifications and controlled
-dead-letter recovery are implemented. Settlement and reconciliation are the
-current phase; audit and reporting, observability, security hardening and
-release infrastructure remain planned work.
+The transactional outbox, durable simulated notifications, controlled
+dead-letter recovery, settlement import and reconciliation are implemented.
+Audit and operational reporting are the current phase; observability,
+performance, security hardening and release infrastructure remain planned
+work.
 
 ## Engineering principles
 

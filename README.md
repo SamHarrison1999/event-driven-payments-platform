@@ -10,22 +10,19 @@ asynchronous event delivery and settlement reconciliation.
 
 Current phase:
 
-**Phase 8 — Notifications and dead letters**
+**Phase 9 — Settlement and reconciliation**
 
-Phase 7 is complete and merged through PR #7. Phase 8 implementation is now
-complete on the feature branch. The platform provides a narrow published-event
-reader, a durable notification consumer checkpoint, source-event
-deduplication, simulated notification delivery with independent retries and
-leases, customer-owned notification queries and administrator-only outbox
-dead-letter recovery.
+Phase 8 is complete and merged through PR #8 at merge commit `179d793`.
+Its remote feature branch has been removed. The stable main branch now includes
+durable notifications, customer-owned notification queries and
+administrator-only outbox dead-letter recovery with immutable replay evidence.
 
-Controlled replay preserves the original event contract, uses optimistic
-version evidence and records an immutable replay-audit entry containing the
-administrator identity, reason and timestamp. ADR 0012 records the accepted
-consumer, delivery, security and replay decisions.
-
-The cumulative Phase 8 PowerShell verifier and all three required GitHub
-Actions checks passed on PR #8 at commit `5031c66`. Phase 8 is ready to merge.
+Phase 9 settlement and reconciliation implementation and cumulative local
+verification are complete on its feature branch. PR #9 passed the required
+repository, backend and frontend checks at `a548c68` and is awaiting merge.
+ADR 0013 defines the strict synthetic CSV contract, raw-byte import
+idempotency, bounded payment-read boundary, deterministic discrepancy
+classification, atomic persistence boundary and immutable resolution evidence.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.
@@ -232,6 +229,41 @@ Implemented Phase 8 endpoints include:
 The customer notification endpoint requires `CUSTOMER`. Dead-letter inspection
 and replay require `ADMIN`; replay is also CSRF protected.
 
+### Settlement and reconciliation
+
+The reconciliation module now provides a role-gated synthetic settlement
+workflow without connecting to a bank, card scheme or clearing system:
+
+- one strict UTF-8 CSV contract capped at 1 MiB and 1,000 data rows;
+- complete parsing and validation before any settlement persistence;
+- raw-byte SHA-256 idempotency for identical accepted uploads;
+- immutable imported rows and one immutable reconciliation result per row;
+- a narrow public payment-module batch reader with no payment repository access;
+- ordered discrepancy codes and one database-protected accepted match per
+  payment;
+- atomic import, row, result, discrepancy and final-count persistence;
+- analyst and administrator inspection with bounded keyset pagination;
+- strong ETags and required `If-Match` for one-time discrepancy resolution; and
+- immutable actor, decision, reason and timestamp evidence owned by the
+  reconciliation module.
+
+Reconciliation state is separate from payment processing. Import, matching or
+resolution never changes a payment, account balance, ledger transaction, ledger
+entry or outbox event. A later authorised correction workflow must use an
+explicit compensating ledger transaction.
+
+Implemented Phase 9 endpoints include:
+
+    POST /api/v1/settlement-imports
+    GET  /api/v1/settlement-imports/{importId}/results
+    GET  /api/v1/settlement-discrepancies
+    GET  /api/v1/settlement-discrepancies/{discrepancyId}
+    PUT  /api/v1/settlement-discrepancies/{discrepancyId}/resolution
+
+All settlement and discrepancy endpoints require
+`RECONCILIATION_ANALYST` or `ADMIN`. Upload and resolution mutations are CSRF
+protected, and resolution also requires the current strong `If-Match` ETag.
+
 ### Frontend
 
 The frontend currently provides:
@@ -251,8 +283,11 @@ The frontend currently provides:
 - administrator-only outbox dead-letter inspection, payload review and
   CSRF-protected replay;
 - optimistic replay-conflict handling and replay-success feedback;
-- session-expiry recovery that clears customer and administrator query caches
-  while preserving safe payment retry state;
+- analyst and administrator settlement-file upload with atomic import results;
+- open and resolved discrepancy queues with bounded pagination;
+- strong-ETag discrepancy resolution and stale-version recovery;
+- session-expiry recovery that clears customer, administrator and
+  reconciliation query caches while preserving safe payment retry state;
 - Vitest, Testing Library and Mock Service Worker workflow tests; and
 - ESLint static analysis and Vite production builds.
 
@@ -262,7 +297,7 @@ The project currently provides:
 
 - a PostgreSQL Docker Compose service;
 - locked backend and frontend dependencies;
-- reproducible PowerShell and Bash verification scripts; and
+- cumulative PowerShell and Bash verification scripts through Phase 9; and
 - GitHub Actions jobs for repository, backend and frontend verification.
 
 ## Local development
@@ -631,8 +666,10 @@ Identity registration, authentication and access management are implemented.
 Customer profiles, GBP accounts, ownership views, account lifecycle management,
 the immutable double-entry ledger, synchronous payment submission,
 ownership-aware payment lookup and frontend payment flows are also implemented.
-Asynchronous event delivery, settlement, notification and reporting remain
-planned work.
+The transactional outbox, durable simulated notifications and controlled
+dead-letter recovery are implemented. Settlement and reconciliation are the
+current phase; audit and reporting, observability, security hardening and
+release infrastructure remain planned work.
 
 ## Engineering principles
 
@@ -684,7 +721,11 @@ The cumulative verifiers retain the earlier acceptance gates:
 - Phase 6 verification: `scripts/verify-phase-6.ps1` and
   `scripts/verify-phase-6.sh`; and
 - Phase 7 verification: `scripts/verify-phase-7.ps1` and
-  `scripts/verify-phase-7.sh`.
+  `scripts/verify-phase-7.sh`;
+- Phase 8 verification: `scripts/verify-phase-8.ps1` and
+  `scripts/verify-phase-8.sh`; and
+- Phase 9 verification: `scripts/verify-phase-9.ps1` and
+  `scripts/verify-phase-9.sh`.
 
 The Phase 6 gate verifies the authenticated payment workspace and
 customer-owned payment lookup. The later gates retain that complete baseline.
@@ -708,3 +749,23 @@ migrations 1 through 15, documentation and required files. It then runs the
 complete Phase 7 baseline. That baseline recursively executes the full backend
 `clean test bootJar` gate, frozen frontend install, ESLint, all Vitest tests,
 the Vite production build and repository whitespace checks.
+
+### Phase 9 verification
+
+From the repository root on Windows:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-phase-9.ps1
+```
+
+From WSL or another Bash environment:
+
+```bash
+bash scripts/verify-phase-9.sh
+```
+
+The Phase 9 verifier checks the settlement import, deterministic matching,
+database immutability, discrepancy-resolution, security, frontend and
+documentation contracts plus Flyway migrations 1 through 18. It then runs the
+complete Phase 8 baseline, which supplies the full backend and frontend
+regression gate.

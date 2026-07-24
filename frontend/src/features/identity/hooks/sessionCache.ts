@@ -6,6 +6,7 @@ const customerQueryRoots =
     'notifications',
     'outbox-dead-letters',
     'payments',
+    'reconciliation',
   ])
 
 export function clearCustomerQueries(

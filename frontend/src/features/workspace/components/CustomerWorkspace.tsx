@@ -4,6 +4,7 @@ import { NotificationPanel } from '../../notifications/components/NotificationPa
 import { DeadLetterPanel } from '../../operations/components/DeadLetterPanel'
 import { PaymentCreationForm } from '../../payments/components/PaymentCreationForm'
 import { PaymentLookup } from '../../payments/components/PaymentLookup'
+import { ReconciliationWorkspace } from '../../reconciliation/components/ReconciliationWorkspace'
 
 const workspaceLinks = [
   {
@@ -37,6 +38,20 @@ const workspaceLinks = [
       'Inspect and replay failed outbox events.',
     adminOnly: true,
   },
+  {
+    href: '#settlement-import',
+    label: 'Settlement import',
+    description:
+      'Upload and inspect synthetic settlement results.',
+    reconciliationOnly: true,
+  },
+  {
+    href: '#settlement-discrepancies',
+    label: 'Discrepancies',
+    description:
+      'Review and resolve reconciliation differences.',
+    reconciliationOnly: true,
+  },
 ]
 
 export function CustomerWorkspace() {
@@ -45,11 +60,31 @@ export function CustomerWorkspace() {
     currentSession.data?.roles.includes(
       'ADMIN',
     ) === true
+  const isCustomer =
+    currentSession.data?.roles.includes(
+      'CUSTOMER',
+    ) === true
+  const isReconciliationUser =
+    isAdministrator ||
+    currentSession.data?.roles.includes(
+      'RECONCILIATION_ANALYST',
+    ) === true
   const visibleWorkspaceLinks =
     workspaceLinks.filter(
       (link) =>
-        link.adminOnly !== true ||
-        isAdministrator,
+        (
+          link.adminOnly !== true ||
+          isAdministrator
+        ) &&
+        (
+          link.reconciliationOnly !== true ||
+          isReconciliationUser
+        ) &&
+        (
+          link.adminOnly === true ||
+          link.reconciliationOnly === true ||
+          isCustomer
+        ),
     )
 
   return (
@@ -94,28 +129,46 @@ export function CustomerWorkspace() {
             Customer workspace
           </p>
 
-          <h3>Manage simulated payments</h3>
+          <h3>
+            {isCustomer
+              ? 'Manage simulated payments'
+              : 'Review settlement operations'}
+          </h3>
 
           <p>
-            Review account information, simulated
-            payment notifications, payment creation
-            and previous results from one protected
-            browser workspace.
+            {isCustomer
+              ? 'Review account information, simulated payment notifications, payment creation and previous results from one protected browser workspace.'
+              : 'Import synthetic settlement data, inspect deterministic results and record attributable discrepancy decisions.'}
           </p>
         </header>
 
         <div className="workspace-grid">
-          <CustomerAccountsPanel />
+          {isCustomer && (
+            <>
+              <CustomerAccountsPanel />
 
-          <NotificationPanel />
+              <NotificationPanel />
 
-          <PaymentCreationForm />
+              <PaymentCreationForm />
 
-          <PaymentLookup />
+              <PaymentLookup />
+            </>
+          )}
 
           {isAdministrator && (
             <DeadLetterPanel />
           )}
+
+          {isReconciliationUser &&
+            currentSession.data !== null &&
+            currentSession.data !==
+              undefined && (
+              <ReconciliationWorkspace
+                userId={
+                  currentSession.data.userId
+                }
+              />
+            )}
         </div>
       </div>
     </div>

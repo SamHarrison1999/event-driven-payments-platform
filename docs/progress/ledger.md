@@ -1,6 +1,6 @@
 # Progress ledger
 
-Last updated: 2026-07-23
+Last updated: 2026-07-24
 
 ## Status meanings
 
@@ -26,7 +26,7 @@ Last updated: 2026-07-23
 | Docker execution | Completed | `hello-world` container succeeded |
 | jq | Completed | jq 1.8.1 |
 | IntelliJ repository | Completed | Repository and Gradle project configured |
-| Current Git phase branch | Current | `feat/phase-8-notifications-dead-letters` from Phase 7 merge `1eff8e9` |
+| Current Git phase branch | Current | `feat/phase-9-settlement-reconciliation` from Phase 8 merge `179d793` |
 
 ## Phase progress
 
@@ -40,8 +40,8 @@ Last updated: 2026-07-23
 | 5 — Synchronous payments | Completed | PR #5 merged; local and GitHub Actions verification passed |
 | 6 — Frontend payment experience | Completed | PR #6 merged; local and GitHub Actions verification passed |
 | 7 — Asynchronous events and outbox | Completed | PR #7 merged; local and GitHub Actions verification passed |
-| 8 — Notifications and dead letters | Current | Implementation, cumulative local verification and required CI checks complete; PR #8 ready to merge |
-| 9 — Settlement and reconciliation | Not started | None |
+| 8 — Notifications and dead letters | Completed | PR #8 merged at `179d793`; local and remote Phase 8 feature branches removed |
+| 9 — Settlement and reconciliation | Current | Implementation, cumulative local gate and PR #9 checks complete; merge remains |
 | 10 — Audit and reporting | Not started | None |
 | 11 — Observability and performance | Not started | None |
 | 12 — Security hardening | Not started | None |
@@ -394,6 +394,36 @@ Phase 1 verification passed.
 | PowerShell and Bash Phase 8 verifiers exist | Completed | `scripts/verify-phase-8.ps1` and `scripts/verify-phase-8.sh` |
 | Composite Phase 8 verifier passes | Completed | PowerShell verifier passed on 2026-07-23 |
 | Required GitHub Actions checks pass | Completed | Repository, Backend and Frontend checks passed on PR #8 at `5031c66` on 2026-07-23 |
+## Phase 9 acceptance evidence
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Phase 8 merge and branch cleanup recorded | Completed | PR #8 merge commit `179d793` and Phase 9 baseline documentation |
+| ADR 0013 exists | Completed | `docs/adr/0013-settlement-and-reconciliation.md` |
+| Settlement and reconciliation boundaries are documented | Completed | ADR 0013, README and architecture overview |
+| Exact bounded CSV contract is implemented | Completed | `SettlementCsvParser` and parser tests |
+| Complete file is validated before persistence | Completed | Parser-first import service and invalid-file rollback coverage |
+| Duplicate accepted uploads are idempotent by SHA-256 fingerprint | Completed | V16 unique fingerprint and import workflow replay tests |
+| Imported settlement rows are immutable | Completed | V16 mutation triggers and PostgreSQL integration tests |
+| External settlement record identifiers are globally unique | Completed | V16 unique constraint and conflicting-import rollback test |
+| Payment data is accessed only through a public reconciliation reader | Completed | `PaymentReconciliationReader` module boundary |
+| Payment snapshots are fetched in one bounded batch | Completed | `PaymentReconciliationReaderService` and focused unit test |
+| Deterministic matching and discrepancy codes are implemented | Completed | `SettlementMatcher` precedence tests |
+| One accepted settlement match per payment is database protected | Completed | V17 match claims and concurrency integration coverage |
+| Import, rows, results and discrepancies commit atomically | Completed | Import workflow and PostgreSQL rollback tests |
+| Reconciliation never mutates payment, account, ledger or outbox history | Completed | Read-only payment boundary and persistence integration tests |
+| Analyst and administrator security is enforced | Completed | Method-security and authenticated MockMvc tests |
+| Import and discrepancy APIs use no-store responses | Completed | HTTP integration tests |
+| Deterministic bounded keyset pagination exists | Completed | Result and discrepancy query services plus HTTP tests |
+| Discrepancy resolution uses strong ETags and `If-Match` | Completed | Version precondition and stale-write HTTP tests |
+| Immutable attributable resolution evidence exists | Completed | V18 triggers and resolution persistence tests |
+| Spring Modulith verification passes | Completed | `ModularityTest` passed in focused Phase 9 suites |
+| PostgreSQL integration tests pass | Completed | Import, reconciliation and resolution integration suites |
+| Authenticated MockMvc tests pass | Completed | Import and discrepancy HTTP integration suites |
+| React analyst workflow passes frontend tests | Completed | 22 focused tests, ESLint and production build passed on 2026-07-24 |
+| Phase 9 PowerShell and Bash verifiers exist | Completed | `scripts/verify-phase-9.ps1` and `scripts/verify-phase-9.sh` |
+| Cumulative Phase 9 verifier passes | Completed | PowerShell verifier passed on 2026-07-24 |
+| GitHub Repository, Backend and Frontend checks pass | Completed | Repository, Backend and Frontend checks passed on PR #9 at `a548c68` on 2026-07-24 |
 ## Decision history
 
 | Date | Decision |
@@ -445,8 +475,15 @@ Phase 1 verification passed.
 | 2026-07-23 | Keep notification delivery retries independent of payment and outbox publication |
 | 2026-07-23 | Restrict outbox dead-letter inspection and controlled replay to administrators |
 | 2026-07-23 | Preserve event payloads during replay and record immutable replay evidence |
+| 2026-07-24 | Parse and validate the complete bounded settlement file before persistence |
+| 2026-07-24 | Identify accepted imports idempotently by SHA-256 of the original raw bytes |
+| 2026-07-24 | Read reconciliation-safe payment snapshots through one bounded public batch API |
+| 2026-07-24 | Keep reconciliation state and resolution evidence separate from payment and ledger history |
+| 2026-07-24 | Use database-protected accepted-match claims and immutable per-row results |
+| 2026-07-24 | Require strong ETags and `If-Match` for one-time discrepancy resolution |
 
 ## Next verified action
 
-Merge PR #8. Then synchronise local `main`, remove the Phase 8 feature branch
-locally and remotely, and record the merge commit before starting Phase 9.
+Commit and push the Phase 9 CI evidence update. After the required checks pass
+again on the documentation-only pull-request head, merge PR #9, sync `main`
+and remove the local and remote Phase 9 feature branches.

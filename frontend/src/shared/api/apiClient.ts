@@ -29,6 +29,12 @@ export interface ApiJsonRequestOptions<T>
   validate: JsonValidator<T>
 }
 
+export interface ApiJsonResponse<T> {
+  data: T
+  headers: Headers
+  status: number
+}
+
 export interface ApiNoContentRequestOptions
   extends ApiRequestOptions {
   contractName: string
@@ -141,6 +147,7 @@ function createHeaders(
 
   if (
     options.body !== undefined &&
+    !(options.body instanceof FormData) &&
     !headers.has('Content-Type')
   ) {
     headers.set(
@@ -155,9 +162,13 @@ function createHeaders(
 function serializeBody(
   body: unknown,
   contractName: string,
-): string | undefined {
+): BodyInit | undefined {
   if (body === undefined) {
     return undefined
+  }
+
+  if (body instanceof FormData) {
+    return body
   }
 
   try {
@@ -260,10 +271,10 @@ async function throwResponseError(
   )
 }
 
-export async function apiRequestJson<T>(
+export async function apiRequestJsonResponse<T>(
   path: string,
   options: ApiJsonRequestOptions<T>,
-): Promise<T> {
+): Promise<ApiJsonResponse<T>> {
   const response = await executeRequest(
     path,
     options,
@@ -308,7 +319,24 @@ export async function apiRequestJson<T>(
     )
   }
 
-  return payload
+  return {
+    data: payload,
+    headers: response.headers,
+    status: response.status,
+  }
+}
+
+export async function apiRequestJson<T>(
+  path: string,
+  options: ApiJsonRequestOptions<T>,
+): Promise<T> {
+  const response =
+    await apiRequestJsonResponse(
+      path,
+      options,
+    )
+
+  return response.data
 }
 
 export async function apiRequestNoContent(

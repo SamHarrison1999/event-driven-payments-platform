@@ -168,6 +168,37 @@ this phase.
 
 ADR 0012 records the consumer, notification lifecycle, security and replay
 decisions.
+
+### Phase 9 — Settlement and reconciliation
+
+Phase 9 implements:
+
+- one exact UTF-8 settlement CSV contract with a 1 MiB raw-byte limit, between
+  1 and 1,000 data rows, bounded fields and real CSV quoting;
+- rejection of malformed UTF-8, a UTF-8 BOM, NUL characters, invalid headers,
+  malformed records, duplicate external record identifiers and invalid values
+  before persistence begins;
+- SHA-256 idempotency over the original accepted file bytes;
+- immutable import rows identified by their original one-based data-row number;
+- one immutable reconciliation result per imported row;
+- a public payment batch reader that returns only identifier, status, amount,
+  currency, completion time and linked ledger-transaction identifier;
+- deterministic discrepancy-code precedence;
+- one database-protected accepted settlement match per payment;
+- atomic import metadata, rows, results, discrepancies and final counts;
+- analyst and administrator APIs with no-store responses and bounded keyset
+  pagination;
+- one-time discrepancy resolution using strong ETags and `If-Match`; and
+- immutable resolution evidence containing actor identity, decision, bounded
+  reason, discrepancy version and decision time.
+
+The generic audit module remains reserved for Phase 10. Phase 9 resolution
+evidence is owned by reconciliation and must not depend on identity-internal
+security events or outbox-internal replay evidence.
+
+ADR 0013 records the accepted import, matching, transaction, security and
+resolution boundaries. Focused parser, matching, persistence, workflow,
+authenticated HTTP, Spring Modulith and React tests verify the implementation.
 ## C4 context diagram
 
 ```mermaid
@@ -248,8 +279,9 @@ flowchart TB
     payment --> outbox
     outbox --> shared
     ledger --> shared
+    reconciliation --> identity
     reconciliation --> payment
-    reconciliation --> audit
+    reconciliation --> shared
     notification --> identity
     notification --> outbox
     notification --> audit
@@ -348,12 +380,17 @@ Version 1 does not claim to implement regulated fraud detection.
 
 Owns:
 
-- settlement imports;
-- imported settlement rows;
-- reconciliation runs;
-- matching results;
-- discrepancies; and
-- discrepancy resolution.
+- accepted settlement-import metadata and raw-byte SHA-256 fingerprints;
+- immutable normalised settlement rows and external record identifiers;
+- immutable per-row reconciliation results;
+- the exclusive accepted-match claim for a payment;
+- discrepancies and their optimistic lifecycle state; and
+- immutable attributable discrepancy-resolution decisions.
+
+It reads payment state only through a bounded public payment-module API and
+uses the public identity boundary only to attribute mutations. It does not read
+payment repositories, account internals, ledger internals, identity-internal
+security events or outbox internals.
 
 ### Notification
 
@@ -499,12 +536,38 @@ A role change transaction:
 3. invalidates active sessions for the affected user.
 
 The role mutation and security event commit atomically.
+### Settlement import and matching
+
+After the entire bounded file has been parsed and validated, one PostgreSQL
+transaction:
+
+1. reserves the raw-byte fingerprint or returns the existing completed import;
+2. stores import metadata and every normalised immutable row;
+3. reads all referenced payments through one bounded public batch query;
+4. classifies rows in original data-row order;
+5. claims at most one accepted settlement match for each payment;
+6. stores exactly one immutable result per row;
+7. creates one discrepancy for every non-match; and
+8. finalises immutable counts before commit.
+
+A persistence, uniqueness or constraint failure rolls back the entire new
+import. Concurrent otherwise-valid rows use a database uniqueness claim: the
+first committed claim is `MATCHED`, and a later conflicting claim is
+`DUPLICATE_PAYMENT_SETTLEMENT`. No two committed rows can both be the accepted
+match for one payment.
+
 ### Discrepancy resolution
 
-A discrepancy-resolution transaction will:
+A discrepancy-resolution transaction:
 
-1. update the resolution state; and
-2. write the associated audit event.
+1. locks and verifies the open discrepancy and expected version from
+   `If-Match`;
+2. inserts one immutable decision containing actor, decision, reason, prior
+   version and timestamp; and
+3. changes only the discrepancy status to `RESOLVED`.
+
+It does not update a payment, account, ledger record, imported row,
+reconciliation result or outbox event.
 
 ## Eventual consistency boundaries
 
@@ -523,15 +586,20 @@ A delayed notification must never imply that a committed payment was lost.
 Payment processing and settlement reconciliation are separate state machines.
 
 A payment can be completed internally while remaining unreconciled externally.
+The payment module exposes a read-only reconciliation snapshot but accepts no
+reconciliation commands.
 
-A reconciliation discrepancy does not mutate or delete the original ledger
-transaction.
+Settlement imports, matching results, discrepancies and resolution decisions
+cannot mutate or delete payment, account, ledger, imported-row, result or
+outbox history.
 
-A financial correction requires a new compensating ledger transaction.
+A financial correction requires a separately authorised workflow that posts a
+new compensating ledger transaction. Phase 9 records
+`INTERNAL_CORRECTION_REQUIRED` but does not perform that correction.
 
 ## Persistence principles
 
-### Implemented through Phase 7
+### Implemented through Phase 9
 
 - PostgreSQL is the application system of record.
 - Flyway owns forward-only schema migration history.
@@ -551,6 +619,15 @@ A financial correction requires a new compensating ledger transaction.
   as deterministic business rejections.
 - Migration version 13 creates the transactional outbox schema, lifecycle
   constraints and claiming indexes.
+- Migration version 14 creates notification, checkpoint and consumer-failure
+  persistence.
+- Migration version 15 adds outbox replay metadata and immutable replay
+  evidence.
+- Migration version 16 creates settlement imports and immutable imported rows.
+- Migration version 17 creates immutable reconciliation results, accepted
+  payment-match claims and discrepancies.
+- Migration version 18 creates immutable resolution evidence and the
+  database-enforced one-time discrepancy lifecycle.
 - Identity email uniqueness is protected by a database constraint.
 - Browser sessions are stored in PostgreSQL.
 - Role-change security events are append-only.
@@ -580,13 +657,21 @@ A financial correction requires a new compensating ledger transaction.
   diagnostics and retry metadata.
 - Database integration is tested with real PostgreSQL Testcontainers.
 
-### Planned domain persistence guarantees
+### Phase 9 persistence implementation
 
-- Imported files retain synthetic source identifiers and fingerprints.
-- Financial schema changes use forward-only Flyway migrations.
+- Migration versions 16 through 18 separately own settlement imports and rows,
+  reconciliation results and claims, and immutable resolution evidence.
+- A unique lowercase SHA-256 fingerprint identifies one accepted raw file.
+- External settlement record identifiers are globally unique across accepted
+  imports.
+- Imported rows and reconciliation results reject update and delete.
+- Each imported row has exactly one result after an import commits.
+- At most one result can hold the accepted match claim for a payment.
+- Resolution decisions are append-only and unique per discrepancy.
+- Financial schema changes continue to use forward-only Flyway migrations.
 ## API principles
 
-### Implemented through Phase 5
+### Implemented through Phase 9
 
 - APIs are versioned under `/api/v1`.
 - `GET /api/v1/system/info` exposes non-sensitive platform metadata.
@@ -626,13 +711,26 @@ A financial correction requires a new compensating ledger transaction.
 - Actuator exposes health, liveness and readiness.
 - OpenAPI output is available under `/v3/api-docs`.
 
-### Planned API guarantees
+### Phase 9 reconciliation API
 
-- Remaining future APIs use the established
-  `application/problem+json` structure.
-- Field errors use stable property paths.
-- Business conflicts use stable machine-readable codes.
-- Pagination is bounded where collection endpoints require it.
+- Settlement and discrepancy operations require
+  `RECONCILIATION_ANALYST` or `ADMIN` at the service boundary.
+- Multipart upload accepts exactly one `file` part and enforces the raw-byte
+  limit independently of caller-supplied metadata.
+- Mutations use the existing session and CSRF controls.
+- Import summaries, row results, discrepancy queues and details use
+  `Cache-Control: no-store`.
+- Identical accepted bytes return the existing import without duplicate rows,
+  results or discrepancies.
+- A different file that reuses an accepted external record identifier returns a
+  stable conflict.
+- Import rows use row-number keyset pagination. Discrepancy queues use a stable
+  creation-time and identifier cursor. Page sizes are capped at 100.
+- Discrepancy detail responses expose a strong version ETag.
+- Resolution requires one strong `If-Match`; stale versions return
+  `412 Precondition Failed`.
+- Validation and business failures use the established
+  `application/problem+json` structure with stable codes and field paths.
 ## Initial risk register
 
 | Risk | Consequence | Control |
@@ -644,7 +742,7 @@ A financial correction requires a new compensating ledger transaction.
 | Duplicate event | Repeated side effect | Consumer deduplication |
 | Invalid state change | Inconsistent payment lifecycle | Explicit state machine |
 | Broken access control | Data disclosure or mutation | Service-level RBAC and ownership tests |
-| Malicious import | Injection or resource exhaustion | Limits, streaming and strict parsing |
+| Malicious import | Injection or resource exhaustion | Byte and row limits, strict CSV parsing and complete pre-persistence validation |
 | Sensitive logging | Credential or data exposure | Allow-listed fields and redaction tests |
 | Framework incompatibility | Build or runtime failure | Locked versions and compatibility tests |
 | Premature distribution | Excessive operational complexity | Modular monolith and extraction criteria |

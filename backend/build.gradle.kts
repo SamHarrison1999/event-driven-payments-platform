@@ -67,6 +67,10 @@ dependencies {
     )
 
     implementation(
+        "org.apache.commons:commons-csv:1.14.1"
+    )
+
+    implementation(
         "org.springdoc:" +
             "springdoc-openapi-starter-webmvc-ui:$springdocVersion"
     )

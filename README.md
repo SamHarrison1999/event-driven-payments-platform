@@ -10,22 +10,18 @@ asynchronous event delivery and settlement reconciliation.
 
 Current phase:
 
-**Phase 8 — Notifications and dead letters**
+**Phase 9 — Settlement and reconciliation**
 
-Phase 7 is complete and merged through PR #7. Phase 8 implementation is now
-complete on the feature branch. The platform provides a narrow published-event
-reader, a durable notification consumer checkpoint, source-event
-deduplication, simulated notification delivery with independent retries and
-leases, customer-owned notification queries and administrator-only outbox
-dead-letter recovery.
+Phase 8 is complete and merged through PR #8 at merge commit `179d793`.
+Its remote feature branch has been removed. The stable main branch now includes
+durable notifications, customer-owned notification queries and
+administrator-only outbox dead-letter recovery with immutable replay evidence.
 
-Controlled replay preserves the original event contract, uses optimistic
-version evidence and records an immutable replay-audit entry containing the
-administrator identity, reason and timestamp. ADR 0012 records the accepted
-consumer, delivery, security and replay decisions.
-
-The cumulative Phase 8 PowerShell verifier and all three required GitHub
-Actions checks passed on PR #8 at commit `5031c66`. Phase 8 is ready to merge.
+Phase 9 starts with the settlement and reconciliation architecture batch.
+ADR 0013 defines the strict synthetic CSV contract, raw-byte import
+idempotency, bounded payment-read boundary, deterministic discrepancy
+classification, atomic persistence boundary and immutable resolution evidence.
+No Phase 9 backend or frontend implementation is claimed by this batch.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.
@@ -232,6 +228,28 @@ Implemented Phase 8 endpoints include:
 The customer notification endpoint requires `CUSTOMER`. Dead-letter inspection
 and replay require `ADMIN`; replay is also CSRF protected.
 
+### Settlement and reconciliation design
+
+Phase 9 will add a role-gated synthetic settlement workflow without connecting
+to a bank, card scheme or clearing system. The accepted design provides:
+
+- one strict UTF-8 CSV contract capped at 1 MiB and 1,000 data rows;
+- complete parsing and validation before any settlement persistence;
+- raw-byte SHA-256 idempotency for identical accepted uploads;
+- immutable imported rows and one immutable reconciliation result per row;
+- a narrow public payment-module batch reader with no payment repository access;
+- ordered discrepancy codes and one database-protected accepted match per
+  payment;
+- atomic import, row, result, discrepancy and final-count persistence;
+- analyst and administrator inspection with bounded keyset pagination;
+- strong ETags and required `If-Match` for one-time discrepancy resolution; and
+- immutable actor, decision, reason and timestamp evidence owned by the
+  reconciliation module.
+
+Reconciliation state is separate from payment processing. Import, matching or
+resolution never changes a payment, account balance, ledger transaction, ledger
+entry or outbox event. A later authorised correction workflow must use an
+explicit compensating ledger transaction.
 ### Frontend
 
 The frontend currently provides:
@@ -631,8 +649,10 @@ Identity registration, authentication and access management are implemented.
 Customer profiles, GBP accounts, ownership views, account lifecycle management,
 the immutable double-entry ledger, synchronous payment submission,
 ownership-aware payment lookup and frontend payment flows are also implemented.
-Asynchronous event delivery, settlement, notification and reporting remain
-planned work.
+The transactional outbox, durable simulated notifications and controlled
+dead-letter recovery are implemented. Settlement and reconciliation are the
+current phase; audit and reporting, observability, security hardening and
+release infrastructure remain planned work.
 
 ## Engineering principles
 

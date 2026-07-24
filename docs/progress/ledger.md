@@ -1,6 +1,6 @@
 # Progress ledger
 
-Last updated: 2026-07-23
+Last updated: 2026-07-24
 
 ## Status meanings
 
@@ -26,7 +26,7 @@ Last updated: 2026-07-23
 | Docker execution | Completed | `hello-world` container succeeded |
 | jq | Completed | jq 1.8.1 |
 | IntelliJ repository | Completed | Repository and Gradle project configured |
-| Current Git phase branch | Current | `feat/phase-8-notifications-dead-letters` from Phase 7 merge `1eff8e9` |
+| Current Git phase branch | Current | `feat/phase-9-settlement-reconciliation` from Phase 8 merge `179d793` |
 
 ## Phase progress
 
@@ -40,8 +40,8 @@ Last updated: 2026-07-23
 | 5 — Synchronous payments | Completed | PR #5 merged; local and GitHub Actions verification passed |
 | 6 — Frontend payment experience | Completed | PR #6 merged; local and GitHub Actions verification passed |
 | 7 — Asynchronous events and outbox | Completed | PR #7 merged; local and GitHub Actions verification passed |
-| 8 — Notifications and dead letters | Current | Implementation, cumulative local verification and required CI checks complete; PR #8 ready to merge |
-| 9 — Settlement and reconciliation | Not started | None |
+| 8 — Notifications and dead letters | Completed | PR #8 merged at `179d793`; local and remote Phase 8 feature branches removed |
+| 9 — Settlement and reconciliation | Current | Architecture batch and ADR 0013 |
 | 10 — Audit and reporting | Not started | None |
 | 11 — Observability and performance | Not started | None |
 | 12 — Security hardening | Not started | None |
@@ -394,6 +394,36 @@ Phase 1 verification passed.
 | PowerShell and Bash Phase 8 verifiers exist | Completed | `scripts/verify-phase-8.ps1` and `scripts/verify-phase-8.sh` |
 | Composite Phase 8 verifier passes | Completed | PowerShell verifier passed on 2026-07-23 |
 | Required GitHub Actions checks pass | Completed | Repository, Backend and Frontend checks passed on PR #8 at `5031c66` on 2026-07-23 |
+## Phase 9 acceptance evidence
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Phase 8 merge and branch cleanup recorded | Completed | PR #8 merge commit `179d793` and Phase 9 baseline documentation |
+| ADR 0013 exists | Completed | `docs/adr/0013-settlement-and-reconciliation.md` |
+| Settlement and reconciliation boundaries are documented | Completed | ADR 0013, README and architecture overview |
+| Exact bounded CSV contract is implemented | Not started | Backend batch 2 |
+| Complete file is validated before persistence | Not started | Backend batch 2 |
+| Duplicate accepted uploads are idempotent by SHA-256 fingerprint | Not started | Backend batch 2 |
+| Imported settlement rows are immutable | Not started | Backend batch 2 and PostgreSQL tests |
+| External settlement record identifiers are globally unique | Not started | Backend batch 2 and PostgreSQL tests |
+| Payment data is accessed only through a public reconciliation reader | Not started | Backend batch 3 |
+| Payment snapshots are fetched in one bounded batch | Not started | Backend batch 3 |
+| Deterministic matching and discrepancy codes are implemented | Not started | Backend batch 3 |
+| One accepted settlement match per payment is database protected | Not started | Backend batch 3 and concurrency tests |
+| Import, rows, results and discrepancies commit atomically | Not started | Backend batch 3 and rollback tests |
+| Reconciliation never mutates payment, account, ledger or outbox history | Not started | Architecture and PostgreSQL integration tests |
+| Analyst and administrator security is enforced | Not started | Backend batch 4 |
+| Import and discrepancy APIs use no-store responses | Not started | Backend batch 4 |
+| Deterministic bounded keyset pagination exists | Not started | Backend batch 4 |
+| Discrepancy resolution uses strong ETags and `If-Match` | Not started | Backend batch 5 |
+| Immutable attributable resolution evidence exists | Not started | Backend batch 5 and PostgreSQL immutability tests |
+| Spring Modulith verification passes | Not started | Focused Phase 9 verification |
+| PostgreSQL integration tests pass | Not started | Focused Phase 9 verification |
+| Authenticated MockMvc tests pass | Not started | Focused Phase 9 verification |
+| React analyst workflow passes frontend tests | Not started | Frontend batch 6 |
+| Phase 9 PowerShell and Bash verifiers exist | Not started | Verification batch 7 |
+| Cumulative Phase 9 verifier passes | Not started | Verification batch 7 |
+| GitHub Repository, Backend and Frontend checks pass | Not started | Phase 9 pull request |
 ## Decision history
 
 | Date | Decision |
@@ -445,8 +475,16 @@ Phase 1 verification passed.
 | 2026-07-23 | Keep notification delivery retries independent of payment and outbox publication |
 | 2026-07-23 | Restrict outbox dead-letter inspection and controlled replay to administrators |
 | 2026-07-23 | Preserve event payloads during replay and record immutable replay evidence |
+| 2026-07-24 | Parse and validate the complete bounded settlement file before persistence |
+| 2026-07-24 | Identify accepted imports idempotently by SHA-256 of the original raw bytes |
+| 2026-07-24 | Read reconciliation-safe payment snapshots through one bounded public batch API |
+| 2026-07-24 | Keep reconciliation state and resolution evidence separate from payment and ledger history |
+| 2026-07-24 | Use database-protected accepted-match claims and immutable per-row results |
+| 2026-07-24 | Require strong ETags and `If-Match` for one-time discrepancy resolution |
 
 ## Next verified action
 
-Merge PR #8. Then synchronise local `main`, remove the Phase 8 feature branch
-locally and remotely, and record the merge commit before starting Phase 9.
+Inspect this architecture batch, confirm ADR 0013 and the documentation diff,
+then commit with `docs: define settlement and reconciliation` and push
+`feat/phase-9-settlement-reconciliation`. Do not begin backend implementation
+before that commit is verified and pushed.

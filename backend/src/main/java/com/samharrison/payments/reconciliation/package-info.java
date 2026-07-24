@@ -1,8 +1,8 @@
 @ApplicationModule(
     displayName = "Reconciliation",
     allowedDependencies = {
+        "identity",
         "payment",
-        "audit",
         "shared"
     }
 )

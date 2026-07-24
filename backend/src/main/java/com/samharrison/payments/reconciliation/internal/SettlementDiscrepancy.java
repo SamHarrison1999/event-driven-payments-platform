@@ -152,6 +152,15 @@ class SettlementDiscrepancy {
         );
     }
 
+    void resolve() {
+        if (status != SettlementDiscrepancyStatus.OPEN) {
+            throw new
+                SettlementDiscrepancyLifecycleException(id);
+        }
+
+        status = SettlementDiscrepancyStatus.RESOLVED;
+    }
+
     UUID id() {
         return id;
     }

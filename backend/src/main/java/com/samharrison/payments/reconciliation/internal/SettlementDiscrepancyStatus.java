@@ -1,6 +1,6 @@
 package com.samharrison.payments.reconciliation.internal;
 
-enum SettlementDiscrepancyStatus {
+public enum SettlementDiscrepancyStatus {
     OPEN,
     RESOLVED
 }

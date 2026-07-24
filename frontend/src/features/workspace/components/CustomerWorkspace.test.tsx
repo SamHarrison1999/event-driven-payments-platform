@@ -24,6 +24,8 @@ const notificationsEndpoint =
   'http://localhost:5173/api/v1/notifications'
 const deadLettersEndpoint =
   'http://localhost:5173/api/v1/admin/outbox/dead-letters'
+const settlementDiscrepanciesEndpoint =
+  'http://localhost:5173/api/v1/settlement-discrepancies'
 
 const firstAccount: CustomerAccount = {
   id:
@@ -66,6 +68,17 @@ beforeEach(() => {
     http.get(notificationsEndpoint, () => {
       return HttpResponse.json([])
     }),
+
+    http.get(
+      settlementDiscrepanciesEndpoint,
+      () => {
+        return HttpResponse.json({
+          discrepancies: [],
+          nextAfterCreatedAt: null,
+          nextAfterId: null,
+        })
+      },
+    ),
   )
 })
 
@@ -78,7 +91,7 @@ describe('CustomerWorkspace', () => {
       )
 
       expect(
-        screen.getByRole('heading', {
+        await screen.findByRole('heading', {
           level: 3,
           name: 'Manage simulated payments',
         }),
@@ -143,13 +156,13 @@ describe('CustomerWorkspace', () => {
 
   it(
     'provides in-page workspace navigation',
-    () => {
+    async () => {
       renderWithQueryClient(
         <CustomerWorkspace />,
       )
 
       expect(
-        screen.getByRole('link', {
+        await screen.findByRole('link', {
           name: 'Accounts',
         }),
       ).toHaveAttribute(
@@ -272,6 +285,60 @@ describe('CustomerWorkspace', () => {
           '2540 minor units',
         ),
       ).toBeInTheDocument()
+    },
+  )
+
+  it(
+    'shows reconciliation without customer payment calls for an analyst',
+    async () => {
+      server.use(
+        http.get(sessionEndpoint, () => {
+          return HttpResponse.json({
+            userId:
+              'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            email: 'analyst@example.com',
+            roles: [
+              'RECONCILIATION_ANALYST',
+            ],
+          })
+        }),
+      )
+
+      renderWithQueryClient(
+        <CustomerWorkspace />,
+      )
+
+      expect(
+        await screen.findByRole('heading', {
+          level: 3,
+          name:
+            'Review settlement operations',
+        }),
+      ).toBeInTheDocument()
+
+      expect(
+        await screen.findByRole('link', {
+          name: 'Settlement import',
+        }),
+      ).toHaveAttribute(
+        'href',
+        '#settlement-import',
+      )
+
+      expect(
+        screen.getByRole('heading', {
+          level: 4,
+          name:
+            'Import and reconcile CSV',
+        }),
+      ).toBeInTheDocument()
+
+      expect(
+        screen.queryByRole('heading', {
+          level: 4,
+          name: 'Your GBP accounts',
+        }),
+      ).not.toBeInTheDocument()
     },
   )
 })

@@ -47,7 +47,7 @@ function App() {
         <nav aria-label="Primary navigation">
           <a href="#overview">Overview</a>
           <a href="#customer-session">
-            Customer workspace
+            Protected workspace
           </a>
           <a href="#foundations">Foundations</a>
           <a href="#system-status">
@@ -98,18 +98,18 @@ function App() {
             </p>
 
             <strong>
-              Durable notifications and recovery
+              Settlement reconciliation
             </strong>
 
             <p>
-              Demonstrating duplicate-safe event
-              consumption, simulated notification
-              delivery and audited dead-letter replay.
+              Demonstrating strict synthetic imports,
+              deterministic matching and immutable
+              discrepancy-resolution evidence.
             </p>
 
             <div className="scope-card__progress">
               <span>Delivery progress</span>
-              <strong>Phase 8</strong>
+              <strong>Phase 9</strong>
             </div>
           </aside>
         </section>

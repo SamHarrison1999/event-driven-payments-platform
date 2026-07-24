@@ -41,7 +41,7 @@ Last updated: 2026-07-24
 | 6 — Frontend payment experience | Completed | PR #6 merged; local and GitHub Actions verification passed |
 | 7 — Asynchronous events and outbox | Completed | PR #7 merged; local and GitHub Actions verification passed |
 | 8 — Notifications and dead letters | Completed | PR #8 merged at `179d793`; local and remote Phase 8 feature branches removed |
-| 9 — Settlement and reconciliation | Current | Implementation and cumulative local gate complete; pull-request CI remains |
+| 9 — Settlement and reconciliation | Current | Implementation, cumulative local gate and PR #9 checks complete; merge remains |
 | 10 — Audit and reporting | Not started | None |
 | 11 — Observability and performance | Not started | None |
 | 12 — Security hardening | Not started | None |
@@ -423,7 +423,7 @@ Phase 1 verification passed.
 | React analyst workflow passes frontend tests | Completed | 22 focused tests, ESLint and production build passed on 2026-07-24 |
 | Phase 9 PowerShell and Bash verifiers exist | Completed | `scripts/verify-phase-9.ps1` and `scripts/verify-phase-9.sh` |
 | Cumulative Phase 9 verifier passes | Completed | PowerShell verifier passed on 2026-07-24 |
-| GitHub Repository, Backend and Frontend checks pass | Not started | Phase 9 pull request |
+| GitHub Repository, Backend and Frontend checks pass | Completed | Repository, Backend and Frontend checks passed on PR #9 at `a548c68` on 2026-07-24 |
 ## Decision history
 
 | Date | Decision |
@@ -484,6 +484,6 @@ Phase 1 verification passed.
 
 ## Next verified action
 
-Commit and push this final verification batch, then open the Phase 9 pull
-request. Record the required Repository, Backend and Frontend check evidence
-only after GitHub Actions passes on the pull-request head.
+Commit and push the Phase 9 CI evidence update. After the required checks pass
+again on the documentation-only pull-request head, merge PR #9, sync `main`
+and remove the local and remote Phase 9 feature branches.

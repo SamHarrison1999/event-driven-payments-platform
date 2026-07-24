@@ -17,8 +17,9 @@ Its remote feature branch has been removed. The stable main branch now includes
 durable notifications, customer-owned notification queries and
 administrator-only outbox dead-letter recovery with immutable replay evidence.
 
-Phase 9 settlement and reconciliation implementation is complete on its
-feature branch and is awaiting the cumulative local gate and pull-request CI.
+Phase 9 settlement and reconciliation implementation and cumulative local
+verification are complete on its feature branch. PR #9 passed the required
+repository, backend and frontend checks at `a548c68` and is awaiting merge.
 ADR 0013 defines the strict synthetic CSV contract, raw-byte import
 idempotency, bounded payment-read boundary, deterministic discrepancy
 classification, atomic persistence boundary and immutable resolution evidence.

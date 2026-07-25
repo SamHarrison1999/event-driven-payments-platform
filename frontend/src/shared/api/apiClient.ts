@@ -40,6 +40,18 @@ export interface ApiNoContentRequestOptions
   contractName: string
 }
 
+export interface ApiBlobRequestOptions
+  extends ApiRequestOptions {
+  contractName: string
+  expectedMediaType: string
+}
+
+export interface ApiBlobResponse {
+  blob: Blob
+  headers: Headers
+  status: number
+}
+
 export class ApiHttpError extends Error {
   readonly status: number
 
@@ -360,5 +372,40 @@ export async function apiRequestNoContent(
     throw new ApiContractError(
       `${options.contractName} response did not use HTTP status 204.`,
     )
+  }
+}
+
+export async function apiRequestBlobResponse(
+  path: string,
+  options: ApiBlobRequestOptions,
+): Promise<ApiBlobResponse> {
+  const response = await executeRequest(
+    path,
+    options,
+    options.contractName,
+  )
+
+  if (!response.ok) {
+    return throwResponseError(
+      response,
+      options.contractName,
+    )
+  }
+
+  const mediaType = getMediaType(response)
+
+  if (
+    mediaType !==
+    options.expectedMediaType.toLowerCase()
+  ) {
+    throw new ApiContractError(
+      `${options.contractName} response used an unexpected content type.`,
+    )
+  }
+
+  return {
+    blob: await response.blob(),
+    headers: response.headers,
+    status: response.status,
   }
 }

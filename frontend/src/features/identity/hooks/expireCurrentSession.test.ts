@@ -54,6 +54,11 @@ describe('expireCurrentSession', () => {
         ['private-administrator-data'],
       )
 
+      queryClient.setQueryData(
+        ['reporting', 'audit-events'],
+        ['private-audit-data'],
+      )
+
       window.sessionStorage.setItem(
         customerSessionStorageKeys
           .paymentSubmission,
@@ -93,6 +98,12 @@ describe('expireCurrentSession', () => {
       expect(
         queryClient.getQueryData(
           ['outbox-dead-letters', 'list'],
+        ),
+      ).toBeUndefined()
+
+      expect(
+        queryClient.getQueryData(
+          ['reporting', 'audit-events'],
         ),
       ).toBeUndefined()
 

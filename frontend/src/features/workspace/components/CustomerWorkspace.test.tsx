@@ -26,6 +26,10 @@ const deadLettersEndpoint =
   'http://localhost:5173/api/v1/admin/outbox/dead-letters'
 const settlementDiscrepanciesEndpoint =
   'http://localhost:5173/api/v1/settlement-discrepancies'
+const auditEventsEndpoint =
+  'http://localhost:5173/api/v1/audit-events'
+const operationalSummaryEndpoint =
+  'http://localhost:5173/api/v1/reports/operational-summary'
 
 const firstAccount: CustomerAccount = {
   id:
@@ -79,6 +83,26 @@ beforeEach(() => {
         })
       },
     ),
+
+    http.get(auditEventsEndpoint, () => {
+      return HttpResponse.json({
+        events: [],
+        nextCursor: null,
+      })
+    }),
+
+    http.get(
+      operationalSummaryEndpoint,
+      () => {
+        return HttpResponse.json({
+          from: '2026-07-18T10:00:00Z',
+          to: '2026-07-25T10:00:00Z',
+          payment: null,
+          settlement: null,
+          reconciliation: null,
+        })
+      },
+    ),
   )
 })
 
@@ -103,6 +127,12 @@ describe('CustomerWorkspace', () => {
           name: 'Your GBP accounts',
         }),
       ).toBeInTheDocument()
+
+      expect(
+        screen.queryByRole('link', {
+          name: 'Audit and reports',
+        }),
+      ).not.toBeInTheDocument()
 
       expect(
         screen.getByRole('heading', {
@@ -243,6 +273,15 @@ describe('CustomerWorkspace', () => {
       )
 
       expect(
+        screen.getByRole('link', {
+          name: 'Audit and reports',
+        }),
+      ).toHaveAttribute(
+        'href',
+        '#audit-reporting',
+      )
+
+      expect(
         screen.getByRole('heading', {
           level: 4,
           name: 'Outbox dead-letter recovery',
@@ -339,6 +378,13 @@ describe('CustomerWorkspace', () => {
           name: 'Your GBP accounts',
         }),
       ).not.toBeInTheDocument()
+
+      expect(
+        screen.getByRole('heading', {
+          level: 4,
+          name: 'Audit event search',
+        }),
+      ).toBeInTheDocument()
     },
   )
 })

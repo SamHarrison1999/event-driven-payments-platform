@@ -145,43 +145,12 @@ class AuditSearchService {
             );
 
         List<AuditEventResponse> merged =
-            new ArrayList<>();
-
-        for (AuditSource source : AuditSource.values()) {
-            if (
-                requiredFilter.source() != null
-                    && requiredFilter.source()
-                        != source
-            ) {
-                continue;
-            }
-
-            Set<String> eventTypes =
-                AuditEventTypeCatalog.eventTypes(
-                    activeCategories,
-                    source,
-                    requiredFilter.eventType()
-                );
-
-            if (eventTypes.isEmpty()) {
-                continue;
-            }
-
-            SourceReadValues values =
-                readValues(
-                    requiredFilter,
-                    cursor,
-                    eventTypes
-                );
-
-            readSource(
-                source,
-                values,
-                merged
+            readMerged(
+                requiredFilter,
+                activeCategories,
+                cursor,
+                requiredFilter.limit() + 1
             );
-        }
-
-        merged.sort(EVENT_ORDER);
 
         boolean hasMore =
             merged.size() > requiredFilter.limit();
@@ -215,10 +184,103 @@ class AuditSearchService {
         );
     }
 
+    @Transactional(
+        readOnly = true,
+        isolation =
+            org.springframework.transaction
+                .annotation.Isolation.REPEATABLE_READ
+    )
+    @PreAuthorize(
+        "hasAnyRole('OPERATIONS', "
+            + "'RECONCILIATION_ANALYST', 'ADMIN')"
+    )
+    List<AuditEventResponse> export(
+        Instant from,
+        Instant to,
+        int limit
+    ) {
+        AuditSearchFilter filter =
+            new AuditSearchFilter(
+                from,
+                to,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                100
+            );
+        Set<AuditCategory> categories =
+            permittedCategories();
+
+        List<AuditEventResponse> events =
+            readMerged(
+                filter,
+                categories,
+                null,
+                limit
+            );
+
+        if (events.size() > limit) {
+            return List.copyOf(
+                events.subList(0, limit)
+            );
+        }
+
+        return List.copyOf(events);
+    }
+
+    private List<AuditEventResponse> readMerged(
+        AuditSearchFilter filter,
+        Set<AuditCategory> activeCategories,
+        AuditCursorCodec.Cursor cursor,
+        int sourceLimit
+    ) {
+        List<AuditEventResponse> merged =
+            new ArrayList<>();
+
+        for (AuditSource source : AuditSource.values()) {
+            if (
+                filter.source() != null
+                    && filter.source() != source
+            ) {
+                continue;
+            }
+
+            Set<String> eventTypes =
+                AuditEventTypeCatalog.eventTypes(
+                    activeCategories,
+                    source,
+                    filter.eventType()
+                );
+
+            if (eventTypes.isEmpty()) {
+                continue;
+            }
+
+            SourceReadValues values =
+                readValues(
+                    filter,
+                    cursor,
+                    eventTypes,
+                    sourceLimit
+                );
+
+            readSource(source, values, merged);
+        }
+
+        merged.sort(EVENT_ORDER);
+        return merged;
+    }
+
     private static SourceReadValues readValues(
         AuditSearchFilter filter,
         AuditCursorCodec.Cursor cursor,
-        Set<String> eventTypes
+        Set<String> eventTypes,
+        int limit
     ) {
         return new SourceReadValues(
             filter.from(),
@@ -234,7 +296,7 @@ class AuditSearchService {
             cursor == null
                 ? null
                 : cursor.eventId(),
-            filter.limit() + 1
+            limit
         );
     }
 

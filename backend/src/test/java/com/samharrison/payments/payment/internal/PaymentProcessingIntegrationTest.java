@@ -95,6 +95,7 @@ class PaymentProcessingIntegrationTest {
         jdbcTemplate.execute(
             """
             TRUNCATE TABLE
+                business_audit_event,
                 outbox_replay_audit,
                 outbox_event,
                 payment_idempotency,
@@ -268,6 +269,14 @@ class PaymentProcessingIntegrationTest {
             "processing-approved",
             response
         );
+
+        assertThat(
+            auditEventTypes(payment.id())
+        )
+            .containsExactly(
+                "payment.submitted",
+                "payment.completed"
+            );
     }
 
     @Test
@@ -368,6 +377,14 @@ class PaymentProcessingIntegrationTest {
             "processing-rejected",
             response
         );
+
+        assertThat(
+            auditEventTypes(payment.id())
+        )
+            .containsExactly(
+                "payment.submitted",
+                "payment.rejected"
+            );
     }
 
     @Test
@@ -562,6 +579,14 @@ class PaymentProcessingIntegrationTest {
             "processing-failed",
             response
         );
+
+        assertThat(
+            auditEventTypes(payment.id())
+        )
+            .containsExactly(
+                "payment.submitted",
+                "payment.failed"
+            );
     }
 
     @Test
@@ -953,6 +978,21 @@ class PaymentProcessingIntegrationTest {
         return jdbcTemplate.queryForObject(
             "SELECT COUNT(*) FROM " + tableName,
             Long.class
+        );
+    }
+
+    private java.util.List<String> auditEventTypes(
+        UUID paymentId
+    ) {
+        return jdbcTemplate.queryForList(
+            """
+            SELECT event_type
+            FROM business_audit_event
+            WHERE subject_identifier = ?
+            ORDER BY occurred_at, id
+            """,
+            String.class,
+            paymentId.toString()
         );
     }
 

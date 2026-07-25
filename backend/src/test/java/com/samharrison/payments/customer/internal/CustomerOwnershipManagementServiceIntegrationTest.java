@@ -33,6 +33,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 )
 class CustomerOwnershipManagementServiceIntegrationTest {
 
+    private static final UUID ACTOR_ID =
+        UUID.fromString(
+            "5d0d7989-1451-4672-b03c-2863aba18125"
+        );
+
     @Container
     @ServiceConnection
     static final PostgreSQLContainer POSTGRESQL =
@@ -69,7 +74,7 @@ class CustomerOwnershipManagementServiceIntegrationTest {
             insertCustomer("ACTIVE");
 
         CustomerOwnershipSnapshot assigned =
-            managementService.assign(
+            assign(
                 identityUserId,
                 customerId
             );
@@ -92,6 +97,11 @@ class CustomerOwnershipManagementServiceIntegrationTest {
             )
         )
             .isEqualTo(customerId);
+
+        assertThat(
+            countAssignmentAuditEvents(identityUserId)
+        )
+            .isEqualTo(1L);
     }
 
     @Test
@@ -103,7 +113,7 @@ class CustomerOwnershipManagementServiceIntegrationTest {
         UUID customerId =
             insertCustomer("ACTIVE");
 
-        managementService.assign(
+        assign(
             identityUserId,
             customerId
         );
@@ -139,7 +149,7 @@ class CustomerOwnershipManagementServiceIntegrationTest {
             insertCustomer("ACTIVE");
 
         CustomerOwnershipSnapshot assigned =
-            managementService.assign(
+            assign(
                 identityUserId,
                 customerId
             );
@@ -158,13 +168,13 @@ class CustomerOwnershipManagementServiceIntegrationTest {
             insertCustomer("ACTIVE");
 
         CustomerOwnershipSnapshot first =
-            managementService.assign(
+            assign(
                 identityUserId,
                 customerId
             );
 
         CustomerOwnershipSnapshot second =
-            managementService.assign(
+            assign(
                 identityUserId,
                 customerId
             );
@@ -173,6 +183,11 @@ class CustomerOwnershipManagementServiceIntegrationTest {
             .isEqualTo(first);
 
         assertThat(repository.count())
+            .isEqualTo(1L);
+
+        assertThat(
+            countAssignmentAuditEvents(identityUserId)
+        )
             .isEqualTo(1L);
     }
 
@@ -188,14 +203,14 @@ class CustomerOwnershipManagementServiceIntegrationTest {
         UUID secondCustomerId =
             insertCustomer("ACTIVE");
 
-        managementService.assign(
+        assign(
             identityUserId,
             firstCustomerId
         );
 
         assertThatThrownBy(
             () ->
-                managementService.assign(
+                assign(
                     identityUserId,
                     secondCustomerId
                 )
@@ -228,7 +243,7 @@ class CustomerOwnershipManagementServiceIntegrationTest {
 
         assertThatThrownBy(
             () ->
-                managementService.assign(
+                assign(
                     missingIdentityUserId,
                     customerId
                 )
@@ -255,7 +270,7 @@ class CustomerOwnershipManagementServiceIntegrationTest {
 
         assertThatThrownBy(
             () ->
-                managementService.assign(
+                assign(
                     identityUserId,
                     customerId
                 )
@@ -296,7 +311,7 @@ class CustomerOwnershipManagementServiceIntegrationTest {
     void customerUserCannotAssignOwnership() {
         assertThatThrownBy(
             () ->
-                managementService.assign(
+                assign(
                     UUID.randomUUID(),
                     UUID.randomUUID()
                 )
@@ -314,7 +329,7 @@ class CustomerOwnershipManagementServiceIntegrationTest {
     void anonymousUserCannotAssignOwnership() {
         assertThatThrownBy(
             () ->
-                managementService.assign(
+                assign(
                     UUID.randomUUID(),
                     UUID.randomUUID()
                 )
@@ -402,6 +417,33 @@ class CustomerOwnershipManagementServiceIntegrationTest {
         );
 
         return identityUserId;
+    }
+
+    private CustomerOwnershipSnapshot assign(
+        UUID identityUserId,
+        UUID customerId
+    ) {
+        return managementService.assign(
+            identityUserId,
+            customerId,
+            ACTOR_ID
+        );
+    }
+
+    private Long countAssignmentAuditEvents(
+        UUID identityUserId
+    ) {
+        return jdbcTemplate.queryForObject(
+            """
+            SELECT COUNT(*)
+            FROM business_audit_event
+            WHERE event_type =
+                'customer.identity-assigned'
+              AND source_record_identifier = ?
+            """,
+            Long.class,
+            identityUserId.toString()
+        );
     }
 
     private UUID insertCustomer(

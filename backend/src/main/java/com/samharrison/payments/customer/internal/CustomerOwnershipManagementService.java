@@ -1,5 +1,7 @@
 package com.samharrison.payments.customer.internal;
 
+import com.samharrison.payments.audit.BusinessAuditEvents;
+import com.samharrison.payments.audit.BusinessAuditRecorder;
 import com.samharrison.payments.customer.CustomerAccountEligibility;
 import com.samharrison.payments.identity.IdentityUserDirectory;
 import java.time.Clock;
@@ -25,12 +27,15 @@ public class CustomerOwnershipManagementService {
     private final CustomerAccountEligibility
         customerEligibility;
 
+    private final BusinessAuditRecorder auditRecorder;
+
     private final Clock clock;
 
     public CustomerOwnershipManagementService(
         CustomerIdentityAssignmentRepository repository,
         IdentityUserDirectory identityUserDirectory,
         CustomerAccountEligibility customerEligibility,
+        BusinessAuditRecorder auditRecorder,
         Clock clock
     ) {
         this.repository = repository;
@@ -38,13 +43,19 @@ public class CustomerOwnershipManagementService {
             identityUserDirectory;
         this.customerEligibility =
             customerEligibility;
+        this.auditRecorder =
+            Objects.requireNonNull(
+                auditRecorder,
+                "auditRecorder must not be null"
+            );
         this.clock = clock;
     }
 
     @Transactional
     public CustomerOwnershipSnapshot assign(
         UUID identityUserId,
-        UUID customerId
+        UUID customerId,
+        UUID actorIdentityUserId
     ) {
         UUID requiredIdentityUserId =
             Objects.requireNonNull(
@@ -98,9 +109,22 @@ public class CustomerOwnershipManagementService {
         repository.save(assignment);
         repository.flush();
 
-        return CustomerOwnershipSnapshot.from(
-            assignment
+        CustomerOwnershipSnapshot snapshot =
+            CustomerOwnershipSnapshot.from(
+                assignment
+            );
+
+        auditRecorder.record(
+            BusinessAuditEvents
+                .identityCustomerAssigned(
+                    snapshot.assignedAt(),
+                    actorIdentityUserId,
+                    snapshot.identityUserId(),
+                    snapshot.customerId()
+                )
         );
+
+        return snapshot;
     }
 
     private Instant now() {

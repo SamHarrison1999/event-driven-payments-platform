@@ -1,6 +1,7 @@
 @ApplicationModule(
     displayName = "Accounts",
     allowedDependencies = {
+        "audit",
         "customer",
         "identity",
         "shared"

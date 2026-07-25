@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -27,6 +28,11 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
     classMode = DirtiesContext.ClassMode.AFTER_CLASS
 )
 class CustomerManagementServiceIntegrationTest {
+
+    private static final UUID ACTOR_ID =
+        UUID.fromString(
+            "ab03dc4d-58b8-4b58-a56e-9773692e7dc0"
+        );
 
     @Container
     @ServiceConnection
@@ -46,11 +52,14 @@ class CustomerManagementServiceIntegrationTest {
     @Autowired
     private CustomerProfileRepository repository;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @Test
     @WithMockUser(roles = "OPERATIONS")
     void operationsUserCreatesAndFindsCustomer() {
         CustomerSnapshot created =
-            service.create(
+            create(
                 "  Sam Example  "
             );
 
@@ -84,13 +93,29 @@ class CustomerManagementServiceIntegrationTest {
             )
         )
             .isTrue();
+
+        assertThat(auditEventCount(created.id()))
+            .isEqualTo(1L);
+
+        assertThat(
+            jdbcTemplate.queryForObject(
+                """
+                SELECT event_type
+                FROM business_audit_event
+                WHERE subject_identifier = ?
+                """,
+                String.class,
+                created.id().toString()
+            )
+        )
+            .isEqualTo("customer.created");
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
     void administratorCreatesCustomer() {
         CustomerSnapshot created =
-            service.create("Admin Created");
+            create("Admin Created");
 
         assertThat(created.fullName())
             .isEqualTo("Admin Created");
@@ -103,7 +128,7 @@ class CustomerManagementServiceIntegrationTest {
     @WithMockUser(roles = "OPERATIONS")
     void operationsUserManagesCustomerLifecycle() {
         CustomerSnapshot created =
-            service.create("Sam Example");
+            create("Sam Example");
 
         CustomerSnapshot renamed =
             service.rename(
@@ -121,7 +146,7 @@ class CustomerManagementServiceIntegrationTest {
             );
 
         CustomerSnapshot suspended =
-            service.suspend(
+            suspend(
                 created.id(),
                 renamed.version()
             );
@@ -135,7 +160,7 @@ class CustomerManagementServiceIntegrationTest {
             );
 
         CustomerSnapshot reactivated =
-            service.reactivate(
+            reactivate(
                 created.id(),
                 suspended.version()
             );
@@ -149,7 +174,7 @@ class CustomerManagementServiceIntegrationTest {
             );
 
         CustomerSnapshot closed =
-            service.close(
+            close(
                 created.id(),
                 reactivated.version()
             );
@@ -173,22 +198,25 @@ class CustomerManagementServiceIntegrationTest {
             .isInstanceOf(
                 IllegalStateException.class
             );
+
+        assertThat(auditEventCount(created.id()))
+            .isEqualTo(4L);
     }
 
     @Test
     @WithMockUser(roles = "OPERATIONS")
     void lifecycleOperationsAreIdempotent() {
         CustomerSnapshot created =
-            service.create("Sam Example");
+            create("Sam Example");
 
         CustomerSnapshot firstSuspension =
-            service.suspend(
+            suspend(
                 created.id(),
                 created.version()
             );
 
         CustomerSnapshot secondSuspension =
-            service.suspend(
+            suspend(
                 created.id(),
                 firstSuspension.version()
             );
@@ -207,13 +235,13 @@ class CustomerManagementServiceIntegrationTest {
             );
 
         CustomerSnapshot firstClosure =
-            service.close(
+            close(
                 created.id(),
                 secondSuspension.version()
             );
 
         CustomerSnapshot secondClosure =
-            service.close(
+            close(
                 created.id(),
                 firstClosure.version()
             );
@@ -230,6 +258,9 @@ class CustomerManagementServiceIntegrationTest {
             .isEqualTo(
                 firstClosure.version()
             );
+
+        assertThat(auditEventCount(created.id()))
+            .isEqualTo(3L);
     }
 
     @Test
@@ -254,7 +285,7 @@ class CustomerManagementServiceIntegrationTest {
     void customerUserCannotManageCustomers() {
         assertThatThrownBy(
             () ->
-                service.create(
+                create(
                     "Forbidden Customer"
                 )
         )
@@ -271,7 +302,7 @@ class CustomerManagementServiceIntegrationTest {
     void anonymousUserCannotManageCustomers() {
         assertThatThrownBy(
             () ->
-                service.create(
+                create(
                     "Anonymous Customer"
                 )
         )
@@ -281,5 +312,62 @@ class CustomerManagementServiceIntegrationTest {
 
         assertThat(repository.count())
             .isZero();
+    }
+
+    private CustomerSnapshot create(
+        String fullName
+    ) {
+        return service.create(
+            fullName,
+            ACTOR_ID
+        );
+    }
+
+    private Long auditEventCount(
+        UUID customerId
+    ) {
+        return jdbcTemplate.queryForObject(
+            """
+            SELECT COUNT(*)
+            FROM business_audit_event
+            WHERE subject_type = 'customer'
+              AND subject_identifier = ?
+            """,
+            Long.class,
+            customerId.toString()
+        );
+    }
+
+    private CustomerSnapshot suspend(
+        UUID customerId,
+        long expectedVersion
+    ) {
+        return service.suspend(
+            customerId,
+            expectedVersion,
+            ACTOR_ID
+        );
+    }
+
+    private CustomerSnapshot reactivate(
+        UUID customerId,
+        long expectedVersion
+    ) {
+        return service.reactivate(
+            customerId,
+            expectedVersion,
+            ACTOR_ID
+        );
+    }
+
+    private CustomerSnapshot close(
+        UUID customerId,
+        long expectedVersion
+    ) {
+        return service.close(
+            customerId,
+            expectedVersion,
+            ACTOR_ID
+        );
     }
 }

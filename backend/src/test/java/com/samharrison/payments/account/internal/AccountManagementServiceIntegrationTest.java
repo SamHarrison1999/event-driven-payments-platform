@@ -36,6 +36,11 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 )
 class AccountManagementServiceIntegrationTest {
 
+    private static final UUID ACTOR_ID =
+        UUID.fromString(
+            "ced219ea-340f-4d14-a4bd-a3a38517298e"
+        );
+
     @Container
     @ServiceConnection
     static final PostgreSQLContainer POSTGRESQL =
@@ -64,7 +69,7 @@ class AccountManagementServiceIntegrationTest {
             insertCustomer("ACTIVE");
 
         AccountSnapshot created =
-            service.create(customerId);
+            create(customerId);
 
         assertThat(created.id())
             .isNotNull();
@@ -102,6 +107,9 @@ class AccountManagementServiceIntegrationTest {
             )
         )
             .isTrue();
+
+        assertThat(auditEventCount(created.id()))
+            .isEqualTo(1L);
     }
 
     @Test
@@ -111,7 +119,7 @@ class AccountManagementServiceIntegrationTest {
             insertCustomer("ACTIVE");
 
         AccountSnapshot created =
-            service.create(customerId);
+            create(customerId);
 
         assertThat(created.customerId())
             .isEqualTo(customerId);
@@ -127,10 +135,10 @@ class AccountManagementServiceIntegrationTest {
             insertCustomer("ACTIVE");
 
         AccountSnapshot created =
-            service.create(customerId);
+            create(customerId);
 
         AccountSnapshot frozen =
-            service.freeze(
+            freeze(
                 created.id(),
                 created.version()
             );
@@ -144,7 +152,7 @@ class AccountManagementServiceIntegrationTest {
             );
 
         AccountSnapshot reactivated =
-            service.reactivate(
+            reactivate(
                 created.id(),
                 frozen.version()
             );
@@ -158,7 +166,7 @@ class AccountManagementServiceIntegrationTest {
             );
 
         AccountSnapshot closed =
-            service.close(
+            close(
                 created.id(),
                 reactivated.version()
             );
@@ -173,7 +181,7 @@ class AccountManagementServiceIntegrationTest {
 
         assertThatThrownBy(
             () ->
-                service.reactivate(
+                reactivate(
                     created.id(),
                     closed.version()
                 )
@@ -181,6 +189,9 @@ class AccountManagementServiceIntegrationTest {
             .isInstanceOf(
                 IllegalStateException.class
             );
+
+        assertThat(auditEventCount(created.id()))
+            .isEqualTo(4L);
     }
 
     @Test
@@ -190,16 +201,16 @@ class AccountManagementServiceIntegrationTest {
             insertCustomer("ACTIVE");
 
         AccountSnapshot created =
-            service.create(customerId);
+            create(customerId);
 
         AccountSnapshot firstFreeze =
-            service.freeze(
+            freeze(
                 created.id(),
                 created.version()
             );
 
         AccountSnapshot secondFreeze =
-            service.freeze(
+            freeze(
                 created.id(),
                 firstFreeze.version()
             );
@@ -218,13 +229,13 @@ class AccountManagementServiceIntegrationTest {
             );
 
         AccountSnapshot firstReactivation =
-            service.reactivate(
+            reactivate(
                 created.id(),
                 secondFreeze.version()
             );
 
         AccountSnapshot secondReactivation =
-            service.reactivate(
+            reactivate(
                 created.id(),
                 firstReactivation.version()
             );
@@ -243,13 +254,13 @@ class AccountManagementServiceIntegrationTest {
             );
 
         AccountSnapshot firstClosure =
-            service.close(
+            close(
                 created.id(),
                 secondReactivation.version()
             );
 
         AccountSnapshot secondClosure =
-            service.close(
+            close(
                 created.id(),
                 firstClosure.version()
             );
@@ -266,6 +277,9 @@ class AccountManagementServiceIntegrationTest {
             .isEqualTo(
                 firstClosure.version()
             );
+
+        assertThat(auditEventCount(created.id()))
+            .isEqualTo(4L);
     }
 
     @Test
@@ -276,7 +290,7 @@ class AccountManagementServiceIntegrationTest {
 
         assertThatThrownBy(
             () ->
-                service.create(
+                create(
                     missingCustomerId
                 )
         )
@@ -308,7 +322,7 @@ class AccountManagementServiceIntegrationTest {
 
         assertThatThrownBy(
             () ->
-                service.create(
+                create(
                     suspendedCustomerId
                 )
         )
@@ -321,7 +335,7 @@ class AccountManagementServiceIntegrationTest {
 
         assertThatThrownBy(
             () ->
-                service.create(
+                create(
                     closedCustomerId
                 )
         )
@@ -361,7 +375,7 @@ class AccountManagementServiceIntegrationTest {
     void customerUserCannotManageAccounts() {
         assertThatThrownBy(
             () ->
-                service.create(
+                create(
                     UUID.randomUUID()
                 )
         )
@@ -378,7 +392,7 @@ class AccountManagementServiceIntegrationTest {
     void anonymousUserCannotManageAccounts() {
         assertThatThrownBy(
             () ->
-                service.create(
+                create(
                     UUID.randomUUID()
                 )
         )
@@ -388,6 +402,63 @@ class AccountManagementServiceIntegrationTest {
 
         assertThat(repository.count())
             .isZero();
+    }
+
+    private AccountSnapshot create(
+        UUID customerId
+    ) {
+        return service.create(
+            customerId,
+            ACTOR_ID
+        );
+    }
+
+    private Long auditEventCount(
+        UUID accountId
+    ) {
+        return jdbcTemplate.queryForObject(
+            """
+            SELECT COUNT(*)
+            FROM business_audit_event
+            WHERE subject_type = 'account'
+              AND subject_identifier = ?
+            """,
+            Long.class,
+            accountId.toString()
+        );
+    }
+
+    private AccountSnapshot freeze(
+        UUID accountId,
+        long expectedVersion
+    ) {
+        return service.freeze(
+            accountId,
+            expectedVersion,
+            ACTOR_ID
+        );
+    }
+
+    private AccountSnapshot reactivate(
+        UUID accountId,
+        long expectedVersion
+    ) {
+        return service.reactivate(
+            accountId,
+            expectedVersion,
+            ACTOR_ID
+        );
+    }
+
+    private AccountSnapshot close(
+        UUID accountId,
+        long expectedVersion
+    ) {
+        return service.close(
+            accountId,
+            expectedVersion,
+            ACTOR_ID
+        );
     }
 
     private UUID insertCustomer(

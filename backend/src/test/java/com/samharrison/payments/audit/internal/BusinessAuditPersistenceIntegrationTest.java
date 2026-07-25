@@ -227,7 +227,8 @@ class BusinessAuditPersistenceIntegrationTest {
             UUID.randomUUID().toString();
 
         BusinessAuditEventRequest request =
-            new BusinessAuditEventRequest(                BusinessAuditEventType
+            new BusinessAuditEventRequest(
+                BusinessAuditEventType
                     .PAYMENT_COMPLETED,
                 OCCURRED_AT,
                 BusinessAuditActor.system(),

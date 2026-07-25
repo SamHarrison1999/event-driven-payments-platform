@@ -1,5 +1,7 @@
 package com.samharrison.payments.payment.internal;
 
+import com.samharrison.payments.audit.BusinessAuditEvents;
+import com.samharrison.payments.audit.BusinessAuditRecorder;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -24,6 +26,8 @@ class PaymentReservationCoordinator {
     private final PaymentIdempotencyRecordRepository
         idempotencyRepository;
 
+    private final BusinessAuditRecorder auditRecorder;
+
     private final Clock clock;
 
     private final TransactionTemplate transactionTemplate;
@@ -32,6 +36,7 @@ class PaymentReservationCoordinator {
         PaymentRepository paymentRepository,
         PaymentIdempotencyRecordRepository
             idempotencyRepository,
+        BusinessAuditRecorder auditRecorder,
         Clock clock,
         PlatformTransactionManager transactionManager
     ) {
@@ -45,6 +50,12 @@ class PaymentReservationCoordinator {
             Objects.requireNonNull(
                 idempotencyRepository,
                 "idempotencyRepository must not be null"
+            );
+
+        this.auditRecorder =
+            Objects.requireNonNull(
+                auditRecorder,
+                "auditRecorder must not be null"
             );
 
         this.clock =
@@ -182,6 +193,17 @@ class PaymentReservationCoordinator {
 
         idempotencyRepository
             .saveAndFlush(reservation);
+
+        auditRecorder.record(
+            BusinessAuditEvents.paymentSubmitted(
+                evaluatedAt,
+                payment.actorIdentityId(),
+                payment.id(),
+                request.sourceAccountId(),
+                request.destinationAccountId(),
+                request.amount().minorUnits()
+            )
+        );
 
         return new PaymentReservationResult.Acquired(
             payment.id(),

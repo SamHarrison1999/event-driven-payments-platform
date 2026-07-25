@@ -1,7 +1,9 @@
 package com.samharrison.payments.account.internal;
 
+import com.samharrison.payments.identity.CurrentIdentityUser;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.util.Objects;
 import java.util.UUID;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
@@ -22,10 +24,22 @@ public final class AccountManagementController {
 
     private final AccountManagementService service;
 
+    private final CurrentIdentityUser currentIdentityUser;
+
     public AccountManagementController(
-        AccountManagementService service
+        AccountManagementService service,
+        CurrentIdentityUser currentIdentityUser
     ) {
-        this.service = service;
+        this.service =
+            Objects.requireNonNull(
+                service,
+                "service must not be null"
+            );
+        this.currentIdentityUser =
+            Objects.requireNonNull(
+                currentIdentityUser,
+                "currentIdentityUser must not be null"
+            );
     }
 
     @PostMapping(
@@ -38,7 +52,10 @@ public final class AccountManagementController {
         AccountCreateRequest request
     ) {
         AccountSnapshot created =
-            service.create(request.customerId());
+            service.create(
+                request.customerId(),
+                currentIdentityUser.requireUserId()
+            );
 
         URI location = URI.create(
             "/api/v1/accounts/"
@@ -96,17 +113,20 @@ public final class AccountManagementController {
                 case ACTIVE ->
                     service.reactivate(
                         accountId,
-                        expectedVersion
+                        expectedVersion,
+                        currentIdentityUser.requireUserId()
                     );
                 case FROZEN ->
                     service.freeze(
                         accountId,
-                        expectedVersion
+                        expectedVersion,
+                        currentIdentityUser.requireUserId()
                     );
                 case CLOSED ->
                     service.close(
                         accountId,
-                        expectedVersion
+                        expectedVersion,
+                        currentIdentityUser.requireUserId()
                     );
             };
 

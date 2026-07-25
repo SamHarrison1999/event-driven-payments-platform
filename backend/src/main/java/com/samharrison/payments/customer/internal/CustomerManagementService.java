@@ -1,7 +1,10 @@
 package com.samharrison.payments.customer.internal;
 
+import com.samharrison.payments.audit.BusinessAuditEvents;
+import com.samharrison.payments.audit.BusinessAuditRecorder;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -15,19 +18,36 @@ public class CustomerManagementService {
 
     private final CustomerProfileRepository repository;
 
+    private final BusinessAuditRecorder auditRecorder;
+
     private final Clock clock;
 
     public CustomerManagementService(
         CustomerProfileRepository repository,
+        BusinessAuditRecorder auditRecorder,
         Clock clock
     ) {
-        this.repository = repository;
-        this.clock = clock;
+        this.repository =
+            Objects.requireNonNull(
+                repository,
+                "repository must not be null"
+            );
+        this.auditRecorder =
+            Objects.requireNonNull(
+                auditRecorder,
+                "auditRecorder must not be null"
+            );
+        this.clock =
+            Objects.requireNonNull(
+                clock,
+                "clock must not be null"
+            );
     }
 
     @Transactional
     public CustomerSnapshot create(
-        String fullName
+        String fullName,
+        UUID actorIdentityUserId
     ) {
         CustomerProfile customer =
             CustomerProfile.create(
@@ -37,7 +57,18 @@ public class CustomerManagementService {
 
         repository.save(customer);
 
-        return flushAndSnapshot(customer);
+        CustomerSnapshot snapshot =
+            flushAndSnapshot(customer);
+
+        auditRecorder.record(
+            BusinessAuditEvents.customerCreated(
+                snapshot.createdAt(),
+                actorIdentityUserId,
+                snapshot.id()
+            )
+        );
+
+        return snapshot;
     }
 
     @Transactional(readOnly = true)
@@ -74,7 +105,8 @@ public class CustomerManagementService {
     @Transactional
     public CustomerSnapshot suspend(
         UUID customerId,
-        long expectedVersion
+        long expectedVersion,
+        UUID actorIdentityUserId
     ) {
         CustomerProfile customer =
             findRequired(customerId);
@@ -84,15 +116,23 @@ public class CustomerManagementService {
             expectedVersion
         );
 
+        CustomerStatus previousStatus =
+            customer.status();
+
         customer.suspend(now());
 
-        return flushAndSnapshot(customer);
+        return flushAuditAndSnapshot(
+            customer,
+            previousStatus,
+            actorIdentityUserId
+        );
     }
 
     @Transactional
     public CustomerSnapshot reactivate(
         UUID customerId,
-        long expectedVersion
+        long expectedVersion,
+        UUID actorIdentityUserId
     ) {
         CustomerProfile customer =
             findRequired(customerId);
@@ -102,15 +142,23 @@ public class CustomerManagementService {
             expectedVersion
         );
 
+        CustomerStatus previousStatus =
+            customer.status();
+
         customer.reactivate(now());
 
-        return flushAndSnapshot(customer);
+        return flushAuditAndSnapshot(
+            customer,
+            previousStatus,
+            actorIdentityUserId
+        );
     }
 
     @Transactional
     public CustomerSnapshot close(
         UUID customerId,
-        long expectedVersion
+        long expectedVersion,
+        UUID actorIdentityUserId
     ) {
         CustomerProfile customer =
             findRequired(customerId);
@@ -120,9 +168,16 @@ public class CustomerManagementService {
             expectedVersion
         );
 
+        CustomerStatus previousStatus =
+            customer.status();
+
         customer.close(now());
 
-        return flushAndSnapshot(customer);
+        return flushAuditAndSnapshot(
+            customer,
+            previousStatus,
+            actorIdentityUserId
+        );
     }
 
     private CustomerProfile findRequired(
@@ -163,6 +218,31 @@ public class CustomerManagementService {
         repository.flush();
 
         return CustomerSnapshot.from(customer);
+    }
+
+    private CustomerSnapshot flushAuditAndSnapshot(
+        CustomerProfile customer,
+        CustomerStatus previousStatus,
+        UUID actorIdentityUserId
+    ) {
+        CustomerSnapshot snapshot =
+            flushAndSnapshot(customer);
+
+        if (previousStatus != snapshot.status()) {
+            auditRecorder.record(
+                BusinessAuditEvents
+                    .customerStatusChanged(
+                        snapshot.updatedAt(),
+                        actorIdentityUserId,
+                        snapshot.id(),
+                        previousStatus.name(),
+                        snapshot.status().name(),
+                        snapshot.version()
+                    )
+            );
+        }
+
+        return snapshot;
     }
 
     private Instant now() {

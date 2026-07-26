@@ -10,22 +10,16 @@ asynchronous event delivery and settlement reconciliation.
 
 Current phase:
 
-**Phase 11 — Observability and performance**
+**Phase 12 — Security hardening**
 
-Phase 9 is complete and merged through PR #9 at merge commit `43b697e`.
-Its local and remote feature branches have been removed. The stable `main`
-branch now includes strict synthetic settlement import, deterministic
-reconciliation, discrepancy review and immutable resolution evidence.
+Phase 11 implementation and verification are complete and merged into `main`.
+Its k6 harness is a controlled functional/performance check and does not make a
+production capacity or SLO claim.
 
-Phase 10 implementation is complete and the required local and pull-request
-verification passed on PR #10 at head `c494a67` on
-2026-07-26.
-
-Phase 11 implementation, local verification and the authenticated payment-path
-smoke test passed on PR #11 at head `f594e5f` on
-2026-07-26. The GitHub Repository, Backend and Frontend checks also
-passed. The smoke run is a controlled functional check and does not represent
-a production performance or SLO claim.
+Phase 12 adds security headers, bounded sensitive-route rate limiting, strict
+multipart upload boundaries, security regression tests, a threat model and
+dependency/static-analysis CI checks. The in-memory limiter is deliberately
+single-process and must not be described as cluster-wide protection.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.
@@ -682,7 +676,7 @@ without a documented reason.
 backend/          Spring Boot modular monolith
 frontend/         React and TypeScript application
 infrastructure/   Reserved for later deployment infrastructure
-load-tests/       Reserved for later performance tests
+load-tests/       Reproducible payment-path performance harness
 docs/             Architecture, product and project evidence
 scripts/          Reproducible verification commands
 .github/          Continuous-integration workflows
@@ -710,9 +704,9 @@ the immutable double-entry ledger, synchronous payment submission,
 ownership-aware payment lookup and frontend payment flows are also implemented.
 The transactional outbox, durable simulated notifications, controlled
 dead-letter recovery, settlement import and reconciliation are implemented.
-Audit and operational reporting are implemented; the remaining Phase 11
-observability, performance, security hardening and release work is still
-planned or in progress.
+Audit and operational reporting are implemented. Phase 11 observability and
+performance work is implemented. Phase 12 security hardening is the current
+phase; release infrastructure and portfolio release remain planned.
 
 ## Engineering principles
 
@@ -735,6 +729,7 @@ planned or in progress.
 - [Architecture overview](docs/architecture/overview.md)
 - [Progress ledger](docs/progress/ledger.md)
 - [Security policy](SECURITY.md)
+- [Phase 12 threat model](docs/security/threat-model.md)
 
 ## Licence
 

@@ -66,12 +66,17 @@ export function isApiProblem(
 export class ApiProblemError extends Error {
   readonly problem: ApiProblem
   readonly status: number
+  readonly retryAfterSeconds: number | null
 
-  constructor(problem: ApiProblem) {
+  constructor(
+    problem: ApiProblem,
+    retryAfterSeconds: number | null = null,
+  ) {
     super(problem.detail)
 
     this.name = 'ApiProblemError'
     this.problem = problem
     this.status = problem.status
+    this.retryAfterSeconds = retryAfterSeconds
   }
 }

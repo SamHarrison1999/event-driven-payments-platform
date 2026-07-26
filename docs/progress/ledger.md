@@ -26,7 +26,7 @@ Last updated: 2026-07-26
 | Docker execution | Completed | `hello-world` container succeeded |
 | jq | Completed | jq 1.8.1 |
 | IntelliJ repository | Completed | Repository and Gradle project configured |
-| Current Git phase branch | Current | `feat/phase-11-observability-performance` from Phase 10 merge `1791b9f` |
+| Current Git phase branch | Current | `feat/phase-12-security-hardening` from Phase 11 merge `654d694` |
 
 ## Phase progress
 
@@ -43,8 +43,8 @@ Last updated: 2026-07-26
 | 8 — Notifications and dead letters | Completed | PR #8 merged at `179d793`; local and remote Phase 8 feature branches removed |
 | 9 — Settlement and reconciliation | Completed | PR #9 merged at `43b697e`; local and remote Phase 9 branches removed |
 | 10 — Audit and reporting | Completed | PR #10 verification recorded on `main` |
-| 11 — Observability and performance | Current | Foundation batch implemented on `feat/phase-11-observability-performance`; focused verification remains |
-| 12 — Security hardening | Not started | None |
+| 11 — Observability and performance | Completed | Implementation, controlled verification and documentation merged into `main` on 2026-07-26 |
+| 12 — Security hardening | Current | `feat/phase-12-security-hardening`; implementation complete pending backend/CI verification |
 | 13 — Release infrastructure | Not started | None |
 | 14 — Portfolio release | Not started | None |
 
@@ -488,11 +488,23 @@ Phase 1 verification passed.
 
 | Criterion | Status | Evidence |
 |---|---|---|
-| Distributed trace propagation and export are implemented | Current | Batch 2 adds Micrometer/OpenTelemetry observations, configurable OTLP export and payment processing spans; focused verification pending |
-| Controlled failure simulation is profile-gated and audited | Current | Batch 2 adds the bounded administrator-only in-memory simulator; focused verification pending |
-| Reproducible payment-path load tests are implemented | Completed | Static verifier and authenticated k6 smoke test passed on 2026-07-26 |
-| Performance methodology, measurements and SLO evidence are recorded | Not started | Final Phase 11 batch |
-| GitHub Repository, Backend and Frontend checks pass | Completed | PR #11 head `f594e5f` passed all three checks on 2026-07-26 |
+| Distributed trace propagation and export are implemented | Completed | Batch 2 adds Micrometer/OpenTelemetry observations, configurable OTLP export and payment processing spans; focused tests passed on 2026-07-26 |
+| Controlled failure simulation is profile-gated and audited | Completed | Batch 2 adds the bounded administrator-only in-memory simulator; focused tests passed on 2026-07-26 |
+| Reproducible payment-path load tests are implemented | Completed | `load-tests/payment-submission.js`, runbook and PowerShell/Bash static verifiers |
+| Performance methodology, measurements and SLO evidence are recorded | Completed | Phase 11 was closed with controlled verification; no production capacity or SLO claim is made |
+
+## Phase 12 acceptance criteria
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Phase 12 scope and security boundaries are recorded | Completed | ADR 0016 |
+| Threat model covers replay, access control, injection, sensitive data and denial of service | Completed | `docs/security/threat-model.md` |
+| API security headers are explicit and HTTPS-aware | Completed | `SecurityHeadersFilter` and regression tests |
+| Sensitive write routes have bounded abuse protection | Completed | Fixed-window limiter, bounded state and rate-limit tests |
+| Settlement multipart and parser limits are enforced | Completed | 1 MiB web cap, parser cap and existing upload tests |
+| Sensitive values are excluded from request-completion logs | Completed | Allow-listed logging and query-string regression test |
+| Security dependency and static-analysis checks are present | Completed | CI security job and Phase 12 static verifier |
+| Focused and cumulative Phase 12 verification passes | Not started | Final local and pull-request evidence |
 
 ## Decision history
 
@@ -558,9 +570,12 @@ Phase 1 verification passed.
 | 2026-07-26 | Use ECS structured logs, low-cardinality Micrometer metrics and database-aware readiness |
 | 2026-07-26 | Use Micrometer Observation with OpenTelemetry/OTLP for optional trace export |
 | 2026-07-26 | Keep failure simulation disabled by default, bounded, in-memory and administrator-only |
+| 2026-07-26 | Measure the authenticated payment path with a security-preserving k6 harness and external fixture inputs |
+| 2026-07-26 | Keep Phase 12 rate limiting bounded and single-process until deployment infrastructure justifies a shared store |
+| 2026-07-26 | Apply strict API response headers without breaking the local Swagger development surface |
 
 ## Next verified action
 
-Phase 11 implementation, local verification and PR #11 CI
-verification are recorded. The final controlled performance-measurement batch
-remains before Phase 11 can be marked complete.
+Run the backend focused Phase 12 security tests and the full local verification
+once a Gradle/JDK-capable environment is available, then review the pull-request
+security job results before marking Phase 12 complete.

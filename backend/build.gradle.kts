@@ -158,6 +158,11 @@ tasks.withType<Test> {
         "ERROR"
     )
 
+    systemProperty(
+        "platform.security.rate-limit.enabled",
+        "false"
+    )
+
     testLogging {
         events("failed", "skipped")
     }

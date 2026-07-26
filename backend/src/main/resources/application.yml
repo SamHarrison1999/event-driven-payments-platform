@@ -2,6 +2,11 @@ spring:
   application:
     name: payments-platform-backend
 
+  servlet:
+    multipart:
+      max-file-size: 1MB
+      max-request-size: 2MB
+
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/payments_platform}
     username: ${DATABASE_USERNAME:payments_app}
@@ -103,6 +108,16 @@ platform:
   failure-simulation:
     enabled: ${FAILURE_SIMULATION_ENABLED:false}
     max-delay: ${FAILURE_SIMULATION_MAX_DELAY:5000ms}
+
+  security:
+    rate-limit:
+      enabled: ${SECURITY_RATE_LIMIT_ENABLED:true}
+      window: ${SECURITY_RATE_LIMIT_WINDOW:1m}
+      max-tracked-keys: ${SECURITY_RATE_LIMIT_MAX_TRACKED_KEYS:10000}
+      login-requests: ${SECURITY_RATE_LIMIT_LOGIN_REQUESTS:10}
+      registration-requests: ${SECURITY_RATE_LIMIT_REGISTRATION_REQUESTS:5}
+      payment-requests: ${SECURITY_RATE_LIMIT_PAYMENT_REQUESTS:60}
+      settlement-import-requests: ${SECURITY_RATE_LIMIT_SETTLEMENT_IMPORT_REQUESTS:10}
 
 server:
   shutdown: graceful

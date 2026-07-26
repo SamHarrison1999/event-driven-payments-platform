@@ -184,6 +184,47 @@ describe('apiRequestJson', () => {
   )
 
   it(
+    'preserves retry guidance for rate-limited responses',
+    async () => {
+      server.use(
+        http.get(endpoint, () => {
+          return HttpResponse.json(
+            {
+              type: 'urn:problem:security:rate-limit',
+              title: 'Too many requests',
+              status: 429,
+              detail: 'Try again later.',
+              code: 'RATE_LIMITED',
+            },
+            {
+              status: 429,
+              headers: {
+                'Content-Type':
+                  'application/problem+json',
+                'Retry-After': '17',
+              },
+            },
+          )
+        }),
+      )
+
+      await expect(
+        apiRequestJson(
+          '/api/v1/test',
+          {
+            contractName: 'Greeting',
+            validate: isGreeting,
+          },
+        ),
+      ).rejects.toMatchObject({
+        name: 'ApiProblemError',
+        status: 429,
+        retryAfterSeconds: 17,
+      })
+    },
+  )
+
+  it(
     'rejects malformed problem responses',
     async () => {
       server.use(

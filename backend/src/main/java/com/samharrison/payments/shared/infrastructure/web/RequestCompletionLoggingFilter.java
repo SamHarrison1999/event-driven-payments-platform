@@ -57,7 +57,7 @@ public class RequestCompletionLoggingFilter
         }
     }
 
-    private static String route(HttpServletRequest request) {
+    static String route(HttpServletRequest request) {
         Object value = request.getAttribute(ROUTE_ATTRIBUTE);
 
         if (value instanceof String route && !route.isBlank()) {

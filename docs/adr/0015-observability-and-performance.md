@@ -49,10 +49,31 @@ performance evidence are separate implementation batches. This keeps each
 batch reviewable and prevents an unmeasured performance claim from being
 presented as an implemented capability.
 
+### Tracing
+
+Micrometer Observation is the application-facing instrumentation API and
+OpenTelemetry with OTLP is the trace implementation. Spring Boot creates HTTP
+observations automatically; payment processing adds one bounded custom
+observation named `platform.payment.processing`. Sampling and the OTLP
+endpoint are configuration-driven so local tests do not require a running
+collector. No payment body, account identifier or session value is attached
+as a span attribute.
+
+### Controlled failure simulation
+
+The failure simulator is disabled by default using
+`platform.failure-simulation.enabled`. When explicitly enabled, only an
+administrator can configure it. Plans are held in memory, have a configured
+maximum delay, use a small allow-list of deterministic modes, and exclude the
+control endpoint from interception. The simulator returns `503` for forced
+failure modes and applies payment-only failures only to payment routes. It is
+an educational resilience-testing aid, not production fault injection.
+
 ## Consequences
 
-The platform can now be inspected using machine-readable logs and standard
-Prometheus scraping while preserving the existing security boundaries. The
-additional metrics are in-process and do not require external infrastructure.
-Later batches must add trace propagation, failure controls and reproducible
-load-test evidence without weakening the redaction and cardinality rules.
+The platform can now be inspected using machine-readable logs, standard
+Prometheus scraping and trace observations while preserving the existing
+security boundaries. The additional metrics and the failure simulator are
+in-process; trace export is optional and configuration-driven. Later batches
+must add reproducible load-test evidence without weakening the redaction and
+cardinality rules.

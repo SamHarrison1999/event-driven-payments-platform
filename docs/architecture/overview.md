@@ -236,9 +236,15 @@ Phase 11 is in progress. The first foundation batch implements:
   retry and processing-duration measurements; and
 - liveness and database-aware readiness semantics.
 
-Metrics and diagnostic endpoints are administrator-protected. Distributed
-tracing, controlled failure simulation, reproducible load testing and measured
-SLO evidence remain later Phase 11 batches.
+Metrics and diagnostic endpoints are administrator-protected. The second
+batch adds Micrometer/OpenTelemetry payment observations with configurable
+OTLP export and a disabled-by-default administrator failure simulator. The
+simulator is in-memory, bounded, excludes its own control endpoint, and can
+target all HTTP requests, payment routes only, or a bounded delay. It does
+not represent a production fault-injection system.
+
+Reproducible load testing and measured SLO evidence remain later Phase 11
+batches.
 
 ## C4 context diagram
 

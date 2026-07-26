@@ -24,6 +24,9 @@ verification passed on PR #10 at head `c494a67` on
 Phase 11 is in progress. The first observability foundation batch adds ECS
 structured console logs, correlation-aware request completion events,
 Prometheus-compatible metrics, and explicit database-aware readiness.
+The second batch adds Micrometer/OpenTelemetry trace observations with
+configurable OTLP export and a disabled-by-default, administrator-only
+failure simulator for bounded resilience demonstrations.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.

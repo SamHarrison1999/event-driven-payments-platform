@@ -3,6 +3,7 @@ package com.samharrison.payments.payment.internal;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.observation.ObservationRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -14,7 +15,10 @@ class PaymentMetricsTest {
     @BeforeEach
     void setUp() {
         registry = new SimpleMeterRegistry();
-        metrics = new PaymentMetrics(registry);
+        metrics = new PaymentMetrics(
+            registry,
+            ObservationRegistry.create()
+        );
     }
 
     @Test

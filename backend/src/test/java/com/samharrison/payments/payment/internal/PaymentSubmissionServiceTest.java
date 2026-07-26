@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.UUID;
+import io.micrometer.observation.ObservationRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,7 +56,10 @@ class PaymentSubmissionServiceTest {
 
     @BeforeEach
     void setUp() {
-        metrics = new PaymentMetrics(new SimpleMeterRegistry());
+        metrics = new PaymentMetrics(
+            new SimpleMeterRegistry(),
+            ObservationRegistry.create()
+        );
 
         service =
             new PaymentSubmissionService(

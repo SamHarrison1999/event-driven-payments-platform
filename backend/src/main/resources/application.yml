@@ -67,6 +67,21 @@ management:
     tags:
       application: ${spring.application.name}
 
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:0.1}
+
+  opentelemetry:
+    tracing:
+      sampler: parent-based-trace-id-ratio
+      export:
+        otlp:
+          endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+
+  observations:
+    key-values:
+      phase: phase-11
+
 springdoc:
   api-docs:
     enabled: true
@@ -84,6 +99,10 @@ platform:
   version: ${APP_VERSION:0.0.1-SNAPSHOT}
   educational: true
   real-money-processing: false
+
+  failure-simulation:
+    enabled: ${FAILURE_SIMULATION_ENABLED:false}
+    max-delay: ${FAILURE_SIMULATION_MAX_DELAY:5000ms}
 
 server:
   shutdown: graceful

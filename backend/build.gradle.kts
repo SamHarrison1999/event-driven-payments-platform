@@ -36,6 +36,10 @@ dependencies {
     )
 
     implementation(
+        "org.springframework.boot:spring-boot-starter-opentelemetry"
+    )
+
+    implementation(
         "org.springframework.boot:spring-boot-starter-data-jpa"
     )
 

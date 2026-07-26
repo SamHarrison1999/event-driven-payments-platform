@@ -77,20 +77,22 @@ public class PaymentSubmissionService {
 
         return switch (reservation) {
             case PaymentReservationResult.Acquired acquired -> {
-                var sample = metrics.startProcessing();
+                yield metrics.observeProcessing(() -> {
+                    var sample = metrics.startProcessing();
 
-                try {
-                    StoredPaymentResponse response =
-                        processingCoordinator.process(
-                            acquired.paymentId(),
-                            acquired.ownerToken()
-                        );
+                    try {
+                        StoredPaymentResponse response =
+                            processingCoordinator.process(
+                                acquired.paymentId(),
+                                acquired.ownerToken()
+                            );
 
-                    metrics.recordOutcome(response);
-                    yield response;
-                } finally {
-                    metrics.stopProcessing(sample);
-                }
+                        metrics.recordOutcome(response);
+                        return response;
+                    } finally {
+                        metrics.stopProcessing(sample);
+                    }
+                });
             }
             case PaymentReservationResult.Replay replay -> {
                 metrics.recordIdempotencyReplay();

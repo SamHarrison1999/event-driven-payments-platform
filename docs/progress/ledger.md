@@ -482,14 +482,14 @@ Phase 1 verification passed.
 | Prometheus-compatible Actuator metrics are exposed | Completed | Micrometer Prometheus registry and protected Actuator endpoints |
 | Payment lifecycle metrics are recorded without high-cardinality labels | Completed | `PaymentMetrics` and `PaymentMetricsTest` |
 | Readiness includes PostgreSQL health while liveness remains process health | Completed | `application.yml` health groups |
-| Focused Phase 11 foundation tests pass | Current | Run the three payment observability test classes |
+| Focused Phase 11 foundation tests pass | Completed | `PaymentMetricsTest`, `PaymentSubmissionServiceTest` and `PaymentProcessingCoordinatorTest` passed on 2026-07-26 |
 
 ### Remaining Phase 11 work
 
 | Criterion | Status | Evidence |
 |---|---|---|
-| Distributed trace propagation and export are implemented | Not started | Later Phase 11 batch |
-| Controlled failure simulation is profile-gated and audited | Not started | Later Phase 11 batch |
+| Distributed trace propagation and export are implemented | Current | Batch 2 adds Micrometer/OpenTelemetry observations, configurable OTLP export and payment processing spans; focused verification pending |
+| Controlled failure simulation is profile-gated and audited | Current | Batch 2 adds the bounded administrator-only in-memory simulator; focused verification pending |
 | Reproducible payment-path load tests are implemented | Not started | Later Phase 11 batch |
 | Performance methodology, measurements and SLO evidence are recorded | Not started | Final Phase 11 batch |
 
@@ -555,9 +555,11 @@ Phase 1 verification passed.
 | 2026-07-24 | Apply role visibility before audit pagination, aggregation and export |
 | 2026-07-24 | Bound synchronous CSV exports to 31 days and 10,000 typed rows |
 | 2026-07-26 | Use ECS structured logs, low-cardinality Micrometer metrics and database-aware readiness |
+| 2026-07-26 | Use Micrometer Observation with OpenTelemetry/OTLP for optional trace export |
+| 2026-07-26 | Keep failure simulation disabled by default, bounded, in-memory and administrator-only |
 
 ## Next verified action
 
-Run the focused Phase 11 foundation tests for payment metrics and processing
-coordination. Do not run the cumulative suite until the remaining Phase 11
-implementation batches are complete.
+Run the focused Phase 11 tracing and failure-simulation tests. Do not run the
+cumulative suite until the remaining Phase 11 implementation batches are
+complete.

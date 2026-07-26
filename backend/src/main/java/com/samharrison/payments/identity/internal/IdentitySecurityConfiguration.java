@@ -200,6 +200,11 @@ public class IdentitySecurityConfiguration {
                             "/actuator/prometheus"
                         )
                         .hasRole("ADMIN")
+                        .requestMatchers(
+                            "/api/v1/operations/failure-simulation",
+                            "/api/v1/operations/failure-simulation/**"
+                        )
+                        .hasRole("ADMIN")
                         .requestMatchers("/error")
                         .permitAll()
                         .anyRequest()

@@ -73,7 +73,7 @@ done
 printf '\n==> Validate Phase 5 documentation\n'
 
 readonly REQUIRED_README_TEXT=(
-  "Phase 5 — Synchronous payments"
+  "Synchronous payments"
   "POST /api/v1/payments"
   "GET  /api/v1/payments/{paymentId}"
   "Idempotency-Key"

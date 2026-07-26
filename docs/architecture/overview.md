@@ -202,7 +202,7 @@ authenticated HTTP, Spring Modulith and React tests verify the implementation.
 
 ### Phase 10 — Audit and operational reporting
 
-Phase 10 will implement:
+Phase 10 implements:
 
 - one canonical append-only journal for new business-audit event types;
 - source-owned identity role-change, outbox replay and reconciliation
@@ -220,8 +220,9 @@ Phase 10 will implement:
 
 Reporting remains read-only. It cannot update payments, accounts, ledger
 records, outbox events, settlement evidence or source-owned audit evidence.
-ADR 0014 defines event ownership, atomic recording, visibility, query,
-aggregation and export boundaries before implementation begins.
+ADR 0014 records the event ownership, atomic recording, visibility, query,
+aggregation and export boundaries. Focused domain, PostgreSQL, authenticated
+HTTP, CSV, Spring Modulith and React tests verify the implementation.
 
 ## C4 context diagram
 
@@ -710,10 +711,15 @@ new compensating ledger transaction. Phase 9 records
 - Resolution decisions are append-only and unique per discrepancy.
 - Financial schema changes continue to use forward-only Flyway migrations.
 
-### Planned Phase 10 persistence
+### Phase 10 persistence implementation
 
-- Migration version 19 will create the canonical `business_audit_event`
-  journal and database immutability controls.
+- Migration version 19 creates the canonical `business_audit_event` journal,
+  event-specific metadata constraints, retry-safe source keys and database
+  immutability controls.
+- Migration version 20 adds deterministic normalized audit-search indexes to
+  canonical and source-owned evidence tables.
+- Migration version 21 adds bounded operational-reporting indexes for
+  payments, completed settlement imports, discrepancies and resolutions.
 - Canonical events use UUID identifiers, versioned event types, UTC instants,
   actor kind, optional actor identity, subject type and identifier, source
   module, source-record identity, a stable source-event identifier,
@@ -793,7 +799,7 @@ new compensating ledger transaction. Phase 9 records
 - Validation and business failures use the established
   `application/problem+json` structure with stable codes and field paths.
 
-### Planned Phase 10 audit and reporting API
+### Phase 10 audit and reporting API
 
 - `GET /api/v1/audit-events` returns a normalized audit page ordered by
   `(occurredAt DESC, eventId DESC)` with an opaque keyset cursor and a maximum

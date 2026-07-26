@@ -1,6 +1,6 @@
 # Progress ledger
 
-Last updated: 2026-07-24
+Last updated: 2026-07-26
 
 ## Status meanings
 
@@ -42,7 +42,7 @@ Last updated: 2026-07-24
 | 7 — Asynchronous events and outbox | Completed | PR #7 merged; local and GitHub Actions verification passed |
 | 8 — Notifications and dead letters | Completed | PR #8 merged at `179d793`; local and remote Phase 8 feature branches removed |
 | 9 — Settlement and reconciliation | Completed | PR #9 merged at `43b697e`; local and remote Phase 9 branches removed |
-| 10 — Audit and reporting | Current | Architecture and acceptance contract in progress on `feat/phase-10-audit-reporting` |
+| 10 — Audit and reporting | Current | Implementation complete on `feat/phase-10-audit-reporting`; cumulative local gate and pull-request CI remain |
 | 11 — Observability and performance | Not started | None |
 | 12 — Security hardening | Not started | None |
 | 13 — Release infrastructure | Not started | None |
@@ -432,42 +432,42 @@ Phase 1 verification passed.
 | Criterion | Status | Evidence |
 |---|---|---|
 | Phase 9 merge and branch cleanup are recorded | Completed | PR #9 merge `43b697e` and Phase 10 baseline documentation |
-| ADR 0014 defines audit and reporting boundaries | Current | `docs/adr/0014-audit-and-operational-reporting.md` |
-| Canonical business-audit events are append-only | Not started | V19 migration and PostgreSQL immutability tests |
-| Canonical event metadata is bounded, versioned and allow-listed | Not started | Audit domain and persistence tests |
-| Source-event recording is idempotent | Not started | Unique source key and retry integration tests |
-| Audit writes commit atomically with their business mutation | Not started | Payment, customer, account and settlement transaction tests |
-| Existing role-change, replay and resolution evidence remains source-owned | Not started | Public read boundaries and module verification |
-| No misleading historical canonical backfill is created | Not started | Migration and normalized projection tests |
+| ADR 0014 defines audit and reporting boundaries | Completed | `docs/adr/0014-audit-and-operational-reporting.md` |
+| Canonical business-audit events are append-only | Completed | V19 mutation trigger and `BusinessAuditPersistenceIntegrationTest` |
+| Canonical event metadata is bounded, versioned and allow-listed | Completed | Audit request, serializer, event-type validator and PostgreSQL constraints |
+| Source-event recording is idempotent | Completed | Unique source key plus same-event replay and conflicting-event tests |
+| Audit writes commit atomically with their business mutation | Completed | Payment, customer, account and settlement transaction integration tests |
+| Existing role-change, replay and resolution evidence remains source-owned | Completed | Identity, outbox and reconciliation public evidence readers |
+| No misleading historical canonical backfill is created | Completed | V19 creates an empty canonical journal; normalized search composes source evidence at read time |
 
 ### Search, authorization and reporting
 
 | Criterion | Status | Evidence |
 |---|---|---|
-| Audit search uses deterministic bounded keyset pagination | Not started | Query service and HTTP integration tests |
-| Audit filters are allow-listed and use UTC half-open time windows | Not started | Filter validation and boundary tests |
-| Role visibility is enforced before paging and aggregation | Not started | Method-security and cross-role HTTP tests |
-| Customers have no Phase 10 audit or report access | Not started | Authenticated authorization tests |
-| Summaries and exports use read-only repeatable-read snapshots | Not started | PostgreSQL reporting integration tests |
-| Payment, settlement and reconciliation summaries are exact | Not started | Fixture-based aggregate verification |
-| Summary and export queries cannot mutate source records | Not started | Read-only transaction and invariant tests |
-| Audit and reporting responses use `Cache-Control: no-store` | Not started | HTTP integration tests |
+| Audit search uses deterministic bounded keyset pagination | Completed | `AuditCursorCodecTest`, merge tests and PostgreSQL HTTP pagination coverage |
+| Audit filters are allow-listed and use UTC half-open time windows | Completed | `AuditSearchFilterTest` and HTTP boundary coverage |
+| Role visibility is enforced before paging and aggregation | Completed | Authority-scoped readers and cross-role HTTP tests |
+| Customers have no Phase 10 audit or report access | Completed | Authenticated audit, summary and export authorization tests |
+| Summaries and exports use read-only repeatable-read snapshots | Completed | `OperationalSummaryService`, `ReportExportService` and PostgreSQL integration tests |
+| Payment, settlement and reconciliation summaries are exact | Completed | Fixture-based aggregate assertions across all three report sections |
+| Summary and export queries cannot mutate source records | Completed | Public read-only module boundaries and read-only reporting transactions |
+| Audit and reporting responses use `Cache-Control: no-store` | Completed | Audit and operational reporting HTTP integration tests |
 
 ### CSV export and frontend
 
 | Criterion | Status | Evidence |
 |---|---|---|
-| Export windows are required and capped at 31 days | Not started | Export validation tests |
-| Every export is capped at 10,000 data rows | Not started | Boundary and overflow tests |
-| CSV uses fixed typed columns and RFC 4180 records | Not started | Golden-file CSV tests |
-| Free-text and formula-capable values are excluded | Not started | Formula-injection and sensitive-field tests |
-| Download filenames and response headers are safe | Not started | HTTP export tests |
-| Role-gated audit and reporting workspace is implemented | Not started | React workflow tests |
-| Session expiry clears audit and reporting query state | Not started | Frontend cache-isolation tests |
-| Frontend lint, tests and production build pass | Not started | Final frontend verification |
-| Spring Modulith verification passes | Not started | `ModularityTest` |
-| PowerShell and Bash Phase 10 verifiers exist | Not started | Final verification batch |
-| Cumulative Phase 10 verifier passes | Not started | Local PowerShell verification |
+| Export windows are required and capped at 31 days | Completed | `ReportWindowTest` and authenticated HTTP validation |
+| Every export is capped at 10,000 data rows | Completed | Independently bounded readers and overflow HTTP coverage |
+| CSV uses fixed typed columns and RFC 4180 records | Completed | `CsvDocumentWriterTest` and exact export byte assertions |
+| Free-text and formula-capable values are excluded | Completed | Typed export mappings and sensitive/formula fixture assertions |
+| Download filenames and response headers are safe | Completed | Fixed filenames, `nosniff`, no-store and content-disposition HTTP assertions |
+| Role-gated audit and reporting workspace is implemented | Completed | `AuditReportingWorkspace.test.tsx` and workspace role tests |
+| Session expiry clears audit and reporting query state | Completed | Reporting cache-isolation tests |
+| Frontend lint, tests and production build pass | Completed | ESLint, 160 Vitest tests and Vite build passed on 2026-07-25 |
+| Spring Modulith verification passes | Completed | `ModularityTest` passed in focused Phase 10 suites |
+| PowerShell and Bash Phase 10 verifiers exist | Completed | `scripts/verify-phase-10.ps1` and `scripts/verify-phase-10.sh` |
+| Cumulative Phase 10 verifier passes | Current | Run the final Phase 10 PowerShell gate |
 | GitHub Repository, Backend and Frontend checks pass | Not started | Phase 10 pull request |
 
 ## Decision history
@@ -534,7 +534,7 @@ Phase 1 verification passed.
 
 ## Next verified action
 
-Validate, commit and push the Phase 10 architecture batch. Then implement the
-canonical audit event domain, Flyway migration V19, immutable persistence and
-focused PostgreSQL tests without adding search, reporting or frontend code to
-that persistence batch.
+Run the cumulative Phase 10 PowerShell verifier. If it passes, commit and push
+this final verification batch, open the Phase 10 pull request, and record the
+required Repository, Backend and Frontend check evidence only after GitHub
+Actions passes on the pull-request head.

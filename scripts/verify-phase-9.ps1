@@ -280,13 +280,17 @@ try {
   )
 
   $expectedMigrationVersions = @(1..18)
+  $phase9MigrationVersions = @(
+    $migrationVersions |
+      Select-Object -First 18
+  )
 
   if (
-    ($migrationVersions -join ',') -ne
+    ($phase9MigrationVersions -join ',') -ne
       ($expectedMigrationVersions -join ',')
   ) {
     throw (
-      'Expected exactly Flyway migrations 1 through 18, found: ' +
+      'Expected Flyway migrations 1 through 18 to remain present, found: ' +
       ($migrationVersions -join ', ')
     )
   }

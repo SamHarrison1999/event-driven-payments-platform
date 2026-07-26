@@ -279,12 +279,12 @@ readonly expected_versions="$(
 )"
 
 readonly actual_versions="$(
-  printf '%s\n' "${migration_versions[@]}" |
+  printf '%s\n' "${migration_versions[@]:0:18}" |
     paste -sd, -
 )"
 
 if [[ "${actual_versions}" != "${expected_versions}" ]]; then
-  fail "expected exactly Flyway migrations 1 through 18, found: ${migration_versions[*]}"
+  fail "expected Flyway migrations 1 through 18 to remain present, found: ${migration_versions[*]}"
 fi
 
 printf '\n==> Run Phase 8 cumulative baseline\n'

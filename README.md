@@ -17,11 +17,13 @@ Its local and remote feature branches have been removed. The stable `main`
 branch now includes strict synthetic settlement import, deterministic
 reconciliation, discrepancy review and immutable resolution evidence.
 
-Phase 10 begins with ADR 0014. It defines a canonical append-only business
-audit journal for new events, preserves existing source-owned security, replay
-and reconciliation evidence, and composes both through bounded read-only
-queries. It also defines operational payment, settlement and reconciliation
-summaries, formula-safe CSV exports and server-enforced role visibility.
+Phase 10 implementation is complete on its feature branch and is awaiting the
+cumulative local gate and pull-request CI. ADR 0014 defines the canonical
+append-only business-audit journal, preserves existing source-owned security,
+replay and reconciliation evidence, and composes both through bounded
+read-only queries. The implementation also provides operational payment,
+settlement and reconciliation summaries, formula-safe CSV exports and
+server-enforced role visibility.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.
@@ -263,6 +265,41 @@ All settlement and discrepancy endpoints require
 `RECONCILIATION_ANALYST` or `ADMIN`. Upload and resolution mutations are CSRF
 protected, and resolution also requires the current strong `If-Match` ETag.
 
+### Audit and operational reporting
+
+The audit and reporting modules now provide:
+
+- an append-only canonical business-audit journal for new customer, account,
+  payment and accepted-settlement mutations;
+- bounded, versioned and allow-listed audit metadata;
+- retry-safe source-event identifiers and atomic recording with each business
+  mutation;
+- source-owned identity role-change, outbox replay and reconciliation
+  resolution evidence through narrow public readers;
+- one normalized audit projection without copying historical evidence;
+- deterministic filter-bound keyset pagination across all permitted sources;
+- role-scoped payment, settlement and reconciliation summaries from one
+  read-only repeatable-read snapshot;
+- four fixed-schema UTF-8 CSV exports with RFC 4180 quoting and CRLF records;
+- required half-open UTC windows capped at 31 days and 10,000 data rows;
+- safe download filenames, no-store responses and `nosniff` headers; and
+- PostgreSQL, authorization, HTTP, CSV and Spring Modulith verification.
+
+Implemented Phase 10 endpoints include:
+
+    GET /api/v1/audit-events
+    GET /api/v1/reports/operational-summary
+    GET /api/v1/reports/audit-events.csv
+    GET /api/v1/reports/payments.csv
+    GET /api/v1/reports/settlements.csv
+    GET /api/v1/reports/reconciliation.csv
+
+`ADMIN` can search every audit category and use every report. `OPERATIONS` is
+limited to operational payment and customer evidence and reports.
+`RECONCILIATION_ANALYST` is limited to settlement and reconciliation evidence
+and reports. `CUSTOMER` has no Phase 10 access. Visibility is enforced before
+pagination, aggregation and export.
+
 ### Frontend
 
 The frontend currently provides:
@@ -285,8 +322,12 @@ The frontend currently provides:
 - analyst and administrator settlement-file upload with atomic import results;
 - open and resolved discrepancy queues with bounded pagination;
 - strong-ETag discrepancy resolution and stale-version recovery;
-- session-expiry recovery that clears customer, administrator and
-  reconciliation query caches while preserving safe payment retry state;
+- operations, reconciliation and administrator audit search with opaque cursor
+  navigation;
+- role-specific operational summary cards and permitted CSV downloads;
+- runtime validation of reporting JSON and hardened download responses;
+- session-expiry recovery that clears customer, administrator, reconciliation
+  and reporting query caches while preserving safe payment retry state;
 - Vitest, Testing Library and Mock Service Worker workflow tests; and
 - ESLint static analysis and Vite production builds.
 
@@ -296,7 +337,7 @@ The project currently provides:
 
 - a PostgreSQL Docker Compose service;
 - locked backend and frontend dependencies;
-- cumulative PowerShell and Bash verification scripts through Phase 9; and
+- cumulative PowerShell and Bash verification scripts through Phase 10; and
 - GitHub Actions jobs for repository, backend and frontend verification.
 
 ## Local development
@@ -725,7 +766,9 @@ The cumulative verifiers retain the earlier acceptance gates:
 - Phase 8 verification: `scripts/verify-phase-8.ps1` and
   `scripts/verify-phase-8.sh`; and
 - Phase 9 verification: `scripts/verify-phase-9.ps1` and
-  `scripts/verify-phase-9.sh`.
+  `scripts/verify-phase-9.sh`; and
+- Phase 10 verification: `scripts/verify-phase-10.ps1` and
+  `scripts/verify-phase-10.sh`.
 
 The Phase 6 gate verifies the authenticated payment workspace and
 customer-owned payment lookup. The later gates retain that complete baseline.
@@ -769,3 +812,23 @@ database immutability, discrepancy-resolution, security, frontend and
 documentation contracts plus Flyway migrations 1 through 18. It then runs the
 complete Phase 8 baseline, which supplies the full backend and frontend
 regression gate.
+
+### Phase 10 verification
+
+From the repository root on Windows:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-phase-10.ps1
+```
+
+From WSL or another Bash environment:
+
+```bash
+bash scripts/verify-phase-10.sh
+```
+
+The Phase 10 verifier checks append-only audit persistence, atomic business
+recording, source-owned evidence readers, normalized role-scoped search,
+repeatable-read summaries, bounded CSV exports, the React reporting workspace,
+documentation and Flyway migrations 1 through 21. It then runs the complete
+Phase 9 baseline, which supplies the full backend and frontend regression gate.

@@ -467,8 +467,8 @@ Phase 1 verification passed.
 | Frontend lint, tests and production build pass | Completed | ESLint, 160 Vitest tests and Vite build passed on 2026-07-25 |
 | Spring Modulith verification passes | Completed | `ModularityTest` passed in focused Phase 10 suites |
 | PowerShell and Bash Phase 10 verifiers exist | Completed | `scripts/verify-phase-10.ps1` and `scripts/verify-phase-10.sh` |
-| Cumulative Phase 10 verifier passes | Current | Run the final Phase 10 PowerShell gate |
-| GitHub Repository, Backend and Frontend checks pass | Not started | Phase 10 pull request |
+| Cumulative Phase 10 verifier passes | Completed | PowerShell verifier passed on 2026-07-26 |
+| GitHub Repository, Backend and Frontend checks pass | Completed | PR #10 head `c494a67` passed all three checks on 2026-07-26 |
 
 ## Decision history
 
@@ -534,7 +534,6 @@ Phase 1 verification passed.
 
 ## Next verified action
 
-Run the cumulative Phase 10 PowerShell verifier. If it passes, commit and push
-this final verification batch, open the Phase 10 pull request, and record the
-required Repository, Backend and Frontend check evidence only after GitHub
-Actions passes on the pull-request head.
+Phase 10 implementation and verification are complete. Merge PR #10
+after review, then synchronise `main` and remove the local and remote Phase 10
+feature branches.

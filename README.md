@@ -17,13 +17,9 @@ Its local and remote feature branches have been removed. The stable `main`
 branch now includes strict synthetic settlement import, deterministic
 reconciliation, discrepancy review and immutable resolution evidence.
 
-Phase 10 implementation is complete on its feature branch and is awaiting the
-cumulative local gate and pull-request CI. ADR 0014 defines the canonical
-append-only business-audit journal, preserves existing source-owned security,
-replay and reconciliation evidence, and composes both through bounded
-read-only queries. The implementation also provides operational payment,
-settlement and reconciliation summaries, formula-safe CSV exports and
-server-enforced role visibility.
+Phase 10 implementation is complete and the required local and pull-request
+verification passed on PR #10 at head `c494a67` on
+2026-07-26.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.

@@ -22,9 +22,12 @@ class PaymentProcessingCoordinator {
 
     private final PaymentFailureFinalizer failureFinalizer;
 
+    private final PaymentMetrics metrics;
+
     PaymentProcessingCoordinator(
         PaymentPostingTransaction postingTransaction,
-        PaymentFailureFinalizer failureFinalizer
+        PaymentFailureFinalizer failureFinalizer,
+        PaymentMetrics metrics
     ) {
         this.postingTransaction =
             Objects.requireNonNull(
@@ -37,6 +40,11 @@ class PaymentProcessingCoordinator {
                 failureFinalizer,
                 "failureFinalizer must not be null"
             );
+
+        this.metrics = Objects.requireNonNull(
+            metrics,
+            "metrics must not be null"
+        );
     }
 
     StoredPaymentResponse process(
@@ -88,6 +96,8 @@ class PaymentProcessingCoordinator {
                                 .CONCURRENT_MODIFICATION
                         );
                 }
+
+                metrics.recordConcurrencyRetry();
             }
         }
 

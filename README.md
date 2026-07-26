@@ -10,7 +10,7 @@ asynchronous event delivery and settlement reconciliation.
 
 Current phase:
 
-**Phase 10 — Audit and operational reporting**
+**Phase 11 — Observability and performance**
 
 Phase 9 is complete and merged through PR #9 at merge commit `43b697e`.
 Its local and remote feature branches have been removed. The stable `main`
@@ -20,6 +20,12 @@ reconciliation, discrepancy review and immutable resolution evidence.
 Phase 10 implementation is complete and the required local and pull-request
 verification passed on PR #10 at head `c494a67` on
 2026-07-26.
+
+Phase 11 implementation, local verification and the authenticated payment-path
+smoke test passed on PR #11 at head `f594e5f` on
+2026-07-26. The GitHub Repository, Backend and Frontend checks also
+passed. The smoke run is a controlled functional check and does not represent
+a production performance or SLO claim.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.
@@ -704,9 +710,9 @@ the immutable double-entry ledger, synchronous payment submission,
 ownership-aware payment lookup and frontend payment flows are also implemented.
 The transactional outbox, durable simulated notifications, controlled
 dead-letter recovery, settlement import and reconciliation are implemented.
-Audit and operational reporting are the current phase; observability,
-performance, security hardening and release infrastructure remain planned
-work.
+Audit and operational reporting are implemented; the remaining Phase 11
+observability, performance, security hardening and release work is still
+planned or in progress.
 
 ## Engineering principles
 

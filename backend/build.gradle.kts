@@ -36,6 +36,10 @@ dependencies {
     )
 
     implementation(
+        "org.springframework.boot:spring-boot-starter-opentelemetry"
+    )
+
+    implementation(
         "org.springframework.boot:spring-boot-starter-data-jpa"
     )
 
@@ -76,6 +80,10 @@ dependencies {
     )
 
     runtimeOnly("org.postgresql:postgresql")
+
+    runtimeOnly(
+        "io.micrometer:micrometer-registry-prometheus"
+    )
 
     testImplementation(
         "org.springframework.boot:spring-boot-starter-actuator-test"

@@ -26,7 +26,7 @@ Last updated: 2026-07-26
 | Docker execution | Completed | `hello-world` container succeeded |
 | jq | Completed | jq 1.8.1 |
 | IntelliJ repository | Completed | Repository and Gradle project configured |
-| Current Git phase branch | Current | `feat/phase-10-audit-reporting` from Phase 9 merge `43b697e` |
+| Current Git phase branch | Current | `feat/phase-11-observability-performance` from Phase 10 merge `1791b9f` |
 
 ## Phase progress
 
@@ -42,8 +42,8 @@ Last updated: 2026-07-26
 | 7 — Asynchronous events and outbox | Completed | PR #7 merged; local and GitHub Actions verification passed |
 | 8 — Notifications and dead letters | Completed | PR #8 merged at `179d793`; local and remote Phase 8 feature branches removed |
 | 9 — Settlement and reconciliation | Completed | PR #9 merged at `43b697e`; local and remote Phase 9 branches removed |
-| 10 — Audit and reporting | Current | Implementation complete on `feat/phase-10-audit-reporting`; cumulative local gate and pull-request CI remain |
-| 11 — Observability and performance | Not started | None |
+| 10 — Audit and reporting | Completed | PR #10 verification recorded on `main` |
+| 11 — Observability and performance | Current | Foundation batch implemented on `feat/phase-11-observability-performance`; focused verification remains |
 | 12 — Security hardening | Not started | None |
 | 13 — Release infrastructure | Not started | None |
 | 14 — Portfolio release | Not started | None |
@@ -470,6 +470,30 @@ Phase 1 verification passed.
 | Cumulative Phase 10 verifier passes | Completed | PowerShell verifier passed on 2026-07-26 |
 | GitHub Repository, Backend and Frontend checks pass | Completed | PR #10 head `c494a67` passed all three checks on 2026-07-26 |
 
+## Phase 11 acceptance criteria
+
+### Foundation observability
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Phase 10 merge and Phase 11 branch baseline are recorded | Completed | Phase 10 merge `1791b9f` and `feat/phase-11-observability-performance` |
+| ADR 0015 defines observability and performance boundaries | Completed | `docs/adr/0015-observability-and-performance.md` |
+| Correlation-aware request completion events are structured and allow-listed | Completed | `RequestCompletionLoggingFilter` and ECS logging configuration |
+| Prometheus-compatible Actuator metrics are exposed | Completed | Micrometer Prometheus registry and protected Actuator endpoints |
+| Payment lifecycle metrics are recorded without high-cardinality labels | Completed | `PaymentMetrics` and `PaymentMetricsTest` |
+| Readiness includes PostgreSQL health while liveness remains process health | Completed | `application.yml` health groups |
+| Focused Phase 11 foundation tests pass | Completed | `PaymentMetricsTest`, `PaymentSubmissionServiceTest` and `PaymentProcessingCoordinatorTest` passed on 2026-07-26 |
+
+### Remaining Phase 11 work
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Distributed trace propagation and export are implemented | Current | Batch 2 adds Micrometer/OpenTelemetry observations, configurable OTLP export and payment processing spans; focused verification pending |
+| Controlled failure simulation is profile-gated and audited | Current | Batch 2 adds the bounded administrator-only in-memory simulator; focused verification pending |
+| Reproducible payment-path load tests are implemented | Completed | Static verifier and authenticated k6 smoke test passed on 2026-07-26 |
+| Performance methodology, measurements and SLO evidence are recorded | Not started | Final Phase 11 batch |
+| GitHub Repository, Backend and Frontend checks pass | Completed | PR #11 head `f594e5f` passed all three checks on 2026-07-26 |
+
 ## Decision history
 
 | Date | Decision |
@@ -531,9 +555,12 @@ Phase 1 verification passed.
 | 2026-07-24 | Record new business-audit events atomically in an append-only canonical journal |
 | 2026-07-24 | Apply role visibility before audit pagination, aggregation and export |
 | 2026-07-24 | Bound synchronous CSV exports to 31 days and 10,000 typed rows |
+| 2026-07-26 | Use ECS structured logs, low-cardinality Micrometer metrics and database-aware readiness |
+| 2026-07-26 | Use Micrometer Observation with OpenTelemetry/OTLP for optional trace export |
+| 2026-07-26 | Keep failure simulation disabled by default, bounded, in-memory and administrator-only |
 
 ## Next verified action
 
-Phase 10 implementation and verification are complete. Merge PR #10
-after review, then synchronise `main` and remove the local and remote Phase 10
-feature branches.
+Phase 11 implementation, local verification and PR #11 CI
+verification are recorded. The final controlled performance-measurement batch
+remains before Phase 11 can be marked complete.

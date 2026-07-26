@@ -81,6 +81,16 @@ describe('App', () => {
       ).toBeInTheDocument()
 
       expect(
+        screen.getByText(
+          'Audit and operational reporting',
+        ),
+      ).toBeInTheDocument()
+
+      expect(
+        screen.getByText('Phase 10'),
+      ).toBeInTheDocument()
+
+      expect(
         await screen.findByText(
           session.email,
         ),

@@ -1,5 +1,7 @@
 package com.samharrison.payments.reconciliation.internal;
 
+import com.samharrison.payments.audit.BusinessAuditEvents;
+import com.samharrison.payments.audit.BusinessAuditRecorder;
 import com.samharrison.payments.payment.PaymentReconciliationReader;
 import com.samharrison.payments.payment.PaymentReconciliationSnapshot;
 import java.time.Clock;
@@ -40,6 +42,8 @@ class SettlementImportTransaction {
 
     private final SettlementMatcher matcher;
 
+    private final BusinessAuditRecorder auditRecorder;
+
     private final Clock clock;
 
     SettlementImportTransaction(
@@ -54,6 +58,7 @@ class SettlementImportTransaction {
         SettlementMatchClaimStore matchClaimStore,
         PaymentReconciliationReader paymentReader,
         SettlementMatcher matcher,
+        BusinessAuditRecorder auditRecorder,
         Clock clock
     ) {
         this.reservationStore =
@@ -95,6 +100,11 @@ class SettlementImportTransaction {
             Objects.requireNonNull(
                 matcher,
                 "matcher must not be null"
+            );
+        this.auditRecorder =
+            Objects.requireNonNull(
+                auditRecorder,
+                "auditRecorder must not be null"
             );
         this.clock =
             Objects.requireNonNull(
@@ -216,6 +226,18 @@ class SettlementImportTransaction {
             importRepository.saveAndFlush(
                 settlementImport
             );
+
+        auditRecorder.record(
+            BusinessAuditEvents
+                .settlementImportAccepted(
+                    completed.completedAt(),
+                    completed.actorIdentityUserId(),
+                    completed.id(),
+                    completed.rowCount(),
+                    completed.matchedCount(),
+                    completed.discrepancyCount()
+                )
+        );
 
         return SettlementImportResponse.completed(
             completed,

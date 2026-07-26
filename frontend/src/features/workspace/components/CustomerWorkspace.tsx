@@ -5,6 +5,7 @@ import { DeadLetterPanel } from '../../operations/components/DeadLetterPanel'
 import { PaymentCreationForm } from '../../payments/components/PaymentCreationForm'
 import { PaymentLookup } from '../../payments/components/PaymentLookup'
 import { ReconciliationWorkspace } from '../../reconciliation/components/ReconciliationWorkspace'
+import { AuditReportingWorkspace } from '../../reporting/components/AuditReportingWorkspace'
 
 const workspaceLinks = [
   {
@@ -52,6 +53,13 @@ const workspaceLinks = [
       'Review and resolve reconciliation differences.',
     reconciliationOnly: true,
   },
+  {
+    href: '#audit-reporting',
+    label: 'Audit and reports',
+    description:
+      'Search evidence and export bounded operational reports.',
+    reportingOnly: true,
+  },
 ]
 
 export function CustomerWorkspace() {
@@ -69,6 +77,14 @@ export function CustomerWorkspace() {
     currentSession.data?.roles.includes(
       'RECONCILIATION_ANALYST',
     ) === true
+  const isReportingUser =
+    isAdministrator ||
+    currentSession.data?.roles.includes(
+      'OPERATIONS',
+    ) === true ||
+    currentSession.data?.roles.includes(
+      'RECONCILIATION_ANALYST',
+    ) === true
   const visibleWorkspaceLinks =
     workspaceLinks.filter(
       (link) =>
@@ -81,8 +97,13 @@ export function CustomerWorkspace() {
           isReconciliationUser
         ) &&
         (
+          link.reportingOnly !== true ||
+          isReportingUser
+        ) &&
+        (
           link.adminOnly === true ||
           link.reconciliationOnly === true ||
+          link.reportingOnly === true ||
           isCustomer
         ),
     )
@@ -132,13 +153,17 @@ export function CustomerWorkspace() {
           <h3>
             {isCustomer
               ? 'Manage simulated payments'
-              : 'Review settlement operations'}
+              : isReconciliationUser
+                ? 'Review settlement operations'
+                : 'Review payment operations'}
           </h3>
 
           <p>
             {isCustomer
               ? 'Review account information, simulated payment notifications, payment creation and previous results from one protected browser workspace.'
-              : 'Import synthetic settlement data, inspect deterministic results and record attributable discrepancy decisions.'}
+              : isReconciliationUser
+                ? 'Import synthetic settlement data, inspect deterministic results and record attributable discrepancy decisions.'
+                : 'Search immutable operational evidence and generate bounded payment reports.'}
           </p>
         </header>
 
@@ -164,6 +189,20 @@ export function CustomerWorkspace() {
             currentSession.data !==
               undefined && (
               <ReconciliationWorkspace
+                userId={
+                  currentSession.data.userId
+                }
+              />
+            )}
+
+          {isReportingUser &&
+            currentSession.data !== null &&
+            currentSession.data !==
+              undefined && (
+              <AuditReportingWorkspace
+                roles={
+                  currentSession.data.roles
+                }
                 userId={
                   currentSession.data.userId
                 }

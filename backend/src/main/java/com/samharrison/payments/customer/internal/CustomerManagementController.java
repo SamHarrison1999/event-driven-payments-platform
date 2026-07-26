@@ -1,7 +1,9 @@
 package com.samharrison.payments.customer.internal;
 
+import com.samharrison.payments.identity.CurrentIdentityUser;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.util.Objects;
 import java.util.UUID;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
@@ -22,10 +24,22 @@ public final class CustomerManagementController {
 
     private final CustomerManagementService service;
 
+    private final CurrentIdentityUser currentIdentityUser;
+
     public CustomerManagementController(
-        CustomerManagementService service
+        CustomerManagementService service,
+        CurrentIdentityUser currentIdentityUser
     ) {
-        this.service = service;
+        this.service =
+            Objects.requireNonNull(
+                service,
+                "service must not be null"
+            );
+        this.currentIdentityUser =
+            Objects.requireNonNull(
+                currentIdentityUser,
+                "currentIdentityUser must not be null"
+            );
     }
 
     @PostMapping(
@@ -38,7 +52,10 @@ public final class CustomerManagementController {
         CustomerCreateRequest request
     ) {
         CustomerSnapshot created =
-            service.create(request.fullName());
+            service.create(
+                request.fullName(),
+                currentIdentityUser.requireUserId()
+            );
 
         URI location = URI.create(
             "/api/v1/customers/"
@@ -126,17 +143,20 @@ public final class CustomerManagementController {
                 case ACTIVE ->
                     service.reactivate(
                         customerId,
-                        expectedVersion
+                        expectedVersion,
+                        currentIdentityUser.requireUserId()
                     );
                 case SUSPENDED ->
                     service.suspend(
                         customerId,
-                        expectedVersion
+                        expectedVersion,
+                        currentIdentityUser.requireUserId()
                     );
                 case CLOSED ->
                     service.close(
                         customerId,
-                        expectedVersion
+                        expectedVersion,
+                        currentIdentityUser.requireUserId()
                     );
             };
 

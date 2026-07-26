@@ -98,18 +98,18 @@ function App() {
             </p>
 
             <strong>
-              Settlement reconciliation
+              Audit and operational reporting
             </strong>
 
             <p>
-              Demonstrating strict synthetic imports,
-              deterministic matching and immutable
-              discrepancy-resolution evidence.
+              Demonstrating immutable cross-domain
+              evidence search, consistent summaries
+              and bounded role-scoped exports.
             </p>
 
             <div className="scope-card__progress">
               <span>Delivery progress</span>
-              <strong>Phase 9</strong>
+              <strong>Phase 10</strong>
             </div>
           </aside>
         </section>

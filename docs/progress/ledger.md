@@ -1,6 +1,6 @@
 # Progress ledger
 
-Last updated: 2026-07-24
+Last updated: 2026-07-26
 
 ## Status meanings
 
@@ -26,7 +26,7 @@ Last updated: 2026-07-24
 | Docker execution | Completed | `hello-world` container succeeded |
 | jq | Completed | jq 1.8.1 |
 | IntelliJ repository | Completed | Repository and Gradle project configured |
-| Current Git phase branch | Current | `feat/phase-9-settlement-reconciliation` from Phase 8 merge `179d793` |
+| Current Git phase branch | Current | `feat/phase-10-audit-reporting` from Phase 9 merge `43b697e` |
 
 ## Phase progress
 
@@ -41,8 +41,8 @@ Last updated: 2026-07-24
 | 6 — Frontend payment experience | Completed | PR #6 merged; local and GitHub Actions verification passed |
 | 7 — Asynchronous events and outbox | Completed | PR #7 merged; local and GitHub Actions verification passed |
 | 8 — Notifications and dead letters | Completed | PR #8 merged at `179d793`; local and remote Phase 8 feature branches removed |
-| 9 — Settlement and reconciliation | Current | Implementation, cumulative local gate and PR #9 checks complete; merge remains |
-| 10 — Audit and reporting | Not started | None |
+| 9 — Settlement and reconciliation | Completed | PR #9 merged at `43b697e`; local and remote Phase 9 branches removed |
+| 10 — Audit and reporting | Current | Implementation complete on `feat/phase-10-audit-reporting`; cumulative local gate and pull-request CI remain |
 | 11 — Observability and performance | Not started | None |
 | 12 — Security hardening | Not started | None |
 | 13 — Release infrastructure | Not started | None |
@@ -423,7 +423,53 @@ Phase 1 verification passed.
 | React analyst workflow passes frontend tests | Completed | 22 focused tests, ESLint and production build passed on 2026-07-24 |
 | Phase 9 PowerShell and Bash verifiers exist | Completed | `scripts/verify-phase-9.ps1` and `scripts/verify-phase-9.sh` |
 | Cumulative Phase 9 verifier passes | Completed | PowerShell verifier passed on 2026-07-24 |
-| GitHub Repository, Backend and Frontend checks pass | Completed | Repository, Backend and Frontend checks passed on PR #9 at `a548c68` on 2026-07-24 |
+| GitHub Repository, Backend and Frontend checks pass | Completed | Final PR #9 head `c6f95f3` passed all three checks before merge `43b697e` on 2026-07-24 |
+
+## Phase 10 acceptance criteria
+
+### Audit ownership and persistence
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Phase 9 merge and branch cleanup are recorded | Completed | PR #9 merge `43b697e` and Phase 10 baseline documentation |
+| ADR 0014 defines audit and reporting boundaries | Completed | `docs/adr/0014-audit-and-operational-reporting.md` |
+| Canonical business-audit events are append-only | Completed | V19 mutation trigger and `BusinessAuditPersistenceIntegrationTest` |
+| Canonical event metadata is bounded, versioned and allow-listed | Completed | Audit request, serializer, event-type validator and PostgreSQL constraints |
+| Source-event recording is idempotent | Completed | Unique source key plus same-event replay and conflicting-event tests |
+| Audit writes commit atomically with their business mutation | Completed | Payment, customer, account and settlement transaction integration tests |
+| Existing role-change, replay and resolution evidence remains source-owned | Completed | Identity, outbox and reconciliation public evidence readers |
+| No misleading historical canonical backfill is created | Completed | V19 creates an empty canonical journal; normalized search composes source evidence at read time |
+
+### Search, authorization and reporting
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Audit search uses deterministic bounded keyset pagination | Completed | `AuditCursorCodecTest`, merge tests and PostgreSQL HTTP pagination coverage |
+| Audit filters are allow-listed and use UTC half-open time windows | Completed | `AuditSearchFilterTest` and HTTP boundary coverage |
+| Role visibility is enforced before paging and aggregation | Completed | Authority-scoped readers and cross-role HTTP tests |
+| Customers have no Phase 10 audit or report access | Completed | Authenticated audit, summary and export authorization tests |
+| Summaries and exports use read-only repeatable-read snapshots | Completed | `OperationalSummaryService`, `ReportExportService` and PostgreSQL integration tests |
+| Payment, settlement and reconciliation summaries are exact | Completed | Fixture-based aggregate assertions across all three report sections |
+| Summary and export queries cannot mutate source records | Completed | Public read-only module boundaries and read-only reporting transactions |
+| Audit and reporting responses use `Cache-Control: no-store` | Completed | Audit and operational reporting HTTP integration tests |
+
+### CSV export and frontend
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Export windows are required and capped at 31 days | Completed | `ReportWindowTest` and authenticated HTTP validation |
+| Every export is capped at 10,000 data rows | Completed | Independently bounded readers and overflow HTTP coverage |
+| CSV uses fixed typed columns and RFC 4180 records | Completed | `CsvDocumentWriterTest` and exact export byte assertions |
+| Free-text and formula-capable values are excluded | Completed | Typed export mappings and sensitive/formula fixture assertions |
+| Download filenames and response headers are safe | Completed | Fixed filenames, `nosniff`, no-store and content-disposition HTTP assertions |
+| Role-gated audit and reporting workspace is implemented | Completed | `AuditReportingWorkspace.test.tsx` and workspace role tests |
+| Session expiry clears audit and reporting query state | Completed | Reporting cache-isolation tests |
+| Frontend lint, tests and production build pass | Completed | ESLint, 160 Vitest tests and Vite build passed on 2026-07-25 |
+| Spring Modulith verification passes | Completed | `ModularityTest` passed in focused Phase 10 suites |
+| PowerShell and Bash Phase 10 verifiers exist | Completed | `scripts/verify-phase-10.ps1` and `scripts/verify-phase-10.sh` |
+| Cumulative Phase 10 verifier passes | Completed | PowerShell verifier passed on 2026-07-26 |
+| GitHub Repository, Backend and Frontend checks pass | Completed | PR #10 head `c494a67` passed all three checks on 2026-07-26 |
+
 ## Decision history
 
 | Date | Decision |
@@ -481,9 +527,13 @@ Phase 1 verification passed.
 | 2026-07-24 | Keep reconciliation state and resolution evidence separate from payment and ledger history |
 | 2026-07-24 | Use database-protected accepted-match claims and immutable per-row results |
 | 2026-07-24 | Require strong ETags and `If-Match` for one-time discrepancy resolution |
+| 2026-07-24 | Preserve source-owned evidence and do not invent a canonical historical backfill |
+| 2026-07-24 | Record new business-audit events atomically in an append-only canonical journal |
+| 2026-07-24 | Apply role visibility before audit pagination, aggregation and export |
+| 2026-07-24 | Bound synchronous CSV exports to 31 days and 10,000 typed rows |
 
 ## Next verified action
 
-Commit and push the Phase 9 CI evidence update. After the required checks pass
-again on the documentation-only pull-request head, merge PR #9, sync `main`
-and remove the local and remote Phase 9 feature branches.
+Phase 10 implementation and verification are complete. Merge PR #10
+after review, then synchronise `main` and remove the local and remote Phase 10
+feature branches.

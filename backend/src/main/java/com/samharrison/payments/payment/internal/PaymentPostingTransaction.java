@@ -2,6 +2,8 @@ package com.samharrison.payments.payment.internal;
 
 import com.samharrison.payments.account.AccountPaymentResult;
 import com.samharrison.payments.account.AccountPaymentMutation;
+import com.samharrison.payments.audit.BusinessAuditEvents;
+import com.samharrison.payments.audit.BusinessAuditRecorder;
 import com.samharrison.payments.ledger.LedgerEntrySide;
 import com.samharrison.payments.ledger.LedgerPostingCommand;
 import com.samharrison.payments.ledger.LedgerPostingEntry;
@@ -35,6 +37,8 @@ class PaymentPostingTransaction {
 
     private final OutboxEventAppender outboxEventAppender;
 
+    private final BusinessAuditRecorder auditRecorder;
+
     private final Clock clock;
 
     PaymentPostingTransaction(
@@ -44,6 +48,7 @@ class PaymentPostingTransaction {
         AccountPaymentMutation accountPaymentMutation,
         LedgerPostingService ledgerPostingService,
         OutboxEventAppender outboxEventAppender,
+        BusinessAuditRecorder auditRecorder,
         Clock clock
     ) {
         this.paymentRepository =
@@ -74,6 +79,12 @@ class PaymentPostingTransaction {
             Objects.requireNonNull(
                 outboxEventAppender,
                 "outboxEventAppender must not be null"
+            );
+
+        this.auditRecorder =
+            Objects.requireNonNull(
+                auditRecorder,
+                "auditRecorder must not be null"
             );
 
         this.clock =
@@ -163,6 +174,14 @@ class PaymentPostingTransaction {
                 response,
                 rejectedAt
             );
+
+            auditRecorder.record(
+                BusinessAuditEvents.paymentRejected(
+                    rejectedAt,
+                    payment.id(),
+                    reason.code()
+                )
+            );
         } else {
             AccountPaymentResult.Approved approved =
                 (AccountPaymentResult.Approved)
@@ -204,6 +223,14 @@ class PaymentPostingTransaction {
                 requiredOwnerToken,
                 response,
                 completedAt
+            );
+
+            auditRecorder.record(
+                BusinessAuditEvents.paymentCompleted(
+                    completedAt,
+                    payment.id(),
+                    request.amount().minorUnits()
+                )
             );
         }
 

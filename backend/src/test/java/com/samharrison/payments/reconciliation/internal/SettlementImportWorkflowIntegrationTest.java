@@ -136,6 +136,11 @@ class SettlementImportWorkflowIntegrationTest {
                 "PAYMENT_NOT_COMPLETED",
                 "PAYMENT_NOT_FOUND"
             );
+
+        assertThat(
+            auditEventCount(imported.importId())
+        )
+            .isEqualTo(1L);
     }
 
     @Test
@@ -185,6 +190,11 @@ class SettlementImportWorkflowIntegrationTest {
             )
         )
             .isEqualTo(1);
+
+        assertThat(
+            auditEventCount(first.importId())
+        )
+            .isEqualTo(1L);
     }
 
     @Test
@@ -316,6 +326,22 @@ class SettlementImportWorkflowIntegrationTest {
         );
 
         return userId;
+    }
+
+    private Long auditEventCount(
+        UUID importId
+    ) {
+        return jdbcTemplate.queryForObject(
+            """
+            SELECT COUNT(*)
+            FROM business_audit_event
+            WHERE event_type =
+                'settlement.import-accepted'
+              AND subject_identifier = ?
+            """,
+            Long.class,
+            importId.toString()
+        );
     }
 
     private UUID insertPendingPayment(

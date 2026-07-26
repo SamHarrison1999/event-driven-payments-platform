@@ -1,5 +1,7 @@
 package com.samharrison.payments.payment.internal;
 
+import com.samharrison.payments.audit.BusinessAuditEvents;
+import com.samharrison.payments.audit.BusinessAuditRecorder;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -17,12 +19,15 @@ class PaymentFailureFinalizer {
     private final PaymentIdempotencyRecordRepository
         idempotencyRepository;
 
+    private final BusinessAuditRecorder auditRecorder;
+
     private final Clock clock;
 
     PaymentFailureFinalizer(
         PaymentRepository paymentRepository,
         PaymentIdempotencyRecordRepository
             idempotencyRepository,
+        BusinessAuditRecorder auditRecorder,
         Clock clock
     ) {
         this.paymentRepository =
@@ -35,6 +40,12 @@ class PaymentFailureFinalizer {
             Objects.requireNonNull(
                 idempotencyRepository,
                 "idempotencyRepository must not be null"
+            );
+
+        this.auditRecorder =
+            Objects.requireNonNull(
+                auditRecorder,
+                "auditRecorder must not be null"
             );
 
         this.clock =
@@ -134,6 +145,14 @@ class PaymentFailureFinalizer {
 
         idempotencyRepository
             .saveAndFlush(reservation);
+
+        auditRecorder.record(
+            BusinessAuditEvents.paymentFailed(
+                failedAt,
+                payment.id(),
+                requiredReason.code()
+            )
+        );
 
         return response;
     }

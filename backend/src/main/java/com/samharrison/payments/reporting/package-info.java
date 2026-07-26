@@ -5,6 +5,8 @@
         "payment",
         "reconciliation",
         "audit",
+        "identity",
+        "outbox",
         "shared"
     }
 )

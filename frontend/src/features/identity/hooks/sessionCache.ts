@@ -7,6 +7,7 @@ const customerQueryRoots =
     'outbox-dead-letters',
     'payments',
     'reconciliation',
+    'reporting',
   ])
 
 export function clearCustomerQueries(

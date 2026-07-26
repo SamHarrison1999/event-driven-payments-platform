@@ -1,5 +1,7 @@
 package com.samharrison.payments.customer.internal;
 
+import com.samharrison.payments.identity.CurrentIdentityUser;
+import java.util.Objects;
 import java.util.UUID;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
@@ -16,10 +18,22 @@ public final class CustomerOwnershipManagementController {
     private final CustomerOwnershipManagementService
         service;
 
+    private final CurrentIdentityUser currentIdentityUser;
+
     public CustomerOwnershipManagementController(
-        CustomerOwnershipManagementService service
+        CustomerOwnershipManagementService service,
+        CurrentIdentityUser currentIdentityUser
     ) {
-        this.service = service;
+        this.service =
+            Objects.requireNonNull(
+                service,
+                "service must not be null"
+            );
+        this.currentIdentityUser =
+            Objects.requireNonNull(
+                currentIdentityUser,
+                "currentIdentityUser must not be null"
+            );
     }
 
     @PutMapping(
@@ -35,7 +49,8 @@ public final class CustomerOwnershipManagementController {
         CustomerOwnershipSnapshot assigned =
             service.assign(
                 identityUserId,
-                customerId
+                customerId,
+                currentIdentityUser.requireUserId()
             );
 
         return ResponseEntity

@@ -77,6 +77,10 @@ dependencies {
 
     runtimeOnly("org.postgresql:postgresql")
 
+    runtimeOnly(
+        "io.micrometer:micrometer-registry-prometheus"
+    )
+
     testImplementation(
         "org.springframework.boot:spring-boot-starter-actuator-test"
     )

@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.OptimisticLockingFailureException;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentProcessingCoordinatorTest {
@@ -35,12 +36,17 @@ class PaymentProcessingCoordinatorTest {
 
     private PaymentProcessingCoordinator coordinator;
 
+    private PaymentMetrics metrics;
+
     @BeforeEach
     void setUp() {
+        metrics = new PaymentMetrics(new SimpleMeterRegistry());
+
         coordinator =
             new PaymentProcessingCoordinator(
                 postingTransaction,
-                failureFinalizer
+                failureFinalizer,
+                metrics
             );
     }
 

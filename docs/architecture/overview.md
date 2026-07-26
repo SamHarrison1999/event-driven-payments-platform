@@ -136,8 +136,8 @@ retry decisions.
 
 Notification, reconciliation, reporting and full broker-backed consumer
 capabilities are introduced in later phases. Phase 7 establishes the persisted
-outbox boundary first; the Kafka-compatible broker, extracted asynchronous
-consumers and observability stack remain planned components.
+outbox boundary first. The observability stack is introduced incrementally in
+Phase 11 without implying a production broker or deployment environment.
 ### Phase 8 — Notifications and dead letters
 
 Phase 8 implements:
@@ -223,6 +223,22 @@ records, outbox events, settlement evidence or source-owned audit evidence.
 ADR 0014 records the event ownership, atomic recording, visibility, query,
 aggregation and export boundaries. Focused domain, PostgreSQL, authenticated
 HTTP, CSV, Spring Modulith and React tests verify the implementation.
+
+### Phase 11 — Observability and performance
+
+Phase 11 is in progress. The first foundation batch implements:
+
+- ECS-compatible structured console logging through Spring Boot;
+- allow-listed request completion events containing method, route, status and
+  duration without request bodies or query strings;
+- Prometheus-compatible Actuator metrics;
+- payment submission, completion, rejection, failure, replay, concurrency
+  retry and processing-duration measurements; and
+- liveness and database-aware readiness semantics.
+
+Metrics and diagnostic endpoints are administrator-protected. Distributed
+tracing, controlled failure simulation, reproducible load testing and measured
+SLO evidence remain later Phase 11 batches.
 
 ## C4 context diagram
 

@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentSubmissionServiceTest {
@@ -50,12 +51,17 @@ class PaymentSubmissionServiceTest {
 
     private PaymentSubmissionService service;
 
+    private PaymentMetrics metrics;
+
     @BeforeEach
     void setUp() {
+        metrics = new PaymentMetrics(new SimpleMeterRegistry());
+
         service =
             new PaymentSubmissionService(
                 reservationCoordinator,
-                processingCoordinator
+                processingCoordinator,
+                metrics
             );
     }
 

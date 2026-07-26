@@ -193,6 +193,13 @@ public class IdentitySecurityConfiguration {
                             "/swagger-ui/**"
                         )
                         .permitAll()
+                        .requestMatchers(
+                            HttpMethod.GET,
+                            "/actuator/metrics",
+                            "/actuator/metrics/**",
+                            "/actuator/prometheus"
+                        )
+                        .hasRole("ADMIN")
                         .requestMatchers("/error")
                         .permitAll()
                         .anyRequest()

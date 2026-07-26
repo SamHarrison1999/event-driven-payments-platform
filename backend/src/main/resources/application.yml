@@ -39,18 +39,33 @@ management:
         include:
           - health
           - info
+          - metrics
+          - prometheus
 
   endpoint:
     health:
       probes:
         enabled: true
       show-details: never
+      group:
+        readiness:
+          include: readinessState,db
+
+    metrics:
+      access: read-only
+
+    prometheus:
+      access: read-only
 
   health:
     livenessstate:
       enabled: true
     readinessstate:
       enabled: true
+
+  metrics:
+    tags:
+      application: ${spring.application.name}
 
 springdoc:
   api-docs:
@@ -83,5 +98,9 @@ server:
         path: /api
 
 logging:
-  pattern:
-    level: "%5p [correlationId:%X{correlationId:-}]"
+  structured:
+    format:
+      console: ecs
+    ecs:
+      service:
+        version: ${APP_VERSION:0.0.1-SNAPSHOT}

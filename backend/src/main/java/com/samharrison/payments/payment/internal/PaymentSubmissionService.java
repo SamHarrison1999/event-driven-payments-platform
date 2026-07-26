@@ -14,11 +14,13 @@ public class PaymentSubmissionService {
     private final PaymentProcessingCoordinator
         processingCoordinator;
 
+    private final PaymentMetrics metrics;
+
     public PaymentSubmissionService(
         PaymentReservationCoordinator
             reservationCoordinator,
-        PaymentProcessingCoordinator
-            processingCoordinator
+        PaymentProcessingCoordinator processingCoordinator,
+        PaymentMetrics metrics
     ) {
         this.reservationCoordinator =
             Objects.requireNonNull(
@@ -31,6 +33,11 @@ public class PaymentSubmissionService {
                 processingCoordinator,
                 "processingCoordinator must not be null"
             );
+
+        this.metrics = Objects.requireNonNull(
+            metrics,
+            "metrics must not be null"
+        );
     }
 
     @PreAuthorize("hasRole('CUSTOMER')")
@@ -39,6 +46,8 @@ public class PaymentSubmissionService {
         String rawIdempotencyKey,
         PaymentCreateRequest request
     ) {
+        metrics.recordSubmission();
+
         UUID requiredActorIdentityId =
             Objects.requireNonNull(
                 actorIdentityId,
@@ -67,13 +76,26 @@ public class PaymentSubmissionService {
             );
 
         return switch (reservation) {
-            case PaymentReservationResult.Acquired acquired ->
-                processingCoordinator.process(
-                    acquired.paymentId(),
-                    acquired.ownerToken()
-                );
-            case PaymentReservationResult.Replay replay ->
-                replay.response();
+            case PaymentReservationResult.Acquired acquired -> {
+                var sample = metrics.startProcessing();
+
+                try {
+                    StoredPaymentResponse response =
+                        processingCoordinator.process(
+                            acquired.paymentId(),
+                            acquired.ownerToken()
+                        );
+
+                    metrics.recordOutcome(response);
+                    yield response;
+                } finally {
+                    metrics.stopProcessing(sample);
+                }
+            }
+            case PaymentReservationResult.Replay replay -> {
+                metrics.recordIdempotencyReplay();
+                yield replay.response();
+            }
             case PaymentReservationResult.Conflict conflict ->
                 throw new PaymentIdempotencyConflictException(
                     conflict.reason()

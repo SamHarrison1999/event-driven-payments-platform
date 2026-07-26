@@ -490,8 +490,9 @@ Phase 1 verification passed.
 |---|---|---|
 | Distributed trace propagation and export are implemented | Current | Batch 2 adds Micrometer/OpenTelemetry observations, configurable OTLP export and payment processing spans; focused verification pending |
 | Controlled failure simulation is profile-gated and audited | Current | Batch 2 adds the bounded administrator-only in-memory simulator; focused verification pending |
-| Reproducible payment-path load tests are implemented | Not started | Later Phase 11 batch |
+| Reproducible payment-path load tests are implemented | Completed | Static verifier and authenticated k6 smoke test passed on 2026-07-26 |
 | Performance methodology, measurements and SLO evidence are recorded | Not started | Final Phase 11 batch |
+| GitHub Repository, Backend and Frontend checks pass | Completed | PR #11 head `f594e5f` passed all three checks on 2026-07-26 |
 
 ## Decision history
 
@@ -560,6 +561,6 @@ Phase 1 verification passed.
 
 ## Next verified action
 
-Run the focused Phase 11 tracing and failure-simulation tests. Do not run the
-cumulative suite until the remaining Phase 11 implementation batches are
-complete.
+Phase 11 implementation, local verification and PR #11 CI
+verification are recorded. The final controlled performance-measurement batch
+remains before Phase 11 can be marked complete.

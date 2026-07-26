@@ -21,12 +21,11 @@ Phase 10 implementation is complete and the required local and pull-request
 verification passed on PR #10 at head `c494a67` on
 2026-07-26.
 
-Phase 11 is in progress. The first observability foundation batch adds ECS
-structured console logs, correlation-aware request completion events,
-Prometheus-compatible metrics, and explicit database-aware readiness.
-The second batch adds Micrometer/OpenTelemetry trace observations with
-configurable OTLP export and a disabled-by-default, administrator-only
-failure simulator for bounded resilience demonstrations.
+Phase 11 implementation, local verification and the authenticated payment-path
+smoke test passed on PR #11 at head `f594e5f` on
+2026-07-26. The GitHub Repository, Backend and Frontend checks also
+passed. The smoke run is a controlled functional check and does not represent
+a production performance or SLO claim.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.

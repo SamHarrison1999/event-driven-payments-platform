@@ -144,7 +144,7 @@ jobs:
 
       - name: Build analysed sources
         run: |
-          ./backend/gradlew classes --no-daemon
+          (cd backend && ./gradlew classes --no-daemon)
           pnpm --dir frontend install --frozen-lockfile
           pnpm --dir frontend build
 

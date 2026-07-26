@@ -26,7 +26,7 @@ Last updated: 2026-07-26
 | Docker execution | Completed | `hello-world` container succeeded |
 | jq | Completed | jq 1.8.1 |
 | IntelliJ repository | Completed | Repository and Gradle project configured |
-| Current Git phase branch | Current | `feat/phase-12-security-hardening` from Phase 11 merge `654d694` |
+| Current Git phase branch | Current | `feat/phase-12-security-hardening` from the Phase 11 baseline |
 
 ## Phase progress
 
@@ -44,7 +44,7 @@ Last updated: 2026-07-26
 | 9 — Settlement and reconciliation | Completed | PR #9 merged at `43b697e`; local and remote Phase 9 branches removed |
 | 10 — Audit and reporting | Completed | PR #10 verification recorded on `main` |
 | 11 — Observability and performance | Completed | Implementation, controlled verification and documentation merged into `main` on 2026-07-26 |
-| 12 — Security hardening | Current | `feat/phase-12-security-hardening`; implementation complete pending backend/CI verification |
+| 12 — Security hardening | Current | PR #12; local verification and all five GitHub Actions checks passed; merge pending |
 | 13 — Release infrastructure | Not started | None |
 | 14 — Portfolio release | Not started | None |
 
@@ -504,7 +504,7 @@ Phase 1 verification passed.
 | Settlement multipart and parser limits are enforced | Completed | 1 MiB web cap, parser cap and existing upload tests |
 | Sensitive values are excluded from request-completion logs | Completed | Allow-listed logging and query-string regression test |
 | Security dependency and static-analysis checks are present | Completed | CI security job and Phase 12 static verifier |
-| Focused and cumulative Phase 12 verification passes | Not started | Final local and pull-request evidence |
+| Focused and cumulative Phase 12 verification passes | Completed | Local Phase 12 verification passed; PR #12 passed all five GitHub Actions checks on 2026-07-26 |
 
 ## Decision history
 
@@ -576,6 +576,6 @@ Phase 1 verification passed.
 
 ## Next verified action
 
-Run the backend focused Phase 12 security tests and the full local verification
-once a Gradle/JDK-capable environment is available, then review the pull-request
-security job results before marking Phase 12 complete.
+Phase 12 implementation and verification are complete. Merge PR #12 after
+review, then synchronise `main` and record the merge commit before removing the
+local and remote Phase 12 feature branches.

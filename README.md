@@ -16,10 +16,12 @@ Phase 11 implementation and verification are complete and merged into `main`.
 Its k6 harness is a controlled functional/performance check and does not make a
 production capacity or SLO claim.
 
-Phase 12 adds security headers, bounded sensitive-route rate limiting, strict
-multipart upload boundaries, security regression tests, a threat model and
-dependency/static-analysis CI checks. The in-memory limiter is deliberately
-single-process and must not be described as cluster-wide protection.
+Phase 12 implementation is complete. PR #12 passed all five GitHub Actions
+checks on 2026-07-26: Backend, Frontend, Repository checks, Security analysis
+and Code scanning results / CodeQL. The branch is ready to merge; Phase 12
+remains the current phase until that pull request is merged. The in-memory
+limiter is deliberately single-process and must not be described as
+cluster-wide protection.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.
@@ -333,8 +335,9 @@ The project currently provides:
 
 - a PostgreSQL Docker Compose service;
 - locked backend and frontend dependencies;
-- cumulative PowerShell and Bash verification scripts through Phase 10; and
-- GitHub Actions jobs for repository, backend and frontend verification.
+- cumulative PowerShell and Bash verification scripts through Phase 12; and
+- GitHub Actions jobs for repository, backend, frontend and security
+  verification.
 
 ## Local development
 
@@ -705,8 +708,9 @@ ownership-aware payment lookup and frontend payment flows are also implemented.
 The transactional outbox, durable simulated notifications, controlled
 dead-letter recovery, settlement import and reconciliation are implemented.
 Audit and operational reporting are implemented. Phase 11 observability and
-performance work is implemented. Phase 12 security hardening is the current
-phase; release infrastructure and portfolio release remain planned.
+performance work is implemented. Phase 12 security hardening is implemented
+and its pull-request verification has passed; release infrastructure and
+portfolio release remain planned.
 
 ## Engineering principles
 
@@ -829,3 +833,9 @@ recording, source-owned evidence readers, normalized role-scoped search,
 repeatable-read summaries, bounded CSV exports, the React reporting workspace,
 documentation and Flyway migrations 1 through 21. It then runs the complete
 Phase 9 baseline, which supplies the full backend and frontend regression gate.
+
+### Phase 12 verification
+
+The local Phase 12 verification passed. PR #12 also passed all five GitHub
+Actions checks on 2026-07-26: Backend, Frontend, Repository checks, Security
+analysis and Code scanning results / CodeQL.

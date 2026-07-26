@@ -1,8 +1,8 @@
 # ADR 0016: Security hardening and threat model boundaries
 
-## Status
-
-Accepted for Phase 12.
+- Status: Accepted
+- Date: 2026-07-26
+- Owners: Platform engineering
 
 ## Context
 

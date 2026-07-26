@@ -94,3 +94,9 @@ The completed platform will include:
 - dependency scanning;
 - container scanning; and
 - a documented threat model.
+
+Phase 12 adds explicit API security headers, bounded sensitive-route rate
+limiting, strict multipart upload limits, focused security regression tests,
+`scripts/verify-phase-12.*`, GitHub dependency review and CodeQL analysis. The
+rate limiter is intentionally in-memory and single-process; it is not a
+substitute for a shared store or edge control in a multi-instance deployment.

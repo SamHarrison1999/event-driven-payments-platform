@@ -32,6 +32,7 @@ tmp/
 
 # Java and Gradle
 .gradle/
+.gradle-phase-12/
 **/build/
 out/
 target/

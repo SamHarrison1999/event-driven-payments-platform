@@ -99,3 +99,54 @@ jobs:
       - name: Build frontend
         working-directory: frontend
         run: pnpm build
+
+  security:
+    name: Security analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Verify Phase 12 security contracts
+        run: bash scripts/verify-phase-12.sh --static-only
+
+      - name: Review dependency changes
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@v5
+
+      - name: Initialise CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: java,javascript-typescript
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+          cache-dependency-path: backend/*.gradle.kts
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.18.0"
+          package-manager-cache: false
+
+      - name: Install pnpm
+        run: npm install --global pnpm@11.9.0
+
+      - name: Build analysed sources
+        run: |
+          (cd backend && ./gradlew classes --no-daemon)
+          pnpm --dir frontend install --frozen-lockfile
+          pnpm --dir frontend build
+
+      - name: Analyse with CodeQL
+        uses: github/codeql-action/analyze@v4

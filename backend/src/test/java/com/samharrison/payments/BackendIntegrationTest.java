@@ -97,6 +97,38 @@ class BackendIntegrationTest {
     }
 
     @Test
+    void addsExplicitSecurityHeadersToApiResponses() throws Exception {
+        mockMvc.perform(
+                get("/api/v1/system/info")
+            )
+            .andExpect(status().isOk())
+            .andExpect(
+                header().string(
+                    "X-Content-Type-Options",
+                    "nosniff"
+                )
+            )
+            .andExpect(
+                header().string("X-Frame-Options", "DENY")
+            )
+            .andExpect(
+                header().string("Referrer-Policy", "no-referrer")
+            )
+            .andExpect(
+                header().string(
+                    "Permissions-Policy",
+                    "camera=(), microphone=(), geolocation=()"
+                )
+            )
+            .andExpect(
+                header().string(
+                    "Content-Security-Policy",
+                    "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+                )
+            );
+    }
+
+    @Test
     void generatesACorrelationIdWhenNoneIsSupplied()
         throws Exception {
         mockMvc.perform(

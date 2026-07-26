@@ -274,13 +274,32 @@ async function throwResponseError(
       )
     }
 
-    throw new ApiProblemError(payload)
+    throw new ApiProblemError(
+      payload,
+      response.status === 429
+        ? parseRetryAfter(response.headers.get('retry-after'))
+        : null,
+    )
   }
 
   throw new ApiHttpError(
     contractName,
     response.status,
   )
+}
+
+function parseRetryAfter(
+  value: string | null,
+): number | null {
+  if (!value || !/^\d+$/.test(value.trim())) {
+    return null
+  }
+
+  const seconds = Number(value)
+
+  return Number.isSafeInteger(seconds) && seconds > 0
+    ? seconds
+    : null
 }
 
 export async function apiRequestJsonResponse<T>(

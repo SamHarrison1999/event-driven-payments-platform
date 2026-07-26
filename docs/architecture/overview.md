@@ -226,7 +226,8 @@ HTTP, CSV, Spring Modulith and React tests verify the implementation.
 
 ### Phase 11 — Observability and performance
 
-Phase 11 is in progress. The first foundation batch implements:
+Phase 11 is complete and merged into `main`. The first foundation batch
+implements:
 
 - ECS-compatible structured console logging through Spring Boot;
 - allow-listed request completion events containing method, route, status and
@@ -243,8 +244,38 @@ simulator is in-memory, bounded, excludes its own control endpoint, and can
 target all HTTP requests, payment routes only, or a bounded delay. It does
 not represent a production fault-injection system.
 
-Reproducible load testing and measured SLO evidence remain later Phase 11
-batches.
+The Phase 11 load-test harness measures the authenticated payment submission
+HTTP path with CSRF validation and unique idempotency keys. It accepts
+short-lived fixture values from the environment and keeps credentials,
+account identifiers and payment data out of source control. Its thresholds are
+controlled run checks and do not constitute a production capacity or SLO claim.
+
+ADR 0015 records the observability and performance boundaries.
+
+### Phase 12 — Security hardening
+
+Phase 12 adds source-owned defence-in-depth around the established session,
+CSRF and role-based access model:
+
+- explicit security headers for API responses, including `nosniff`, frame
+  denial, restrictive referrer and permissions policies, an API CSP and
+  HTTPS-only HSTS;
+- a bounded in-memory fixed-window limiter for login, registration, payment
+  and settlement-import writes, with `429` problem responses and
+  `Retry-After` guidance;
+- one-megabyte multipart file limits in addition to the settlement parser's
+  strict raw-byte, UTF-8, field and row limits;
+- allow-listed request-completion logging that excludes query strings, bodies,
+  cookies, credentials and CSRF values;
+- frontend preservation of rate-limit retry metadata; and
+- a documented threat model, focused regression tests, a reproducible Phase 12
+  verifier, GitHub dependency review and CodeQL analysis.
+
+The limiter is deliberately single-process and keyed by the direct remote
+address. It is not a cluster-wide control; a multi-instance deployment must
+move the state to a shared store or trusted edge gateway. ADR 0016 and the
+[Phase 12 threat model](security/threat-model.md) record the security scope and
+residual risks.
 
 ## C4 context diagram
 

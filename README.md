@@ -10,21 +10,17 @@ asynchronous event delivery and settlement reconciliation.
 
 Current phase:
 
-**Phase 13 — Release infrastructure**
+**Phase 14 — Portfolio release**
 
-Phase 11 implementation and verification are complete and merged into `main`.
-Its k6 harness is a controlled functional/performance check and does not make a
-production capacity or SLO claim.
+Phases 11, 12 and 13 implementation and verification are complete and merged
+into main. Phase 14 packages the engineering evidence for recruiters and
+interviewers across the repository documentation and the companion portfolio
+site. It does not add new payment-domain behaviour or make production-capacity,
+regulatory or real-money-processing claims.
 
-Phase 12 implementation and verification are complete and merged into `main`.
-The in-memory limiter is deliberately single-process and must not be described
-as cluster-wide protection.
-
-Phase 13 has started with a release-foundation batch. It adds a separate
-Docker Compose release composition for PostgreSQL, the backend and the
-same-origin frontend, plus deterministic container builds and a local smoke
-verification gate. It does not claim production deployment readiness or real-
-money processing.
+The payment-platform Phase 14 pull request (#14, head
+b5ffbbd) passed the required GitHub Actions Repository,
+Backend and Frontend checks on 2026-07-27.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.
@@ -343,6 +339,17 @@ The project currently provides:
 - GitHub Actions jobs for repository, backend, frontend and security
   verification.
 
+## Portfolio and interview materials
+
+Phase 14 presents the platform as a portfolio project while keeping its
+educational scope explicit:
+
+- [Portfolio project overview](docs/portfolio/README.md)
+- [Architecture diagrams](docs/architecture/diagrams.md)
+- [Five-minute interview/demo runbook](docs/portfolio/demo-runbook.md)
+- [Architecture overview](docs/architecture/overview.md)
+- [Threat model](docs/security/threat-model.md)
+- [Progress ledger](docs/progress/ledger.md)
 ## Local development
 
 ### Prerequisites

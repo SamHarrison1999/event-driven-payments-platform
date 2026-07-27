@@ -851,3 +851,6 @@ PostgreSQL health gating, deterministic backend packaging, unprivileged
 backend and frontend containers, same-origin Nginx routing and a PowerShell
 static/runtime smoke verifier. Docker image builds remain a local acceptance
 gate and are not a production capacity claim.
+
+The Docker image build and runtime smoke test passed locally on 2026-07-27
+using `scripts/verify-phase-13.ps1`.

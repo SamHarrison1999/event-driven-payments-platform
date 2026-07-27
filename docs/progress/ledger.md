@@ -516,7 +516,7 @@ Phase 1 verification passed.
 | Backend and frontend containers run without root privileges | Completed | Container definitions and static verifier |
 | Browser and API share one Nginx origin | Completed | `frontend/nginx.conf` |
 | Release static contract and local smoke gate exist | Completed | `scripts/verify-phase-13.ps1` |
-| Docker image build and runtime smoke test pass locally | Pending | Run the Phase 13 verifier without `-StaticOnly` |
+| Docker image build and runtime smoke test pass locally | Completed | Local Docker image build and runtime smoke verification passed on 2026-07-27 via `scripts/verify-phase-13.ps1` |
 
 ## Decision history
 
@@ -590,5 +590,5 @@ Phase 1 verification passed.
 
 ## Next verified action
 
-Run `scripts/verify-phase-13.ps1 -StaticOnly`, then build and smoke-test the
-release composition locally before opening the Phase 13 pull request.
+Review the Phase 13 changes, commit the documentation update, and open the
+Phase 13 pull request.

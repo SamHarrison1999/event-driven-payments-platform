@@ -530,7 +530,7 @@ Phase 1 verification passed.
 | Payment-platform README links the portfolio evidence | Completed | README Portfolio and interview materials section |
 | Resume site presents the platform as a portfolio project | Completed | `SamHarrison1999/resume` Projects and Portfolio sections |
 | Local documentation and site validation pass | Current | Run repository checks and inspect the rendered portfolio page |
-| Required GitHub Actions checks pass | Not started | Record the Repository, Backend and Frontend checks after the Phase 14 pull requests |
+| Required GitHub Actions checks pass | Completed | PR #14 head `b5ffbbd` passed Repository, Backend and Frontend checks on 2026-07-27 |
 ## Decision history
 
 | Date | Decision |
@@ -603,5 +603,6 @@ Phase 1 verification passed.
 
 ## Next verified action
 
-Run local documentation and rendered-site validation, then record the
-GitHub Actions results before opening the Phase 14 pull requests.
+Commit and push this CI-evidence documentation update, then rerun the
+Repository, Backend and Frontend checks on the updated Phase 14 payment-platform
+pull request before merging the two Phase 14 pull requests.

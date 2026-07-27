@@ -13,10 +13,14 @@ Current phase:
 **Phase 14 — Portfolio release**
 
 Phases 11, 12 and 13 implementation and verification are complete and merged
-into `main`. Phase 14 packages the engineering evidence for recruiters and
+into main. Phase 14 packages the engineering evidence for recruiters and
 interviewers across the repository documentation and the companion portfolio
 site. It does not add new payment-domain behaviour or make production-capacity,
 regulatory or real-money-processing claims.
+
+The payment-platform Phase 14 pull request (#14, head
+b5ffbbd) passed the required GitHub Actions Repository,
+Backend and Frontend checks on 2026-07-27.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.

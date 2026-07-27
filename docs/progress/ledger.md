@@ -517,6 +517,7 @@ Phase 1 verification passed.
 | Browser and API share one Nginx origin | Completed | `frontend/nginx.conf` |
 | Release static contract and local smoke gate exist | Completed | `scripts/verify-phase-13.ps1` |
 | Docker image build and runtime smoke test pass locally | Completed | Local Docker image build and runtime smoke verification passed on 2026-07-27 via `scripts/verify-phase-13.ps1` |
+| Required GitHub Actions checks pass | Completed | Repository, Backend and Frontend checks passed on the Phase 13 pull request |
 
 ## Decision history
 
@@ -590,5 +591,5 @@ Phase 1 verification passed.
 
 ## Next verified action
 
-Review the Phase 13 changes, commit the documentation update, and open the
-Phase 13 pull request.
+Merge the Phase 13 pull request after final review, then synchronise `main`
+and begin Phase 14 planning.

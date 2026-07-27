@@ -854,3 +854,6 @@ gate and are not a production capacity claim.
 
 The Docker image build and runtime smoke test passed locally on 2026-07-27
 using `scripts/verify-phase-13.ps1`.
+
+The required GitHub Actions checks also passed on the Phase 13 pull request:
+Repository, Backend and Frontend.

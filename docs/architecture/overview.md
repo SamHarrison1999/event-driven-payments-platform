@@ -277,6 +277,27 @@ move the state to a shared store or trusted edge gateway. ADR 0016 and the
 [Phase 12 threat model](security/threat-model.md) record the security scope and
 residual risks.
 
+### Phase 13 — Release infrastructure
+
+The first Phase 13 batch adds a release-shaped local container boundary:
+
+- `compose.release.yaml` starts PostgreSQL, the Spring Boot backend and the
+  React/Nginx frontend as one composition;
+- PostgreSQL health gates backend startup, while only the frontend HTTP port is
+  exposed to the host;
+- the backend Dockerfile builds a deterministic executable JAR and runs it as
+  an unprivileged user;
+- the frontend Dockerfile builds the locked pnpm application and serves it
+  through an unprivileged Nginx image;
+- Nginx proxies the established `/api`, `/actuator`, `/v3` and `/swagger-ui`
+  paths through the browser's same origin; and
+- `scripts/verify-phase-13.ps1` validates the static contract and can perform
+  a bounded local image-build and smoke check.
+
+This is a reproducible local release boundary, not a claim of production
+hosting, TLS termination, cluster-wide rate limiting or real-money processing.
+ADR 0017 records the release-infrastructure decisions and exclusions.
+
 ## C4 context diagram
 
 ```mermaid

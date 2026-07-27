@@ -1,6 +1,6 @@
 # Progress ledger
 
-Last updated: 2026-07-26
+Last updated: 2026-07-27
 
 ## Status meanings
 
@@ -26,7 +26,7 @@ Last updated: 2026-07-26
 | Docker execution | Completed | `hello-world` container succeeded |
 | jq | Completed | jq 1.8.1 |
 | IntelliJ repository | Completed | Repository and Gradle project configured |
-| Current Git phase branch | Current | `feat/phase-12-security-hardening` from the Phase 11 baseline |
+| Current Git phase branch | Current | `feat/phase-13-release-infrastructure` from the merged Phase 12 `main` baseline |
 
 ## Phase progress
 
@@ -44,8 +44,8 @@ Last updated: 2026-07-26
 | 9 — Settlement and reconciliation | Completed | PR #9 merged at `43b697e`; local and remote Phase 9 branches removed |
 | 10 — Audit and reporting | Completed | PR #10 verification recorded on `main` |
 | 11 — Observability and performance | Completed | Implementation, controlled verification and documentation merged into `main` on 2026-07-26 |
-| 12 — Security hardening | Current | PR #12; local verification and all five GitHub Actions checks passed; merge pending |
-| 13 — Release infrastructure | Not started | None |
+| 12 — Security hardening | Completed | PR #12 merged into `main`; local verification and all five GitHub Actions checks passed |
+| 13 — Release infrastructure | Current | Release-foundation implementation batch in progress |
 | 14 — Portfolio release | Not started | None |
 
 ## Phase 0 acceptance evidence
@@ -506,6 +506,19 @@ Phase 1 verification passed.
 | Security dependency and static-analysis checks are present | Completed | CI security job and Phase 12 static verifier |
 | Focused and cumulative Phase 12 verification passes | Completed | Local Phase 12 verification passed; PR #12 passed all five GitHub Actions checks on 2026-07-26 |
 
+## Phase 13 release-foundation acceptance criteria
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Release composition is separate from PostgreSQL-only development Compose | Completed | `compose.release.yaml` and ADR 0017 |
+| PostgreSQL health gates backend startup | Completed | Compose health check and `depends_on` condition |
+| Backend image uses deterministic executable JAR packaging | Completed | `backend/build.gradle.kts` and `backend/Dockerfile` |
+| Backend and frontend containers run without root privileges | Completed | Container definitions and static verifier |
+| Browser and API share one Nginx origin | Completed | `frontend/nginx.conf` |
+| Release static contract and local smoke gate exist | Completed | `scripts/verify-phase-13.ps1` |
+| Docker image build and runtime smoke test pass locally | Completed | Local Docker image build and runtime smoke verification passed on 2026-07-27 via `scripts/verify-phase-13.ps1` |
+| Required GitHub Actions checks pass | Completed | Repository, Backend and Frontend checks passed on the Phase 13 pull request |
+
 ## Decision history
 
 | Date | Decision |
@@ -573,9 +586,10 @@ Phase 1 verification passed.
 | 2026-07-26 | Measure the authenticated payment path with a security-preserving k6 harness and external fixture inputs |
 | 2026-07-26 | Keep Phase 12 rate limiting bounded and single-process until deployment infrastructure justifies a shared store |
 | 2026-07-26 | Apply strict API response headers without breaking the local Swagger development surface |
+| 2026-07-27 | Keep release-shaped Compose separate from the PostgreSQL-only development workflow |
+| 2026-07-27 | Serve the browser and API through one unprivileged Nginx origin |
 
 ## Next verified action
 
-Phase 12 implementation and verification are complete. Merge PR #12 after
-review, then synchronise `main` and record the merge commit before removing the
-local and remote Phase 12 feature branches.
+Merge the Phase 13 pull request after final review, then synchronise `main`
+and begin Phase 14 planning.

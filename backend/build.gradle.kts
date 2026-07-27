@@ -8,6 +8,10 @@ group = "com.samharrison"
 version = "0.0.1-SNAPSHOT"
 description = "Educational event-driven payments and reconciliation platform"
 
+tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+    archiveFileName.set("payments-platform-backend.jar")
+}
+
 val springModulithVersion = "2.0.7"
 val springdocVersion = "3.0.3"
 

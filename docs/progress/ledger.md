@@ -529,8 +529,9 @@ Phase 1 verification passed.
 | Five-minute interview/demo runbook exists | Completed | `docs/portfolio/demo-runbook.md` |
 | Payment-platform README links the portfolio evidence | Completed | README Portfolio and interview materials section |
 | Resume site presents the platform as a portfolio project | Completed | `SamHarrison1999/resume` Projects and Portfolio sections |
-| Local documentation and site validation pass | Current | Run repository checks and inspect the rendered portfolio page |
+| Local documentation and site validation pass | Completed | `git diff --check`, Docker release smoke verification and portfolio screenshot/link review completed during Phase 14 |
 | Required GitHub Actions checks pass | Completed | PR #14 head `b5ffbbd` passed Repository, Backend and Frontend checks on 2026-07-27 |
+
 ## Decision history
 
 | Date | Decision |
@@ -603,6 +604,6 @@ Phase 1 verification passed.
 
 ## Next verified action
 
-Commit and push this CI-evidence documentation update, then rerun the
-Repository, Backend and Frontend checks on the updated Phase 14 payment-platform
-pull request before merging the two Phase 14 pull requests.
+No further Phase 14 action is required. The project is complete for portfolio
+purposes. Start a new phase only if a separate portfolio or engineering
+objective is identified.

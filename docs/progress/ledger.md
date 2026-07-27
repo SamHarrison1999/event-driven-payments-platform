@@ -519,6 +519,18 @@ Phase 1 verification passed.
 | Docker image build and runtime smoke test pass locally | Completed | Local Docker image build and runtime smoke verification passed on 2026-07-27 via `scripts/verify-phase-13.ps1` |
 | Required GitHub Actions checks pass | Completed | Repository, Backend and Frontend checks passed on the Phase 13 pull request |
 
+## Phase 14 portfolio-release acceptance criteria
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| Phase 14 scope and educational boundaries are recorded | Completed | README and portfolio project overview |
+| Recruiter-facing project overview exists | Completed | `docs/portfolio/README.md` |
+| Architecture and lifecycle diagrams exist | Completed | `docs/architecture/diagrams.md` |
+| Five-minute interview/demo runbook exists | Completed | `docs/portfolio/demo-runbook.md` |
+| Payment-platform README links the portfolio evidence | Completed | README Portfolio and interview materials section |
+| Resume site presents the platform as a portfolio project | Completed | `SamHarrison1999/resume` Projects and Portfolio sections |
+| Local documentation and site validation pass | Current | Run repository checks and inspect the rendered portfolio page |
+| Required GitHub Actions checks pass | Not started | Record the Repository, Backend and Frontend checks after the Phase 14 pull requests |
 ## Decision history
 
 | Date | Decision |
@@ -591,5 +603,5 @@ Phase 1 verification passed.
 
 ## Next verified action
 
-Merge the Phase 13 pull request after final review, then synchronise `main`
-and begin Phase 14 planning.
+Run local documentation and rendered-site validation, then record the
+GitHub Actions results before opening the Phase 14 pull requests.

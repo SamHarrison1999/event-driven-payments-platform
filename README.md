@@ -10,18 +10,21 @@ asynchronous event delivery and settlement reconciliation.
 
 Current phase:
 
-**Phase 12 — Security hardening**
+**Phase 13 — Release infrastructure**
 
 Phase 11 implementation and verification are complete and merged into `main`.
 Its k6 harness is a controlled functional/performance check and does not make a
 production capacity or SLO claim.
 
-Phase 12 implementation is complete. PR #12 passed all five GitHub Actions
-checks on 2026-07-26: Backend, Frontend, Repository checks, Security analysis
-and Code scanning results / CodeQL. The branch is ready to merge; Phase 12
-remains the current phase until that pull request is merged. The in-memory
-limiter is deliberately single-process and must not be described as
-cluster-wide protection.
+Phase 12 implementation and verification are complete and merged into `main`.
+The in-memory limiter is deliberately single-process and must not be described
+as cluster-wide protection.
+
+Phase 13 has started with a release-foundation batch. It adds a separate
+Docker Compose release composition for PostgreSQL, the backend and the
+same-origin frontend, plus deterministic container builds and a local smoke
+verification gate. It does not claim production deployment readiness or real-
+money processing.
 
 The `main` branch remains protected by a ruleset requiring pull requests and
 the repository, backend and frontend CI checks.
@@ -335,7 +338,8 @@ The project currently provides:
 
 - a PostgreSQL Docker Compose service;
 - locked backend and frontend dependencies;
-- cumulative PowerShell and Bash verification scripts through Phase 12; and
+- cumulative PowerShell and Bash verification scripts through Phase 12;
+- a Docker Compose release composition for the complete local platform; and
 - GitHub Actions jobs for repository, backend, frontend and security
   verification.
 
@@ -709,8 +713,8 @@ The transactional outbox, durable simulated notifications, controlled
 dead-letter recovery, settlement import and reconciliation are implemented.
 Audit and operational reporting are implemented. Phase 11 observability and
 performance work is implemented. Phase 12 security hardening is implemented
-and its pull-request verification has passed; release infrastructure and
-portfolio release remain planned.
+and merged. Phase 13 release infrastructure is in progress; Phase 14
+portfolio release remains planned.
 
 ## Engineering principles
 
@@ -839,3 +843,11 @@ Phase 9 baseline, which supplies the full backend and frontend regression gate.
 The local Phase 12 verification passed. PR #12 also passed all five GitHub
 Actions checks on 2026-07-26: Backend, Frontend, Repository checks, Security
 analysis and Code scanning results / CodeQL.
+
+### Phase 13 release-foundation verification
+
+The first Phase 13 batch defines a release-shaped Docker Compose runtime with
+PostgreSQL health gating, deterministic backend packaging, unprivileged
+backend and frontend containers, same-origin Nginx routing and a PowerShell
+static/runtime smoke verifier. Docker image builds remain a local acceptance
+gate and are not a production capacity claim.

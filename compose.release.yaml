@@ -1,0 +1,57 @@
+name: event-driven-payments-platform-release
+
+services:
+  postgres:
+    image: postgres:18.4-alpine
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-payments_platform}
+      POSTGRES_USER: ${POSTGRES_USER:-payments_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-payments_local_dev_only}
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          pg_isready
+          -U ${POSTGRES_USER:-payments_app}
+          -d ${POSTGRES_DB:-payments_platform}
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+    volumes:
+      - release-postgres-data:/var/lib/postgresql
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-payments_platform}
+      DATABASE_USERNAME: ${POSTGRES_USER:-payments_app}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-payments_local_dev_only}
+      APP_VERSION: ${APP_VERSION:-phase-13-local}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+
+    depends_on:
+      backend:
+        condition: service_healthy
+
+    ports:
+      - "${RELEASE_HTTP_PORT:-8080}:8080"
+
+volumes:
+  release-postgres-data:

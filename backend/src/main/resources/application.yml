@@ -105,6 +105,10 @@ platform:
   educational: true
   real-money-processing: false
 
+  portfolio-demo:
+    auto-provisioning:
+      enabled: ${PORTFOLIO_DEMO_AUTO_PROVISIONING_ENABLED:true}
+
   failure-simulation:
     enabled: ${FAILURE_SIMULATION_ENABLED:false}
     max-delay: ${FAILURE_SIMULATION_MAX_DELAY:5000ms}

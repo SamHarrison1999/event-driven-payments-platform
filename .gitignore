@@ -70,3 +70,4 @@ docker-data/
 *.sqlite
 *.sqlite3
 uploads/
+.neon

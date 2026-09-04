@@ -30,6 +30,8 @@ describe('isPaymentDetails', () => {
           status: 'COMPLETED',
           ledgerTransactionId:
             '44444444-4444-4444-8444-444444444444',
+          rejectionReason: null,
+          failureReason: null,
         }),
       ).toBe(true)
     },
@@ -42,6 +44,9 @@ describe('isPaymentDetails', () => {
         isPaymentDetails({
           ...basePayment,
           status: 'PENDING',
+          ledgerTransactionId: null,
+          rejectionReason: null,
+          failureReason: null,
         }),
       ).toBe(true)
 
@@ -49,6 +54,9 @@ describe('isPaymentDetails', () => {
         isPaymentDetails({
           ...basePayment,
           status: 'PROCESSING',
+          ledgerTransactionId: null,
+          rejectionReason: null,
+          failureReason: null,
         }),
       ).toBe(true)
     },
@@ -61,8 +69,10 @@ describe('isPaymentDetails', () => {
         isPaymentDetails({
           ...basePayment,
           status: 'REJECTED',
+          ledgerTransactionId: null,
           rejectionReason:
             'PAYMENT_INSUFFICIENT_FUNDS',
+          failureReason: null,
         }),
       ).toBe(true)
     },
@@ -75,6 +85,8 @@ describe('isPaymentDetails', () => {
         isPaymentDetails({
           ...basePayment,
           status: 'FAILED',
+          ledgerTransactionId: null,
+          rejectionReason: null,
           failureReason:
             'PAYMENT_CONCURRENT_MODIFICATION',
         }),

@@ -37,6 +37,8 @@ describe('getPayment', () => {
             status: 'COMPLETED',
             ledgerTransactionId:
               '44444444-4444-4444-8444-444444444444',
+            rejectionReason: null,
+            failureReason: null,
             createdAt:
               '2026-07-01T10:15:00Z',
             updatedAt:

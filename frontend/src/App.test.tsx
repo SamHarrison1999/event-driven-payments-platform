@@ -82,13 +82,13 @@ describe('App', () => {
 
       expect(
         screen.getByText(
-          'Audit and operational reporting',
+          'Simulation environment',
         ),
       ).toBeInTheDocument()
 
       expect(
-        screen.getByText('Phase 10'),
-      ).toBeInTheDocument()
+        screen.queryByText('Phase 10'),
+      ).not.toBeInTheDocument()
 
       expect(
         await screen.findByText(

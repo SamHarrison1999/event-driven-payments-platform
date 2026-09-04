@@ -1,8 +1,10 @@
 package com.samharrison.payments.identity.internal;
 
+import com.samharrison.payments.identity.CustomerRegistered;
 import java.time.Clock;
 import java.time.Instant;
 import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,15 +19,18 @@ public class CustomerRegistrationService {
     private final IdentityUserRepository repository;
     private final PasswordHashingService hashingService;
     private final Clock clock;
+    private final ApplicationEventPublisher eventPublisher;
 
     public CustomerRegistrationService(
         IdentityUserRepository repository,
         PasswordHashingService hashingService,
-        Clock clock
+        Clock clock,
+        ApplicationEventPublisher eventPublisher
     ) {
         this.repository = repository;
         this.hashingService = hashingService;
         this.clock = clock;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -71,6 +76,12 @@ public class CustomerRegistrationService {
 
             throw exception;
         }
+
+        eventPublisher.publishEvent(
+            new CustomerRegistered(
+                user.id()
+            )
+        );
 
         return CustomerRegistrationResult.from(
             user

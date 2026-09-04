@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 
 import { useCurrentSession } from '../hooks/useCurrentSession'
+import { RegisterForm } from './RegisterForm'
 import { LoginForm } from './LoginForm'
 import { UserMenu } from './UserMenu'
 
@@ -94,7 +95,10 @@ export function SessionBoundary({
 
       {currentSession.isSuccess &&
         currentSession.data === null && (
-          <LoginForm />
+          <div className="authentication-grid">
+            <LoginForm />
+            <RegisterForm />
+          </div>
         )}
 
       {currentSession.isSuccess &&

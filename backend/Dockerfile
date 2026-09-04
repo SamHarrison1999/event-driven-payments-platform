@@ -31,6 +31,6 @@ USER payments:payments
 EXPOSE 8080
 
 HEALTHCHECK --interval=10s --timeout=5s --start-period=40s --retries=6 \
-    CMD curl --fail --silent http://127.0.0.1:8080/actuator/health/readiness
+    CMD curl --fail --silent "http://127.0.0.1:${PORT:-8080}/actuator/health/readiness"
 
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

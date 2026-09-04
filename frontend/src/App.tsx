@@ -88,30 +88,6 @@ function App() {
               </span>
             </div>
           </div>
-
-          <aside
-            aria-label="Project scope"
-            className="hero__scope-card"
-          >
-            <p className="scope-card__label">
-              Current milestone
-            </p>
-
-            <strong>
-              Audit and operational reporting
-            </strong>
-
-            <p>
-              Demonstrating immutable cross-domain
-              evidence search, consistent summaries
-              and bounded role-scoped exports.
-            </p>
-
-            <div className="scope-card__progress">
-              <span>Delivery progress</span>
-              <strong>Phase 10</strong>
-            </div>
-          </aside>
         </section>
 
         <SessionBoundary>

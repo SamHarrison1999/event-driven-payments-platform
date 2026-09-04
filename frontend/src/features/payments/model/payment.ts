@@ -42,9 +42,9 @@ export interface PaymentReceiptData {
   amountMinorUnits: number
   currency: 'GBP'
   status: PaymentStatus
-  ledgerTransactionId?: string
-  rejectionReason?: PaymentRejectionReason
-  failureReason?: PaymentFailureReason
+  ledgerTransactionId?: string | null
+  rejectionReason?: PaymentRejectionReason | null
+  failureReason?: PaymentFailureReason | null
   createdAt?: string
   updatedAt?: string
   version?: number
@@ -101,6 +101,15 @@ function isInstant(
   )
 }
 
+function isAbsent(
+  value: unknown,
+): value is null | undefined {
+  return (
+    value === null ||
+    value === undefined
+  )
+}
+
 function hasExpectedOutcome(
   value: Record<string, unknown>,
 ): boolean {
@@ -108,24 +117,24 @@ function hasExpectedOutcome(
     case 'COMPLETED':
       return (
         isUuid(value.ledgerTransactionId) &&
-        value.rejectionReason === undefined &&
-        value.failureReason === undefined
+        isAbsent(value.rejectionReason) &&
+        isAbsent(value.failureReason)
       )
 
     case 'REJECTED':
       return (
-        value.ledgerTransactionId === undefined &&
+        isAbsent(value.ledgerTransactionId) &&
         isOneOf(
           value.rejectionReason,
           paymentRejectionReasons,
         ) &&
-        value.failureReason === undefined
+        isAbsent(value.failureReason)
       )
 
     case 'FAILED':
       return (
-        value.ledgerTransactionId === undefined &&
-        value.rejectionReason === undefined &&
+        isAbsent(value.ledgerTransactionId) &&
+        isAbsent(value.rejectionReason) &&
         isOneOf(
           value.failureReason,
           paymentFailureReasons,
@@ -135,9 +144,9 @@ function hasExpectedOutcome(
     case 'PENDING':
     case 'PROCESSING':
       return (
-        value.ledgerTransactionId === undefined &&
-        value.rejectionReason === undefined &&
-        value.failureReason === undefined
+        isAbsent(value.ledgerTransactionId) &&
+        isAbsent(value.rejectionReason) &&
+        isAbsent(value.failureReason)
       )
 
     default:

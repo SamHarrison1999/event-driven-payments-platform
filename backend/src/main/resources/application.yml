@@ -120,6 +120,8 @@ platform:
       settlement-import-requests: ${SECURITY_RATE_LIMIT_SETTLEMENT_IMPORT_REQUESTS:10}
 
 server:
+  port: ${PORT:8080}
+
   shutdown: graceful
 
   servlet:

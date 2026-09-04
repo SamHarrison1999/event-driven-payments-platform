@@ -6,6 +6,29 @@ asynchronous event delivery and settlement reconciliation.
 > **Educational system:** this application does not process real money and
 > must not be used as a banking, payment-processing or accounting product.
 
+## Live portfolio deployment
+
+A hosted portfolio deployment is available for demonstrating the complete
+browser-to-database workflow:
+
+- **Frontend:** [event-driven-payments-platform.vercel.app](https://event-driven-payments-platform.vercel.app/)
+- **Backend:** [Render readiness endpoint](https://event-driven-payments-api.onrender.com/actuator/health/readiness)
+- **Database:** Neon PostgreSQL.
+
+Vercel serves the React application and rewrites `/api/*` requests to the
+Spring Boot service on Render. This preserves the browser-facing same-origin
+API design while keeping database credentials exclusively on the backend.
+
+The hosted Spring Boot application also runs bounded background processors for
+transactional-outbox publication and simulated notification consumption and
+delivery. These workers use the same database-backed claims, leases,
+idempotency and dead-letter behaviour exercised by the integration tests.
+
+The Render service uses a free portfolio hosting tier and may require a short
+cold start after a period of inactivity.
+
+The hosted environment remains an **educational simulation**. It does not
+process real payments or real settlement files.
 ## Project status
 
 Current phase:
@@ -332,12 +355,20 @@ The frontend currently provides:
 
 The project currently provides:
 
-- a PostgreSQL Docker Compose service;
+- a PostgreSQL Docker Compose service for local development;
 - locked backend and frontend dependencies;
+- a Vercel-hosted React portfolio frontend;
+- a Render-hosted Docker/Spring Boot backend using the platform-assigned
+  HTTP port;
+- Neon PostgreSQL for the hosted portfolio environment;
+- same-origin `/api/*` forwarding from the Vercel frontend to the backend;
+- configurable scheduled outbox-publication and notification-processing
+  workers;
 - cumulative PowerShell and Bash verification scripts through Phase 12;
-- a Docker Compose release composition for the complete local platform; and
+- a Docker Compose release composition for the complete local platform;
 - GitHub Actions jobs for repository, backend, frontend and security
-  verification.
+  verification; and
+- Dependabot plus pnpm audit verification for frontend dependency security.
 
 ## Portfolio and interview materials
 

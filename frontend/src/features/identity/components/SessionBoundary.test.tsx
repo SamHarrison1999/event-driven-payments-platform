@@ -359,7 +359,7 @@ describe('SessionBoundary', () => {
   )
 
   it(
-    'allows a failed session bootstrap to be retried',
+    'automatically retries a transient session bootstrap failure',
     async () => {
       let attempts = 0
 
@@ -370,6 +370,49 @@ describe('SessionBoundary', () => {
           if (attempts === 1) {
             return new HttpResponse(null, {
               status: 503,
+            })
+          }
+
+          return HttpResponse.json(session)
+        }),
+      )
+
+      window.sessionStorage.setItem(
+        customerSessionStorageKeys
+          .paymentSubmission,
+        'unresolved-payment',
+      )
+
+      renderWithQueryClient(
+        <SessionBoundary />,
+      )
+
+      expect(
+        await screen.findByText(
+          session.email,
+          {},
+          {
+            timeout: 3_000,
+          },
+        ),
+      ).toBeInTheDocument()
+
+      expect(attempts).toBe(2)
+    },
+  )
+
+  it(
+    'allows a non-transient session bootstrap failure to be manually retried',
+    async () => {
+      let attempts = 0
+
+      server.use(
+        http.get(sessionEndpoint, () => {
+          attempts += 1
+
+          if (attempts === 1) {
+            return new HttpResponse(null, {
+              status: 500,
             })
           }
 

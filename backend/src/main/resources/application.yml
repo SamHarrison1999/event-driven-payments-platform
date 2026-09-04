@@ -109,6 +109,10 @@ platform:
     auto-provisioning:
       enabled: ${PORTFOLIO_DEMO_AUTO_PROVISIONING_ENABLED:true}
 
+  background-processing:
+    enabled: ${BACKGROUND_PROCESSING_ENABLED:true}
+    fixed-delay-ms: ${BACKGROUND_PROCESSING_FIXED_DELAY_MS:2000}
+
   failure-simulation:
     enabled: ${FAILURE_SIMULATION_ENABLED:false}
     max-delay: ${FAILURE_SIMULATION_MAX_DELAY:5000ms}

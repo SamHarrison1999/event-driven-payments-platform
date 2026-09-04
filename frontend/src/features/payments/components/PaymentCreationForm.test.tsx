@@ -21,6 +21,7 @@ import { customerSessionStorageKeys } from '../../../shared/storage/customerSess
 import { renderWithQueryClient } from '../../../test/renderWithQueryClient'
 import { server } from '../../../test/server'
 import { PaymentCreationForm } from './PaymentCreationForm'
+import { NotificationPanel } from '../../notifications/components/NotificationPanel'
 
 const accountEndpoint =
   'http://localhost:5173/api/v1/accounts'
@@ -30,6 +31,9 @@ const csrfEndpoint =
   'http://localhost:5173/api/v1/identity/csrf'
 const paymentEndpoint =
   'http://localhost:5173/api/v1/payments'
+
+const notificationEndpoint =
+  'http://localhost:5173/api/v1/notifications'
 
 const identitySession = {
   userId:
@@ -937,7 +941,7 @@ describe('PaymentCreationForm', () => {
     },
   )
   it(
-    'invalidates account data after completion',
+    'invalidates account and notification data after completion',
     async () => {
       useAccounts([
         sourceAccount,
@@ -945,6 +949,7 @@ describe('PaymentCreationForm', () => {
       ])
 
       let accountRequests = 0
+      let notificationRequests = 0
 
       server.use(
         http.get(accountEndpoint, () => {
@@ -954,6 +959,12 @@ describe('PaymentCreationForm', () => {
             sourceAccount,
             destinationAccount,
           ])
+        }),
+
+        http.get(notificationEndpoint, () => {
+          notificationRequests += 1
+
+          return HttpResponse.json([])
         }),
 
         http.get(csrfEndpoint, () => {
@@ -983,8 +994,17 @@ describe('PaymentCreationForm', () => {
       const user = userEvent.setup()
 
       renderWithQueryClient(
-        <PaymentCreationForm />,
+        <>
+          <NotificationPanel />
+          <PaymentCreationForm />
+        </>,
       )
+
+      await screen.findByText(
+        'No notifications yet',
+      )
+
+      expect(notificationRequests).toBe(1)
 
       await prepareReview(user)
 
@@ -1000,6 +1020,12 @@ describe('PaymentCreationForm', () => {
 
       await waitFor(() => {
         expect(accountRequests).toBe(2)
+      })
+
+      await waitFor(() => {
+        expect(
+          notificationRequests,
+        ).toBeGreaterThanOrEqual(2)
       })
     },
   )

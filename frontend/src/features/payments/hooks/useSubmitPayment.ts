@@ -9,6 +9,7 @@ import { expireCurrentSession } from '../../identity/hooks/expireCurrentSession'
 import { useCurrentSession } from '../../identity/hooks/useCurrentSession'
 import { submitPaymentIdempotently } from '../api/submitPaymentIdempotently'
 import type { PaymentDraft } from '../model/paymentDraft'
+import { notificationQueryKeys } from '../../notifications/hooks/notificationQueryKeys'
 
 export function useSubmitPayment() {
   const currentSession =
@@ -39,6 +40,22 @@ export function useSubmitPayment() {
       void queryClient.invalidateQueries({
         queryKey: accountQueryKeys.all,
       })
+
+      void queryClient.invalidateQueries({
+        queryKey: notificationQueryKeys.all,
+      })
+
+      window.setTimeout(() => {
+        void queryClient.invalidateQueries({
+          queryKey: notificationQueryKeys.all,
+        })
+      }, 2_500)
+
+      window.setTimeout(() => {
+        void queryClient.invalidateQueries({
+          queryKey: notificationQueryKeys.all,
+        })
+      }, 5_000)
     },
     retry: false,
   })

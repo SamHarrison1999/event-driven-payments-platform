@@ -27,6 +27,9 @@ const sessionEndpoint =
 const csrfEndpoint =
   'http://localhost:5173/api/v1/identity/csrf'
 
+const registrationEndpoint =
+  'http://localhost:5173/api/v1/identity/registrations'
+
 const session: IdentitySession = {
   userId:
     '2f1f55da-5793-4a75-aeb5-c20f69f16949',
@@ -143,11 +146,19 @@ describe('SessionBoundary', () => {
       expect(
         screen.getByLabelText(
           'Email address',
-        ),
+          {
+            selector: '#login-email',
+          },
+        )
       ).toBeInTheDocument()
 
       expect(
-        screen.getByLabelText('Password'),
+        screen.getByLabelText(
+          'Password',
+          {
+            selector: '#login-password',
+          },
+        )
       ).toBeInTheDocument()
     },
   )
@@ -195,12 +206,20 @@ describe('SessionBoundary', () => {
       await user.type(
         await screen.findByLabelText(
           'Email address',
+          {
+            selector: '#login-email',
+          },
         ),
         session.email,
       )
 
       await user.type(
-        screen.getByLabelText('Password'),
+        screen.getByLabelText(
+          'Password',
+          {
+            selector: '#login-password',
+          },
+        ),
         'this is a secure customer passphrase',
       )
 
@@ -256,12 +275,20 @@ describe('SessionBoundary', () => {
       await user.type(
         await screen.findByLabelText(
           'Email address',
+          {
+            selector: '#login-email',
+          },
         ),
         session.email,
       )
 
       const passwordInput =
-        screen.getByLabelText('Password')
+        screen.getByLabelText(
+          'Password',
+          {
+            selector: '#login-password',
+          },
+        )
 
       await user.type(
         passwordInput,
@@ -448,6 +475,271 @@ describe('SessionBoundary', () => {
       ).toBeInTheDocument()
 
       expect(attempts).toBe(2)
+    },
+  )
+
+  it(
+    'creates a customer account from the unauthenticated workspace',
+    async () => {
+      let registrationBody: unknown
+
+      server.use(
+        http.get(sessionEndpoint, () => {
+          return unauthorizedProblem()
+        }),
+
+        http.get(csrfEndpoint, () => {
+          return csrfResponse(
+            'registration-token',
+          )
+        }),
+
+        http.post(
+          registrationEndpoint,
+          async ({ request }) => {
+            registrationBody =
+              await request.json()
+
+            return HttpResponse.json(
+              {
+                id: '9ee15533-c884-45fa-b1e6-caf9af1d2eba',
+                email:
+                  'new.customer@example.com',
+                status: 'ACTIVE',
+                roles: ['CUSTOMER'],
+                createdAt:
+                  '2026-09-04T16:00:00Z',
+              },
+              {
+                status: 201,
+              },
+            )
+          },
+        ),
+      )
+
+      const user = userEvent.setup()
+
+      renderWithQueryClient(
+        <SessionBoundary />,
+      )
+
+      await screen.findByRole(
+        'heading',
+        {
+          name: 'Create account',
+        },
+      )
+
+      await user.type(
+        screen.getByLabelText(
+          'Email address',
+          {
+            selector: '#register-email',
+          },
+        ),
+        'new.customer@example.com',
+      )
+
+      await user.type(
+        screen.getByLabelText(
+          'Password',
+          {
+            selector: '#register-password',
+          },
+        ),
+        'LongSecureDemoPassword2026!',
+      )
+
+      await user.type(
+        screen.getByLabelText(
+          'Confirm password',
+        ),
+        'LongSecureDemoPassword2026!',
+      )
+
+      await user.click(
+        screen.getByRole(
+          'button',
+          {
+            name: 'Create account',
+          },
+        ),
+      )
+
+      expect(
+        await screen.findByText(
+          'Account created',
+        ),
+      ).toBeInTheDocument()
+
+      expect(registrationBody).toEqual({
+        email: 'new.customer@example.com',
+        password: 'LongSecureDemoPassword2026!',
+      })
+    },
+  )
+
+  it(
+    'rejects mismatched registration passwords before submitting',
+    async () => {
+      server.use(
+        http.get(sessionEndpoint, () => {
+          return unauthorizedProblem()
+        }),
+      )
+
+      const user = userEvent.setup()
+
+      renderWithQueryClient(
+        <SessionBoundary />,
+      )
+
+      await screen.findByRole(
+        'heading',
+        {
+          name: 'Create account',
+        },
+      )
+
+      await user.type(
+        screen.getByLabelText(
+          'Email address',
+          {
+            selector: '#register-email',
+          },
+        ),
+        'new.customer@example.com',
+      )
+
+      await user.type(
+        screen.getByLabelText(
+          'Password',
+          {
+            selector: '#register-password',
+          },
+        ),
+        'LongSecureDemoPassword2026!',
+      )
+
+      await user.type(
+        screen.getByLabelText(
+          'Confirm password',
+        ),
+        'DifferentSecurePassword2026!',
+      )
+
+      await user.click(
+        screen.getByRole(
+          'button',
+          {
+            name: 'Create account',
+          },
+        ),
+      )
+
+      expect(
+        await screen.findByText(
+          'Passwords do not match.',
+        ),
+      ).toBeInTheDocument()
+    },
+  )
+
+  it(
+    'explains when a registration email already exists',
+    async () => {
+      server.use(
+        http.get(sessionEndpoint, () => {
+          return unauthorizedProblem()
+        }),
+
+        http.get(csrfEndpoint, () => {
+          return csrfResponse(
+            'registration-token',
+          )
+        }),
+
+        http.post(
+          registrationEndpoint,
+          () =>
+            HttpResponse.json(
+              {
+                type:
+                  'urn:problem:identity:duplicate-email',
+                title:
+                  'Email address already registered',
+                status: 409,
+                detail:
+                  'Email already exists.',
+                code:
+                  'IDENTITY_DUPLICATE_EMAIL',
+              },
+              {
+                status: 409,
+                headers: {
+                  'Content-Type':
+                    'application/problem+json',
+                },
+              },
+            ),
+        ),
+      )
+
+      const user = userEvent.setup()
+
+      renderWithQueryClient(
+        <SessionBoundary />,
+      )
+
+      await screen.findByRole(
+        'heading',
+        {
+          name: 'Create account',
+        },
+      )
+
+      await user.type(
+        screen.getByLabelText(
+          'Email address',
+          {
+            selector: '#register-email',
+          },
+        ),
+        'existing@example.com',
+      )
+
+      await user.type(
+        screen.getByLabelText(
+          'Password',
+          {
+            selector: '#register-password',
+          },
+        ),
+        'LongSecureDemoPassword2026!',
+      )
+
+      await user.type(
+        screen.getByLabelText(
+          'Confirm password',
+        ),
+        'LongSecureDemoPassword2026!',
+      )
+
+      await user.click(
+        screen.getByRole(
+          'button',
+          {
+            name: 'Create account',
+          },
+        ),
+      )
+
+      expect(
+        await screen.findByText(
+          /account with this email already exists/i,
+        ),
+      ).toBeInTheDocument()
     },
   )
 })
